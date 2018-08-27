@@ -150,6 +150,62 @@ namespace Xenko.VirtualReality
             }
         }
 
+        public class TrackedDevice
+        {
+            //public static int GetDeviceIndex(int id)
+            //{
+            //    var currentIndex = 0;
+            //    for (uint index = 0; index < DevicePoses.Length; index++)
+            //    {
+            //        if (Valve.VR.OpenVR.System.GetTrackedDeviceClass(index) == ETrackedDeviceClass.GenericTracker)
+            //        {
+            //            if (currentIndex == id)
+            //            {
+            //                return currentIndex;
+            //            }
+
+            //            currentIndex++;
+            //        }
+            //    }
+
+            //    return -1;
+            //}
+
+            public TrackedDevice(int trackerIndex)
+            {
+                TrackerIndex = trackerIndex;
+
+                var error = ETrackedPropertyError.TrackedProp_Success;
+                var result = new System.Text.StringBuilder((int)64);
+                Valve.VR.OpenVR.System.GetStringTrackedDeviceProperty((uint)trackerIndex, ETrackedDeviceProperty.Prop_SerialNumber_String, result, 64, ref error);
+                SerialNumber = result.ToString();
+                //var currentIndex = 0;
+                //for (uint index = 0; index < DevicePoses.Length; index++)
+                //{
+                //    if (Valve.VR.OpenVR.System.GetTrackedDeviceClass(index) == ETrackedDeviceClass.GenericTracker)
+                //    {
+                //        if (currentIndex == trackerIndex)
+                //        {
+                //            TrackerIndex = (int)index;
+                //            break;
+                //        }
+                //        currentIndex++;
+                //    }
+                //}
+            }
+
+            internal int TrackerIndex;
+            internal string SerialNumber;
+            internal VRControllerState_t State;
+            internal VRControllerState_t PreviousState;
+
+            public void Update()
+            {
+                PreviousState = State;
+                Valve.VR.OpenVR.System.GetControllerState((uint)TrackerIndex, ref State, (uint)Utilities.SizeOf<VRControllerState_t>());
+            }
+        }
+
         private static readonly TrackedDevicePose_t[] DevicePoses = new TrackedDevicePose_t[Valve.VR.OpenVR.k_unMaxTrackedDeviceCount];
         private static readonly TrackedDevicePose_t[] GamePoses = new TrackedDevicePose_t[Valve.VR.OpenVR.k_unMaxTrackedDeviceCount];
 
@@ -264,6 +320,49 @@ namespace Xenko.VirtualReality
                     currentIndex++;
                 }
             }
+
+            return DeviceState.Invalid;
+        }
+
+        public static DeviceState GetTrackerPose(int trackerIndex, out Matrix pose, out Vector3 velocity, out Vector3 angVelocity)
+        {
+            return GetTrackerPoseUnsafe(trackerIndex, out pose, out velocity, out angVelocity);
+        }
+
+        private static unsafe DeviceState GetTrackerPoseUnsafe(int trackerIndex, out Matrix pose, out Vector3 velocity, out Vector3 angVelocity)
+        {
+            var currentIndex = 0;
+
+            pose = Matrix.Identity;
+            velocity = Vector3.Zero;
+            angVelocity = Vector3.Zero;
+            var index = trackerIndex;
+
+            //for (uint index = 0; index < DevicePoses.Length; index++)
+            //{
+            //    if (Valve.VR.OpenVR.System.GetTrackedDeviceClass(index) == ETrackedDeviceClass.GenericTracker)
+            //    {
+            //        if (currentIndex == trackerIndex)
+                    {
+                        Utilities.CopyMemory((IntPtr)Interop.Fixed(ref pose), (IntPtr)Interop.Fixed(ref DevicePoses[index].mDeviceToAbsoluteTracking), Utilities.SizeOf<HmdMatrix34_t>());
+                        Utilities.CopyMemory((IntPtr)Interop.Fixed(ref velocity), (IntPtr)Interop.Fixed(ref DevicePoses[index].vVelocity), Utilities.SizeOf<HmdVector3_t>());
+                        Utilities.CopyMemory((IntPtr)Interop.Fixed(ref angVelocity), (IntPtr)Interop.Fixed(ref DevicePoses[index].vAngularVelocity), Utilities.SizeOf<HmdVector3_t>());
+
+                        var state = DeviceState.Invalid;
+                        if (DevicePoses[index].bDeviceIsConnected && DevicePoses[index].bPoseIsValid)
+                        {
+                            state = DeviceState.Valid;
+                        }
+                        else if (DevicePoses[index].bDeviceIsConnected && !DevicePoses[index].bPoseIsValid && DevicePoses[index].eTrackingResult == ETrackingResult.Running_OutOfRange)
+                        {
+                            state = DeviceState.OutOfRange;
+                        }
+
+                        return state;
+                    }
+                    currentIndex++;
+            //    }
+            //}
 
             return DeviceState.Invalid;
         }
