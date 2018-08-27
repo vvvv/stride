@@ -188,7 +188,7 @@ namespace Xenko.VirtualReality
         {
             var tex = new Texture_t
             {
-                eType = EGraphicsAPIConvention.API_DirectX,
+                eType = ETextureType.DirectX,
                 eColorSpace = EColorSpace.Auto,
                 handle = texture.NativeResource.NativePointer,
             };
@@ -312,7 +312,7 @@ namespace Xenko.VirtualReality
         {
             projection = Matrix.Identity;
             var eye = eyeIndex == 0 ? EVREye.Eye_Left : EVREye.Eye_Right;
-            var proj = Valve.VR.OpenVR.System.GetProjectionMatrix(eye, near, far, EGraphicsAPIConvention.API_DirectX);
+            var proj = Valve.VR.OpenVR.System.GetProjectionMatrix(eye, near, far);
             Utilities.CopyMemory((IntPtr)Interop.Fixed(ref projection), (IntPtr)Interop.Fixed(ref proj), Utilities.SizeOf<Matrix>());
         }
 
@@ -353,7 +353,7 @@ namespace Xenko.VirtualReality
         {
             var tex = new Texture_t
             {
-                eType = EGraphicsAPIConvention.API_DirectX,
+                eType = ETextureType.DirectX,
                 eColorSpace = EColorSpace.Auto,
                 handle = texture.NativeResource.NativePointer,
             };
