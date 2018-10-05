@@ -100,6 +100,8 @@ namespace Xenko.Graphics
         /// </summary>
         public TextureFlags Flags;
 
+        public TextureOptions Options;
+
         /// <summary>
         /// Gets a value indicating whether this instance is a render target.
         /// </summary>

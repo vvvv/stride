@@ -57,9 +57,9 @@ namespace Xenko.Graphics
         /// <param name="arraySize">Size of the texture 2D array, default to 1.</param>
         /// <param name="usage">The usage.</param>
         /// <returns>A new instance of 2D <see cref="Texture" /> class.</returns>
-        public static Texture New2D(GraphicsDevice device, int width, int height, MipMapCount mipCount, PixelFormat format, TextureFlags textureFlags = TextureFlags.ShaderResource, int arraySize = 1, GraphicsResourceUsage usage = GraphicsResourceUsage.Default)
+        public static Texture New2D(GraphicsDevice device, int width, int height, MipMapCount mipCount, PixelFormat format, TextureFlags textureFlags = TextureFlags.ShaderResource, int arraySize = 1, GraphicsResourceUsage usage = GraphicsResourceUsage.Default, TextureOptions textureOptions = TextureOptions.None)
         {
-            return new Texture(device).InitializeFrom(TextureDescription.New2D(width, height, mipCount, format, textureFlags, arraySize, usage));
+            return new Texture(device).InitializeFrom(TextureDescription.New2D(width, height, mipCount, format, textureFlags, arraySize, usage, MultisampleCount.None, textureOptions));
         }
 
         /// <summary>
@@ -106,9 +106,10 @@ namespace Xenko.Graphics
             TextureFlags textureFlags = TextureFlags.ShaderResource,
             int arraySize = 1,
             GraphicsResourceUsage usage = GraphicsResourceUsage.Default,
-            MultisampleCount multisampleCount = MultisampleCount.None)
+            MultisampleCount multisampleCount = MultisampleCount.None,
+            TextureOptions textureOptions = TextureOptions.None)
         {
-            return new Texture(device).InitializeFrom(TextureDescription.New2D(width, height, mipCount, format, textureFlags, arraySize, usage, multisampleCount), textureData);
+            return new Texture(device).InitializeFrom(TextureDescription.New2D(width, height, mipCount, format, textureFlags, arraySize, usage, multisampleCount, textureOptions), textureData);
         }
     }
 }

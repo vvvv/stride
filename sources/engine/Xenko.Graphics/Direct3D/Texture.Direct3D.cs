@@ -656,7 +656,7 @@ namespace Xenko.Graphics
                 MipLevels = textureDescription.MipLevels,
                 Usage = (ResourceUsage)textureDescription.Usage,
                 CpuAccessFlags = GetCpuAccessFlagsFromUsage(textureDescription.Usage),
-                OptionFlags = ResourceOptionFlags.None,
+                OptionFlags = (ResourceOptionFlags)textureDescription.Options,
             };
 
             if (textureDescription.Dimension == TextureDimension.TextureCube)
