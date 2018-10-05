@@ -74,6 +74,8 @@ namespace Xenko.Graphics
         /// </summary>
         public ColorSpace ColorSpace;
 
+        public bool SharedRenderTarget;
+
         #endregion
 
         #region Constructors and Destructors
@@ -92,6 +94,7 @@ namespace Xenko.Graphics
             IsFullScreen = false;
             RefreshRate = new Rational(60, 1); // by default
             ColorSpace = ColorSpace.Linear;
+            SharedRenderTarget = false;
         }
 
         /// <summary>
@@ -160,6 +163,7 @@ namespace Xenko.Graphics
                 hashCode = (hashCode * 397) ^ RefreshRate.GetHashCode();
                 hashCode = (hashCode * 397) ^ PreferredFullScreenOutputIndex;
                 hashCode = (hashCode * 397) ^ (int)ColorSpace;
+                hashCode = (hashCode * 397) ^ SharedRenderTarget.GetHashCode();
                 return hashCode;
             }
         }

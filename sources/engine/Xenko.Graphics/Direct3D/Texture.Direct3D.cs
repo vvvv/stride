@@ -75,6 +75,7 @@ namespace Xenko.Graphics
             }
         }
 
+
         public void Recreate(DataBox[] dataBoxes = null)
         {
             InitializeFromImpl(dataBoxes);
@@ -89,7 +90,7 @@ namespace Xenko.Graphics
         /// Initializes from a native SharpDX.Texture
         /// </summary>
         /// <param name="texture">The texture.</param>
-        internal Texture InitializeFromImpl(Texture2D texture, bool isSrgb)
+        internal Texture InitializeFromImpl(Texture2D texture, bool isSrgb, TextureOptions textureOptions = TextureOptions.None)
         {
             NativeDeviceChild = texture;
             var newTextureDescription = ConvertFromNativeDescription(texture.Description);
@@ -97,6 +98,8 @@ namespace Xenko.Graphics
             // We might have created the swapchain as a non-srgb format (esp on Win10&RT) but we want it to behave like it is (esp. for the view and render target)
             if (isSrgb)
                 newTextureDescription.Format = newTextureDescription.Format.ToSRgb();
+
+            newTextureDescription.Options = textureOptions;
 
             return InitializeFrom(newTextureDescription);
         }
@@ -149,6 +152,12 @@ namespace Xenko.Graphics
                 }
 
                 GraphicsDevice.RegisterTextureMemoryUsage(SizeInBytes);
+            }
+
+            if (textureDescription.Options == TextureOptions.Shared)
+            {
+                var sharedResource = NativeDeviceChild.QueryInterface<SharpDX.DXGI.Resource>();
+                SharedHandle = sharedResource.SharedHandle;
             }
 
             NativeShaderResourceView = GetShaderResourceView(ViewType, ArraySlice, MipLevel);

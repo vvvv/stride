@@ -118,6 +118,11 @@ namespace Xenko.Rendering.Compositing
         [DefaultValue(true)]
         public bool BindDepthAsResourceDuringTransparentRendering { get; set; } = true;
 
+        /// <summary>
+        /// Gets or sets a value indicating whether to create a shared texture render target.
+        /// </summary>
+        public bool ShareRenderTarget { get; set; }
+
         protected override void InitializeCore()
         {
             base.InitializeCore();
@@ -860,8 +865,8 @@ namespace Xenko.Rendering.Compositing
             if (viewOutputTarget == null || viewOutputTarget.MultisampleCount != MultisampleCount.None)
             {
                 viewOutputTarget = PushScopedResource(drawContext.GraphicsContext.Allocator.GetTemporaryTexture2D(
-                    TextureDescription.New2D(renderTargetsSize.Width, renderTargetsSize.Height, 1, PixelFormat.R8G8B8A8_UNorm_SRgb,
-                        TextureFlags.ShaderResource | TextureFlags.RenderTarget)));
+                    TextureDescription.New2D(renderTargetsSize.Width, renderTargetsSize.Height, PixelFormat.R8G8B8A8_UNorm_SRgb,
+                        TextureFlags.ShaderResource | TextureFlags.RenderTarget, 1, GraphicsResourceUsage.Default)));
             }
 
             // Create depth if needed
