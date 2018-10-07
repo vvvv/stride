@@ -154,16 +154,23 @@ namespace Xenko.Graphics
                 GraphicsDevice.RegisterTextureMemoryUsage(SizeInBytes);
             }
 
-            if (textureDescription.Options == TextureOptions.Shared)
-            {
-                var sharedResource = NativeDeviceChild.QueryInterface<SharpDX.DXGI.Resource>();
-                SharedHandle = sharedResource.SharedHandle;
-            }
-
             NativeShaderResourceView = GetShaderResourceView(ViewType, ArraySlice, MipLevel);
             NativeUnorderedAccessView = GetUnorderedAccessView(ViewType, ArraySlice, MipLevel);
             NativeRenderTargetView = GetRenderTargetView(ViewType, ArraySlice, MipLevel);
-            NativeDepthStencilView = GetDepthStencilView(out HasStencil);           
+            NativeDepthStencilView = GetDepthStencilView(out HasStencil);
+
+            if (textureDescription.Options == TextureOptions.Shared)
+            {
+                try
+                {
+                    var sharedResource = NativeDeviceChild.QueryInterface<SharpDX.DXGI.Resource>();
+                    SharedHandle = sharedResource.SharedHandle;
+                }
+                catch
+                {
+                    SharedHandle = IntPtr.Zero;
+                }
+            }
         }
 
         protected internal override void OnDestroyed()

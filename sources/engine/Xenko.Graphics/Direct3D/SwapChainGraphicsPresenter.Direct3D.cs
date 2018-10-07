@@ -55,12 +55,11 @@ namespace Xenko.Graphics
             : base(device, presentationParameters)
         {
             PresentInterval = presentationParameters.PresentationInterval;
-            presentationParameters.SharedRenderTarget = true;
 
             // Initialize the swap chain
             swapChain = CreateSwapChain();
 
-            backBuffer = new Texture(device).InitializeFromImpl(swapChain.GetBackBuffer<BackBufferResourceType>(0), Description.BackBufferFormat.IsSRgb(), Description.SharedRenderTarget ? TextureOptions.Shared : TextureOptions.None);
+            backBuffer = new Texture(device).InitializeFromImpl(swapChain.GetBackBuffer<BackBufferResourceType>(0), Description.BackBufferFormat.IsSRgb());
 
             // Reload should get backbuffer from swapchain as well
             //backBufferTexture.Reload = graphicsResource => ((Texture)graphicsResource).Recreate(swapChain.GetBackBuffer<SharpDX.Direct3D11.Texture>(0));
