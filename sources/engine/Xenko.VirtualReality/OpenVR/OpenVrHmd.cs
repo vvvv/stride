@@ -134,6 +134,11 @@ namespace Xenko.VirtualReality
             OpenVR.SetTrackingSpace((Valve.VR.ETrackingUniverseOrigin)space);
         }
 
+        public override void SetChaperoneColor(Color color)
+        {
+            OpenVR.SetChaperoneColor(color);
+        }
+
         public override DeviceState State => state;
 
         public override Vector3 HeadPosition => currentHeadPos;

@@ -71,6 +71,10 @@ namespace Xenko.VirtualReality
         {
         }
 
+        public virtual void SetChaperoneColor(Color color)
+        {
+        }
+
         public abstract void ReadEyeParameters(Eyes eye, float near, float far, ref Vector3 cameraPosition, ref Matrix cameraRotation, bool ignoreHeadRotation, bool ignoreHeadPosition, out Matrix view, out Matrix projection);
 
         public abstract void Commit(CommandList commandList, Texture renderFrame);

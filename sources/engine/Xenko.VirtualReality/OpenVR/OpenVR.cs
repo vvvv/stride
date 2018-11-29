@@ -272,6 +272,16 @@ namespace Xenko.VirtualReality
             Valve.VR.OpenVR.Compositor.SetTrackingSpace(space);
         }
 
+        public static void SetChaperoneColor(Color color)
+        {
+            EVRSettingsError e = EVRSettingsError.None;
+            Valve.VR.OpenVR.Settings.SetFloat("collisionBounds", "CollisionBoundsColorGammaR", color.R / 255f, ref e);
+            Valve.VR.OpenVR.Settings.SetFloat("collisionBounds", "CollisionBoundsColorGammaG", color.G / 255f, ref e);
+            Valve.VR.OpenVR.Settings.SetFloat("collisionBounds", "CollisionBoundsColorGammaB", color.B / 255f, ref e);
+            Valve.VR.OpenVR.Settings.SetFloat("collisionBounds", "CollisionBoundsColorGammaA", color.A / 255f, ref e);
+            Valve.VR.OpenVR.Settings.Sync(true, ref e);
+        }
+
         public static DeviceState GetControllerPose(int controllerIndex, out Matrix pose, out Vector3 velocity, out Vector3 angVelocity)
         {
             return GetControllerPoseUnsafe(controllerIndex, out pose, out velocity, out angVelocity);
