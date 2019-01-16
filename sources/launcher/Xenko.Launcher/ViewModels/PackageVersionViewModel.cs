@@ -19,7 +19,7 @@ namespace Xenko.LauncherApp.ViewModels
     internal abstract class PackageVersionViewModel : DispatcherViewModel
     {
         protected NugetLocalPackage LocalPackage;
-        protected NugetPackage ServerPackage;
+        protected NugetServerPackage ServerPackage;
         private ProgressAction currentProgressAction;
         private int currentProgress;
         private bool isProcessing;
@@ -219,7 +219,6 @@ namespace Xenko.LauncherApp.ViewModels
                         progressReport.UpdateProgress(ProgressAction.Install, -1);
                         MetricsHelper.NotifyDownloadStarting(ServerPackage.Id, ServerPackage.Version.ToString());
                         await Store.InstallPackage(ServerPackage.Id, ServerPackage.Version, progressReport);
-                        Store.UpdateTargets();
                         downloadCompleted = true;
                         MetricsHelper.NotifyDownloadCompleted(ServerPackage.Id, ServerPackage.Version.ToString());
                     }
@@ -238,7 +237,6 @@ namespace Xenko.LauncherApp.ViewModels
                         if (localPackage != null)
                         {
                             await Store.UninstallPackage(localPackage, null);
-                            Store.UpdateTargets();
                         }
                     }
                     catch
@@ -249,7 +247,7 @@ namespace Xenko.LauncherApp.ViewModels
 
                     if (displayErrorMessage)
                     {
-                        var message = $"{InstallErrorMessage}{e.FormatSummary(true)}";
+                        var message = $"{InstallErrorMessage}{Environment.NewLine}{Environment.NewLine}{Launcher.LastErrorOrWarning?.Replace(Environment.NewLine, Environment.NewLine + Environment.NewLine) ?? string.Empty}{Environment.NewLine}{e.FormatSummary(true)}";
                         await ServiceProvider.Get<IDialogService>().MessageBox(message, MessageBoxButton.OK, MessageBoxImage.Error);
                         return;
                     }

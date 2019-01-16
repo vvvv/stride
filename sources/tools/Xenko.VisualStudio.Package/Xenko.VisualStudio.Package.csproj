@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">15.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
@@ -6,17 +6,18 @@
     <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <Import Project="..\..\targets\Xenko.PreSettings.targets" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   <PropertyGroup>
     <TargetVsixContainerName>Xenko.vsix</TargetVsixContainerName>
+    <TargetVsixContainer>bin\$(TargetVsixContainerName)</TargetVsixContainer>
     <RootNamespace>Xenko.VisualStudio</RootNamespace>
-    <XenkoOutputPath>bin\$(Configuration)\</XenkoOutputPath>
     <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>Key.snk</AssemblyOriginatorKeyFile>
     <TargetFramework>$(TargetFrameworkTool)</TargetFramework>
     <XenkoAssemblyProcessor>false</XenkoAssemblyProcessor>
     <XenkoBuildTags>WindowsTools</XenkoBuildTags>
-    <XenkoIncludeVSIX>BuiltProjectOutputGroup;BuiltProjectOutputGroupDependencies;GetCopyToOutputDirectoryItems</XenkoIncludeVSIX>
+    <XenkoSkipAutoPack>true</XenkoSkipAutoPack>
+    <PackageVersion>3.0.2</PackageVersion>
     <VSSDKTargetPlatformRegRootSuffix>Xenko</VSSDKTargetPlatformRegRootSuffix>
   </PropertyGroup>
   <ItemGroup>
@@ -86,6 +87,7 @@
     <Compile Include="..\..\assets\Xenko.Core.Assets\PackageSessionHelper.Solution.cs">
       <Link>Assets\PackageSessionHelper.Solution.cs</Link>
     </Compile>
+    <Compile Include="..\..\shared\Xenko.NuGetResolver\RestoreHelper.cs" Link="NuGet\RestoreHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="MyControl.xaml.cs">
@@ -161,13 +163,16 @@
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\assets\Xenko.Core.Packages\Xenko.Core.Packages.csproj" />
-    <ProjectReference Include="..\..\core\Xenko.Core.Design\Xenko.Core.Design.csproj" />
-    <ProjectReference Include="..\..\core\Xenko.Core.Mathematics\Xenko.Core.Mathematics.csproj" />
-    <ProjectReference Include="..\..\core\Xenko.Core.Reflection\Xenko.Core.Reflection.csproj" />
-    <ProjectReference Include="..\..\core\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj" />
-    <ProjectReference Include="..\..\core\Xenko.Core.Yaml\Xenko.Core.Yaml.csproj" />
-    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj" />
+    <!-- Note: we need to include those manually otherwise we run into this issue: https://stackoverflow.com/questions/41832161/missing-builtprojectoutputgroupdependencies-building-vsix-depending-on-new-sim -->
+    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj" AdditionalProperties="TargetFramework=netstandard2.0" />
+    <ProjectReference Include="..\..\core\Xenko.Core.Mathematics\Xenko.Core.Mathematics.csproj" AdditionalProperties="TargetFramework=netstandard2.0" />
+    <ProjectReference Include="..\..\core\Xenko.Core.IO\Xenko.Core.IO.csproj" AdditionalProperties="TargetFramework=netstandard2.0" />
+    <ProjectReference Include="..\..\core\Xenko.Core.MicroThreading\Xenko.Core.MicroThreading.csproj" AdditionalProperties="TargetFramework=netstandard2.0" />
+    <ProjectReference Include="..\..\core\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj" AdditionalProperties="TargetFramework=netstandard2.0" />
+    <ProjectReference Include="..\..\assets\Xenko.Core.Assets\Xenko.Core.Assets.csproj" AdditionalProperties="TargetFramework=$(TargetFramework)" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="NuGet\" />
   </ItemGroup>
   <Import Project="..\..\assets\Xenko.Core.Assets.Yaml\Xenko.Core.Assets.Yaml.projitems" Label="Shared" />
   <PropertyGroup>
@@ -181,6 +186,6 @@
   </Target>
   <Import Project="$(XenkoPostSettingsTargets)" />
   <!-- Force NET Sdk to be included before VsSDK -->
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="Exists('$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets')" />
 </Project>

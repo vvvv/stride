@@ -17,15 +17,15 @@ namespace Xenko.Editor.Build
         /// <summary>
         /// The current session being processed
         /// </summary>
-        private readonly HashSet<Guid> systemProjectsLoaded = new HashSet<Guid>();
+        private readonly HashSet<string> systemProjectsLoaded = new HashSet<string>();
 
         private class UpdateImportShaderCacheBuildStep : BuildStep
         {
-            private readonly HashSet<Guid> cachedProject;
+            private readonly HashSet<string> cachedProject;
 
-            private readonly List<Guid> importedProjectIds;
+            private readonly List<string> importedProjectIds;
 
-            public UpdateImportShaderCacheBuildStep(HashSet<Guid> cachedProject, List<Guid> importedProjectIds)
+            public UpdateImportShaderCacheBuildStep(HashSet<string> cachedProject, List<string> importedProjectIds)
             {
                 this.cachedProject = cachedProject;
                 this.importedProjectIds = importedProjectIds;
@@ -66,12 +66,13 @@ namespace Xenko.Editor.Build
             // Check if there are any new system projects to preload
             // TODO: PDX-1251: For now, allow non-system project as well (which means they will be loaded only once at startup)
             // Later, they should be imported depending on what project the currently previewed/built asset is
-            var systemPackages = session.AllPackages.Where(project => /*project.IsSystem &&*/ !systemProjectsLoaded.Contains(project.Id)).ToList();
+            var systemPackages = session.AllPackages.Where(project => /*project.IsSystem &&*/ !systemProjectsLoaded.Contains(project.Package.Meta.Name)).ToList();
             if (systemPackages.Count == 0)
                 return null;
 
-            var importShadersRootProject = new Package();
-            var importShadersProjectSession = new PackageSession(importShadersRootProject);
+            var importShadersRootProject = new StandalonePackage(new Package());
+            var importShadersProjectSession = new PackageSession();
+            importShadersProjectSession.Projects.Add(importShadersRootProject);
 
             foreach (var package in systemPackages)
             {
@@ -79,21 +80,21 @@ namespace Xenko.Editor.Build
                 foreach (var asset in package.Assets)
                 {
                     if (typeof(EffectShaderAsset).IsAssignableFrom(asset.AssetType))
-                        mapPackage.Assets.Add(new AssetItem(asset.Url, asset.Asset) { SourceFolder = asset.AssetItem.SourceFolder, SourceProject = asset.AssetItem.SourceProject });
+                        mapPackage.Assets.Add(new AssetItem(asset.Url, asset.Asset) { SourceFolder = asset.AssetItem.SourceFolder });
                 }
 
-                importShadersProjectSession.Packages.Add(mapPackage);
-                importShadersRootProject.LocalDependencies.Add(mapPackage);
+                importShadersProjectSession.Projects.Add(new StandalonePackage(mapPackage));
+                importShadersRootProject.FlattenedDependencies.Add(new Dependency(mapPackage));
             }
 
             // compile the fake project (create the build steps)
-            var assetProjectCompiler = new PackageCompiler(new PackageAssetEnumerator(importShadersRootProject));
+            var assetProjectCompiler = new PackageCompiler(new PackageAssetEnumerator(importShadersRootProject.Package));
             var context = new AssetCompilerContext { CompilationContext = typeof(AssetCompilationContext) };
             var dependenciesCompileResult = assetProjectCompiler.Prepare(context);
             context.Dispose();
 
             var buildSteps = dependenciesCompileResult.BuildSteps;
-            buildSteps?.Add(new UpdateImportShaderCacheBuildStep(systemProjectsLoaded, systemPackages.Select(x => x.Id).ToList()));
+            buildSteps?.Add(new UpdateImportShaderCacheBuildStep(systemProjectsLoaded, systemPackages.Select(x => x.Package.Meta.Name).ToList()));
 
             return buildSteps;
         }
@@ -104,8 +105,9 @@ namespace Xenko.Editor.Build
             if (packages.Count == 0)
                 return null;
 
-            var importShadersRootProject = new Package();
-            var importShadersProjectSession = new PackageSession(importShadersRootProject);
+            var importShadersRootProject = new StandalonePackage(new Package());
+            var importShadersProjectSession = new PackageSession();
+            importShadersProjectSession.Projects.Add(importShadersRootProject);
 
             foreach (var package in packages)
             {
@@ -114,20 +116,20 @@ namespace Xenko.Editor.Build
                 {
                     if (typeof(EffectShaderAsset).IsAssignableFrom(asset.AssetType))
                     {
-                        mapPackage.Assets.Add(new AssetItem(asset.Url, asset.Asset) { SourceFolder = asset.AssetItem.SourceFolder, SourceProject = asset.AssetItem.SourceProject });
+                        mapPackage.Assets.Add(new AssetItem(asset.Url, asset.Asset) { SourceFolder = asset.AssetItem.SourceFolder });
                     }
                 }
 
-                importShadersProjectSession.Packages.Add(mapPackage);
-                importShadersRootProject.LocalDependencies.Add(mapPackage);
+                importShadersProjectSession.Projects.Add(new StandalonePackage(mapPackage));
+                importShadersRootProject.FlattenedDependencies.Add(new Dependency(mapPackage));
             }
 
             // compile the fake project (create the build steps)
-            var assetProjectCompiler = new PackageCompiler(new PackageAssetEnumerator(importShadersRootProject));
+            var assetProjectCompiler = new PackageCompiler(new PackageAssetEnumerator(importShadersRootProject.Package));
             var dependenciesCompileResult = assetProjectCompiler.Prepare(new AssetCompilerContext { CompilationContext = typeof(AssetCompilationContext) });
 
             var buildSteps = dependenciesCompileResult.BuildSteps;
-            buildSteps?.Add(new UpdateImportShaderCacheBuildStep(new HashSet<Guid>(), packages.Select(x => x.Id).ToList()));
+            buildSteps?.Add(new UpdateImportShaderCacheBuildStep(new HashSet<string>(), packages.Select(x => x.Package.Meta.Name).ToList()));
 
             return buildSteps;
         }

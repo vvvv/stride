@@ -128,18 +128,15 @@ namespace Xenko.Assets.Presentation.ViewModel
 
             //display orientation needs changes in ios / android manifest files
             var currentOrientation = gameSettingsAsset.GetOrCreate<RenderingSettings>().DisplayOrientation;
-            if (displayOrientation != currentOrientation)
+            if (displayOrientation != currentOrientation && Session.CurrentProject != null)
             {
-                foreach (var profile in Session.CurrentPackage.Package.Profiles)
-                {
-                    GameSettingsAssetCompiler.SetPlatformOrientation(Session.CurrentPackage.Package, profile.Platform, currentOrientation);
-                }
+                GameSettingsAssetCompiler.SetPlatformOrientation(Session.CurrentProject.Project, currentOrientation);
 
                 displayOrientation = currentOrientation;
             }
         }
 
-        public override bool IsLocked => true;
+        public override bool IsLocked => false;
 
         public SceneViewModel DefaultScene
         {

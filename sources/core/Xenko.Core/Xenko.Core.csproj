@@ -1,13 +1,13 @@
-﻿<Project>
-
+<Project>
+  <PropertyGroup>
+    <XenkoRuntime>true</XenkoRuntime>
+  </PropertyGroup>
   <Import Project="..\..\targets\Xenko.Core.PreSettings.targets" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   
   <PropertyGroup>
     <Description>Core assembly for all Xenko assemblies.</Description>
-    <Version>0.1.0.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <TargetFramework>$(TargetFramework)</TargetFramework>
     <XenkoCodeAnalysis>true</XenkoCodeAnalysis>
   </PropertyGroup>
   
@@ -15,10 +15,10 @@
     <XenkoAssemblySign>true</XenkoAssemblySign>
     <XenkoNativeOutputName>libcore</XenkoNativeOutputName>
     <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
-    <TargetFramework>$(TargetFramework)</TargetFramework>
     <XenkoAssemblyProcessorOptions>--auto-module-initializer --serialization</XenkoAssemblyProcessorOptions>
     <XenkoBuildTags>*</XenkoBuildTags>
     <RestorePackages>true</RestorePackages>
+    <ExtrasUwpMetaPackageVersion>6.2.2</ExtrasUwpMetaPackageVersion>
   </PropertyGroup>
   
   <Choose>
@@ -36,7 +36,7 @@
     </When>
   </Choose>
   <Choose>
-    <When Condition=" '$(XenkoRuntime)' == 'CoreCLR' ">
+    <When Condition=" '$(XenkoNETRuntime)' == 'CoreCLR' ">
       <ItemGroup>
         <None Include="..\..\data\Linux\runtimeconfig.json">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -56,6 +56,9 @@
     <Compile Include="..\..\shared\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
+    <None Include="build\**\*.targets" PackagePath="build\" Pack="true" />
+    <None Include="build\**\*.props" PackagePath="build\" Pack="true" />
+    <None Include="..\..\..\deps\AssemblyProcessor\*.*" PackagePath="tools\AssemblyProcessor\" Pack="true" />
   </ItemGroup>
   
   <ItemGroup>
@@ -108,7 +111,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <XenkoContent Include="Xenko.Core.dll.config" />
+    <XenkoContent Condition="'$(XenkoPlatform)' == 'Linux'" Include="Xenko.Core.dll.config" />
   </ItemGroup>
   
   <ItemGroup>
@@ -116,5 +119,5 @@
   </ItemGroup>
   
   <Import Project="$(XenkoPostSettingsTargets)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
 </Project>

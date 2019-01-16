@@ -1,6 +1,8 @@
-﻿<Project>
+<Project>
   <PropertyGroup>
     <XenkoAssemblySign>true</XenkoAssemblySign>
+    <XenkoRuntime>true</XenkoRuntime>
+    <XenkoRuntimeNetStandard>true</XenkoRuntimeNetStandard>
   </PropertyGroup>
   <Import Project="..\..\targets\Xenko.Core.PreSettings.targets" />
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
@@ -8,7 +10,6 @@
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <XenkoAssemblyProcessor>false</XenkoAssemblyProcessor>
-    <TargetFramework>$(TargetFramework)</TargetFramework>
     <!-- 
     <XenkoPlatformDependent>true</XenkoPlatformDependent>
     <XenkoAssemblyProcessorOptions>$(XenkoAssemblyProcessorDefaultOptions)</XenkoAssemblyProcessorOptions>
@@ -23,12 +24,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Core\Xenko.Core.csproj">
-      <Private>False</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(XenkoEffectCompiler)' == 'true'">

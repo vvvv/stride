@@ -6,7 +6,6 @@ using Xenko.Core.Assets;
 using Xenko.Core.Assets.Templates;
 using Xenko.Core;
 using Xenko.Core.IO;
-using Xenko.Assets;
 
 namespace Xenko.ProjectGenerator
 {
@@ -43,7 +42,6 @@ namespace Xenko.ProjectGenerator
 
             // Creates the package
             var package = NewPackage(name);
-            package.Id = parameters.Id;
 
             // Setup the default namespace
             package.Meta.RootNamespace = parameters.Namespace;
@@ -53,7 +51,7 @@ namespace Xenko.ProjectGenerator
 
             // Add it to the current session
             var session = parameters.Session;
-            session.Packages.Add(package);
+            session.Projects.Add(new StandalonePackage(package));
 
             // Load missing references
             session.LoadMissingReferences(parameters.Logger);
@@ -75,12 +73,6 @@ namespace Xenko.ProjectGenerator
                     Version = new PackageVersion("1.0.0.0")
                 },
             };
-
-            // Add dependency to latest Xenko package
-            package.Meta.Dependencies.Add(XenkoConfig.GetLatestPackageDependency());
-
-            // Setup the assets folder by default
-            package.Profiles.Add(PackageProfile.NewShared());
 
             return package;
         }

@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\targets\Xenko.PreSettings.targets" />
+
+  <PropertyGroup>
+    <XenkoPackAssets>true</XenkoPackAssets>
+    <TargetFramework>$(TargetFrameworkTool)</TargetFramework>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <!-- Note: we version this package manually because most of the time the samples are big and don't need to be updated.
+         PLEASE UPDATE XenkoDefaultAssetsPlugin.LoadDefaultTemplates() accordingly! -->
+    <PackageVersion>3.1.0.1</PackageVersion>
+    <PackageVersion Condition="'$(XenkoOfficialBuild)' != 'true'">$(PackageVersion)-beta01</PackageVersion>
+  </PropertyGroup>
+
+  <Import Project="$(XenkoPostSettingsTargets)" />
+</Project>

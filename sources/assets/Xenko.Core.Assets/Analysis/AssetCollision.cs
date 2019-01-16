@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 using Xenko.Core.IO;
 using Xenko.Core.Serialization.Contents;
@@ -66,8 +67,11 @@ namespace Xenko.Core.Assets.Analysis
                     changed = true;
                 }
 
-                UFile newLocation;
-                if (assetResolver.RegisterLocation(item.Location, out newLocation))
+                // Note: we ignore name collisions if asset is not referenceable
+                var referenceable = item.Asset.GetType().GetCustomAttribute<AssetDescriptionAttribute>()?.Referenceable ?? true;
+
+                UFile newLocation = null;
+                if (referenceable && assetResolver.RegisterLocation(item.Location, out newLocation))
                 {
                     changed = true;
                 }
@@ -137,19 +141,6 @@ namespace Xenko.Core.Assets.Analysis
             if (package != null)
             {
                 UpdateRootAssets(package.RootAssets, idRemap);
-
-                // We check dependencies to be consistent with other places, but nothing should be changed in there
-                // (except if we were to instantiate multiple packages referencing each other at once?)
-                foreach (var dependency in package.LocalDependencies)
-                {
-                    if (dependency.RootAssets != null)
-                        UpdateRootAssets(dependency.RootAssets, idRemap);
-                }
-                foreach (var dependency in package.Meta.Dependencies)
-                {
-                    if (dependency.RootAssets != null)
-                        UpdateRootAssets(dependency.RootAssets, idRemap);
-                }
             }
         }
 

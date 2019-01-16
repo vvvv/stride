@@ -54,9 +54,9 @@ namespace Xenko.Editor.Build
         }
 
         /// <inheritdoc/>
-        public T GetConfiguration<T>(string profile = null) where T : Configuration
+        public T GetConfiguration<T>() where T : Configuration
         {
-            var configuration = CurrentGameSettings?.TryGet<T>(profile);
+            var configuration = CurrentGameSettings?.TryGet<T>();
             return configuration;
         }
 
@@ -70,7 +70,7 @@ namespace Xenko.Editor.Build
 
         private void SessionOnSessionStateChanged(object sender, SessionStateChangedEventArgs sessionStateChangedEventArgs)
         {
-            if (session.CurrentPackage?.Package != currentPackage)
+            if (session.CurrentProject?.Package != currentPackage)
             {
                 UpdateCurrentGameSettings();
             }
@@ -78,7 +78,7 @@ namespace Xenko.Editor.Build
 
         private void UpdateCurrentGameSettings()
         {
-            currentPackage = session.CurrentPackage?.Package;
+            currentPackage = session.CurrentProject?.Package;
             CurrentGameSettings = currentPackage?.GetGameSettingsAssetOrDefault() ?? GameSettingsFactory.Create();
             RaiseGameSettings(CurrentGameSettings);
         }

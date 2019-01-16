@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Xenko.Core.Assets.Analysis;
+using Xenko.Core.Extensions;
 
 namespace Xenko.Core.Assets.Compiler
 {
@@ -74,22 +75,9 @@ namespace Xenko.Core.Assets.Compiler
             }
 
             //  2. Process referenced packages as well (for their roots)
-            foreach (var packageDependency in package.Meta.Dependencies)
+            foreach (var dependency in package.Container.FlattenedDependencies.Select(x => x.Package).NotNull())
             {
-                var subPackage = package.Session.Packages.Find(packageDependency);
-                if (subPackage != null)
-                {
-                    CollectReferences(subPackage, assetsReferenced, packagesProcessed);
-                }
-            }
-
-            foreach (var subPackageReference in package.LocalDependencies)
-            {
-                var subPackage = package.Session.Packages.Find(subPackageReference.Id);
-                if (subPackage != null)
-                {
-                    CollectReferences(subPackage, assetsReferenced, packagesProcessed);
-                }
+                CollectReferences(dependency, assetsReferenced, packagesProcessed);
             }
 
             // 3. Some types are marked with AlwaysMarkAsRoot

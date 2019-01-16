@@ -9,8 +9,10 @@ using System.Threading.Tasks;
 using Microsoft.Build.Evaluation;
 using Microsoft.Build.Execution;
 using Microsoft.Build.Framework;
+using NuGet.ProjectModel;
 using Xenko.Core;
 using Xenko.Core.Diagnostics;
+using Xenko.Core.IO;
 using ILogger = Xenko.Core.Diagnostics.ILogger;
 
 namespace Xenko.Core.Assets
@@ -114,48 +116,49 @@ namespace Xenko.Core.Assets
             return null;
         }
 
-        public static async Task RestoreNugetPackages(ILogger logger, string projectPath)
+        public static async Task<DependencyGraphSpec> GenerateRestoreGraphFile(ILogger logger, string projectPath)
         {
-            if (Path.GetExtension(projectPath)?.ToLowerInvariant() == ".csproj")
+            DependencyGraphSpec spec = null;
+            using (var restoreGraphResult = new TemporaryFile())
             {
-                var project = LoadProject(projectPath);
-
-                try
+                await Task.Run(() =>
                 {
-                    var addedProjs = new HashSet<string>(); //to avoid worst case circular dependencies.
-                    var allProjs = Core.Utilities.IterateTree(project, project1 =>
+                    var pc = new Microsoft.Build.Evaluation.ProjectCollection();
+
+                    try
                     {
-                        var projs = new List<Project>();
-                        foreach (var item in project1.AllEvaluatedItems.Where(x => x.ItemType == "ProjectReference"))
+                        var parameters = new BuildParameters(pc)
                         {
-                            var path = Path.Combine(project.DirectoryPath, item.EvaluatedInclude);
-                            if (!File.Exists(path)) continue;
+                            Loggers = new[] { new LoggerRedirect(logger, true) } //Instance of ILogger instantiated earlier
+                        };
 
-                            if (addedProjs.Add(path))
-                            {
-                                projs.Add(project.ProjectCollection.LoadProject(path));
-                            }
-                        }
+                        // Run a MSBuild /t:Restore <projectfile>
+                        var request = new BuildRequestData(projectPath, new Dictionary<string, string> { { "RestoreGraphOutputPath", restoreGraphResult.Path }, { "RestoreRecursive", "false" } }, null, new[] { "GenerateRestoreGraphFile" }, null, BuildRequestDataFlags.None);
 
-                        return projs;
-                    });
+                        mainBuildManager.Build(parameters, request);
+                    }
+                    finally
+                    {
+                        pc.UnloadAllProjects();
+                        pc.Dispose();
+                    }
+                });
 
-                    await RestoreNugetPackagesNonRecursive(logger, allProjs.Select(x => x.DirectoryPath));
-                }
-                finally
+                if (File.Exists(restoreGraphResult.Path) && new FileInfo(restoreGraphResult.Path).Length != 0)
                 {
-                    project.ProjectCollection.UnloadAllProjects();
-                    project.ProjectCollection.Dispose();
+                    spec = DependencyGraphSpec.Load(restoreGraphResult.Path);
+                    File.Delete(restoreGraphResult.Path);
+                }
+                else
+                {
+                    spec = new DependencyGraphSpec();
                 }
             }
-            else
-            {
-                // Solution or unknown project file
-                await RestoreNugetPackagesNonRecursive(logger, projectPath);
-            }
+
+            return spec;
         }
 
-        public static async Task RestoreNugetPackagesNonRecursive(ILogger logger, string projectPath)
+        public static async Task RestoreNugetPackages(ILogger logger, string projectPath)
         {
             await Task.Run(() =>
             {
@@ -179,14 +182,6 @@ namespace Xenko.Core.Assets
                     pc.Dispose();
                 }
             });
-        }
-
-        public static async Task RestoreNugetPackagesNonRecursive(ILogger logger, IEnumerable<string> projectPaths)
-        {
-            foreach (var projectPath in projectPaths)
-            {
-                await RestoreNugetPackagesNonRecursive(logger, projectPath);
-            }
         }
 
         public static Microsoft.Build.Evaluation.Project LoadProject(string fullProjectLocation, string configuration = "Debug", string platform = "AnyCPU", Dictionary<string, string> extraProperties = null)

@@ -1,6 +1,6 @@
-<Project>
+﻿<Project>
   <Import Project="..\..\targets\Xenko.Core.PreSettings.targets" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   <PropertyGroup>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <TargetFramework>$(TargetFrameworkTool)</TargetFramework>
@@ -9,6 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
+    <PackageReference Include="Extended.Wpf.Toolkit" Version="3.4.0" />
     <PackageReference Include="System.Collections.Immutable" Version="1.4.0" />
     <Reference Include="System.ComponentModel.Composition" />
     <PackageReference Include="System.Diagnostics.Tracing" Version="4.3.0" />
@@ -25,14 +26,6 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="Xceed.Wpf.DataGrid">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\deps\ExtendedWPFToolkit\Xceed.Wpf.DataGrid.dll</HintPath>
-    </Reference>
-    <Reference Include="Xceed.Wpf.Toolkit">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\deps\ExtendedWPFToolkit\Xceed.Wpf.Toolkit.dll</HintPath>
-    </Reference>
     <PackageReference Include="System.ValueTuple" Version="4.4.0" />
   </ItemGroup>
   <ItemGroup>
@@ -142,8 +135,8 @@
     <Compile Update="Components\TemplateDescriptions\Views\TemplateBrowserUserControl.xaml.cs">
       <DependentUpon>TemplateBrowserUserControl.xaml</DependentUpon>
     </Compile>
-    <Compile Update="Components\TemplateDescriptions\Views\NewPackageWindow.xaml.cs">
-      <DependentUpon>NewPackageWindow.xaml</DependentUpon>
+    <Compile Update="Components\TemplateDescriptions\Views\NewProjectWindow.xaml.cs">
+      <DependentUpon>NewProjectWindow.xaml</DependentUpon>
     </Compile>
     <Compile Update="View\NotificationWindow.xaml.cs">
       <DependentUpon>NotificationWindow.xaml</DependentUpon>
@@ -243,7 +236,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Components\TemplateDescriptions\Views\NewPackageWindow.xaml">
+    <Page Include="Components\TemplateDescriptions\Views\NewProjectWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -279,58 +272,11 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\assets\Xenko.Core.Assets.Quantum\Xenko.Core.Assets.Quantum.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\assets\Xenko.Core.Packages\Xenko.Core.Packages.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\buildengine\Xenko.Core.BuildEngine.Common\Xenko.Core.BuildEngine.Common.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Design\Xenko.Core.Design.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Reflection\Xenko.Core.Reflection.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Yaml\Xenko.Core.Yaml.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Mathematics\Xenko.Core.Mathematics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Translation\Xenko.Core.Translation.csproj">
-      <Project>{6a7b231e-36aa-4647-8c1a-fb1540abc813}</Project>
-      <Name>Xenko.Core.Translation</Name>
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\presentation\Xenko.Core.Presentation.Dialogs\Xenko.Core.Presentation.Dialogs.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\presentation\Xenko.Core.Presentation.Quantum\Xenko.Core.Presentation.Quantum.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\presentation\Xenko.Core.Presentation\Xenko.Core.Presentation.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\presentation\Xenko.Core.Quantum\Xenko.Core.Quantum.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\assets\Xenko.Core.Assets\Xenko.Core.Assets.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\presentation\Xenko.Core.Translation.Presentation\Xenko.Core.Translation.Presentation.csproj">
-      <Project>{b686c194-d71d-4ff0-8b4f-f53afbcd962f}</Project>
-      <Name>Xenko.Core.Translation.Presentation</Name>
-      <Private>False</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\..\assets\Xenko.Core.Assets.Quantum\Xenko.Core.Assets.Quantum.csproj" />
+    <ProjectReference Include="..\..\presentation\Xenko.Core.Presentation.Dialogs\Xenko.Core.Presentation.Dialogs.csproj" />
+    <ProjectReference Include="..\..\presentation\Xenko.Core.Presentation.Quantum\Xenko.Core.Presentation.Quantum.csproj" />
+    <ProjectReference Include="..\..\assets\Xenko.Core.Assets\Xenko.Core.Assets.csproj" />
+    <ProjectReference Include="..\..\presentation\Xenko.Core.Translation.Presentation\Xenko.Core.Translation.Presentation.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\Icons\android.png" />
@@ -480,9 +426,20 @@
   </ItemGroup>
   <Import Project="..\..\editor\Xenko.Core.MostRecentlyUsedFiles\Xenko.Core.MostRecentlyUsedFiles.projitems" Label="Shared" />
   <Import Project="$(XenkoPostSettingsTargets)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   <PropertyGroup>
-    <PostBuildEvent>Path=$(MSBuildBinPath)\Roslyn;$(Path)
+    <PostBuildEvent>Path=$(RoslynTargetsPath);$(Path)
+IF EXIST "$(SolutionDir)..\sources\localization\fr\$(TargetName).fr.po" $(SolutionDir)..\deps\Gettext.Net\GNU.Gettext.Msgfmt.exe --lib-dir $(SolutionDir)..\deps\Gettext.Net --resource $(TargetName) -d $(TargetDir) --locale fr "$(SolutionDir)..\sources\localization\fr\$(TargetName).fr.po" --verbose
 IF EXIST "$(SolutionDir)..\sources\localization\ja\$(TargetName).ja.po" $(SolutionDir)..\deps\Gettext.Net\GNU.Gettext.Msgfmt.exe --lib-dir $(SolutionDir)..\deps\Gettext.Net --resource $(TargetName) -d $(TargetDir) --locale ja "$(SolutionDir)..\sources\localization\ja\$(TargetName).ja.po" --verbose</PostBuildEvent>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeExtraAssemblies</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+  <Target Name="IncludeExtraAssemblies">
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(OutputPath)Xceed.Wpf.DataGrid.dll" />
+      <BuildOutputInPackage Include="$(OutputPath)Xceed.Wpf.Toolkit.dll" />
+    </ItemGroup>
+  </Target>
 </Project>

@@ -2,11 +2,12 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Build.Evaluation;
 using Xenko.Core;
 using Xenko.Core.Annotations;
 using Xenko.Core.Assets.Analysis;
@@ -22,57 +23,445 @@ using ILogger = Xenko.Core.Diagnostics.ILogger;
 
 namespace Xenko.Core.Assets
 {
+    public abstract class PackageContainer
+    {
+        public PackageContainer([NotNull] Package package)
+        {
+            Package = package;
+            Package.Container = this;
+        }
+
+        /// <summary>
+        /// Gets the session.
+        /// </summary>
+        [CanBeNull]
+        public PackageSession Session { get; private set; }
+
+        [NotNull]
+        public Package Package { get; }
+
+        public ObservableCollection<DependencyRange> DirectDependencies { get; } = new ObservableCollection<DependencyRange>();
+
+        public ObservableCollection<Dependency> FlattenedDependencies { get; } = new ObservableCollection<Dependency>();
+
+        /// <summary>
+        /// Saves this package and all dirty assets. See remarks.
+        /// </summary>
+        /// <param name="log">The log.</param>
+        /// <exception cref="System.ArgumentNullException">log</exception>
+        /// <remarks>When calling this method directly, it does not handle moving assets between packages.
+        /// Call <see cref="PackageSession.Save" /> instead.</remarks>
+        public void Save(ILogger log, PackageSaveParameters saveParameters = null)
+        {
+            if (log == null) throw new ArgumentNullException(nameof(log));
+
+            if (Package.FullPath == null)
+            {
+                log.Error(Package, null, AssetMessageCode.PackageCannotSave, "null");
+                return;
+            }
+
+            saveParameters = saveParameters ?? PackageSaveParameters.Default();
+
+            // Use relative paths when saving
+            var analysis = new PackageAnalysis(Package, new PackageAnalysisParameters()
+            {
+                SetDirtyFlagOnAssetWhenFixingUFile = false,
+                ConvertUPathTo = UPathType.Relative,
+                IsProcessingUPaths = true,
+            });
+            analysis.Run(log);
+
+            var assetsFiltered = false;
+            try
+            {
+                // Update source folders
+                Package.UpdateSourceFolders(Package.Assets);
+
+                if (Package.IsDirty)
+                {
+                    List<UFile> filesToDeleteLocal;
+                    var filesToDelete = Package.FilesToDelete;
+                    lock (filesToDelete)
+                    {
+                        filesToDeleteLocal = filesToDelete.ToList();
+                        filesToDelete.Clear();
+                    }
+
+                    try
+                    {
+                        SavePackage();
+
+                        // Move the package if the path has changed
+                        if (Package.PreviousPackagePath != null && Package.PreviousPackagePath != Package.FullPath)
+                        {
+                            filesToDeleteLocal.Add(Package.PreviousPackagePath);
+                        }
+                        Package.PreviousPackagePath = Package.FullPath;
+
+                        Package.IsDirty = false;
+                    }
+                    catch (Exception ex)
+                    {
+                        log.Error(Package, null, AssetMessageCode.PackageCannotSave, ex, Package.FullPath);
+                        return;
+                    }
+
+                    // Delete obsolete files
+                    foreach (var file in filesToDeleteLocal)
+                    {
+                        if (File.Exists(file.FullPath))
+                        {
+                            try
+                            {
+                                File.Delete(file.FullPath);
+                            }
+                            catch (Exception ex)
+                            {
+                                log.Error(Package, null, AssetMessageCode.AssetCannotDelete, ex, file.FullPath);
+                            }
+                        }
+                    }
+                }
+
+                //batch projects
+                var vsProjs = new Dictionary<string, Microsoft.Build.Evaluation.Project>();
+
+                foreach (var asset in Package.Assets)
+                {
+                    if (asset.IsDirty)
+                    {
+                        if (saveParameters.AssetFilter?.Invoke(asset) ?? true)
+                        {
+                            Package.SaveSingleAsset_NoUpdateSourceFolder(asset, log);
+                        }
+                        else
+                        {
+                            assetsFiltered = true;
+                        }
+                    }
+
+                    // Add new files to .csproj
+                    var projectAsset = asset.Asset as IProjectAsset;
+                    if (projectAsset != null)
+                    {
+                        var projectFullPath = (asset.Package.Container as SolutionProject)?.FullPath;
+                        var projectInclude = asset.GetProjectInclude();
+
+                        Microsoft.Build.Evaluation.Project project;
+                        if (!vsProjs.TryGetValue(projectFullPath, out project))
+                        {
+                            project = VSProjectHelper.LoadProject(projectFullPath);
+                            vsProjs.Add(projectFullPath, project);
+                        }
+
+                        //check if the item is already there, this is possible when saving the first time when creating from a template
+                        if (project.Items.All(x => x.EvaluatedInclude != projectInclude))
+                        {
+                            var generatorAsset = projectAsset as IProjectFileGeneratorAsset;
+                            if (generatorAsset != null)
+                            {
+                                var generatedInclude = asset.GetGeneratedInclude();
+
+                                project.AddItem("None", projectInclude,
+                                    new List<KeyValuePair<string, string>>
+                                    {
+                                    new KeyValuePair<string, string>("Generator", generatorAsset.Generator),
+                                    new KeyValuePair<string, string>("LastGenOutput", new UFile(generatedInclude).GetFileName())
+                                    });
+
+                                project.AddItem("Compile", generatedInclude,
+                                    new List<KeyValuePair<string, string>>
+                                    {
+                                    new KeyValuePair<string, string>("AutoGen", "True"),
+                                    new KeyValuePair<string, string>("DesignTime", "True"),
+                                    new KeyValuePair<string, string>("DesignTimeSharedInput", "True"),
+                                    new KeyValuePair<string, string>("DependentUpon", new UFile(projectInclude).GetFileName())
+                                    });
+                            }
+                            else
+                            {
+                                // Note: if project has auto items, no need to add it
+                                if (string.Compare(project.GetPropertyValue("EnableDefaultCompileItems"), "true", true, CultureInfo.InvariantCulture) != 0)
+                                    project.AddItem("Compile", projectInclude);
+                            }
+                        }
+                    }
+                }
+
+                foreach (var project in vsProjs.Values)
+                {
+                    project.Save();
+                    project.ProjectCollection.UnloadAllProjects();
+                    project.ProjectCollection.Dispose();
+                }
+
+                // If some assets were filtered out, Assets is still dirty
+                Package.Assets.IsDirty = assetsFiltered;
+            }
+            finally
+            {
+                // Rollback all relative UFile to absolute paths
+                analysis.Parameters.ConvertUPathTo = UPathType.Absolute;
+                analysis.Run();
+            }
+        }
+
+        protected virtual void SavePackage()
+        {
+            AssetFileSerializer.Save(Package.FullPath, Package, null);
+        }
+
+        internal void SetSessionInternal(PackageSession session)
+        {
+            Session = session;
+        }
+    }
+
+    public class StandalonePackage : PackageContainer
+    {
+        private readonly Package package;
+
+        public StandalonePackage([NotNull] Package package)
+            : base(package)
+        {
+        }
+
+        public override string ToString() => $"Package: {package.Meta.Name}";
+    }
+
+    public enum DependencyType
+    {
+        Package,
+        Project,
+    }
+
+    public class Dependency
+    {
+        public Dependency(string name, PackageVersion version, DependencyType type)
+        {
+            Name = name;
+            Version = version;
+            Type = type;
+        }
+
+        public Dependency(Package package) : this(package.Meta.Name, package.Meta.Version, DependencyType.Package)
+        {
+            Package = package;
+        }
+
+        public string Name { get; set; }
+
+        public string MSBuildProject { get; set; }
+
+        public PackageVersion Version { get; set; }
+
+        public DependencyType Type { get; set; }
+
+        public Package Package { get; set; }
+
+        public override string ToString()
+        {
+            return $"{Name} {Version} ({Type})";
+        }
+    }
+
+    public class DependencyRange
+    {
+        public DependencyRange(string name, PackageVersionRange versionRange, DependencyType type)
+        {
+            Name = name;
+            VersionRange = versionRange;
+            Type = type;
+        }
+
+        public string Name { get; set; }
+
+        public string MSBuildProject { get; set; }
+
+        public PackageVersionRange VersionRange { get; set; }
+
+        public DependencyType Type { get; set; }
+    }
+
+    public class SolutionProject : PackageContainer
+    {
+        protected SolutionProject([NotNull] Package package) : base(package)
+        {
+            DirectDependencies.CollectionChanged += DirectDependencies_CollectionChanged;
+        }
+
+        public SolutionProject([NotNull] Package package, Guid projectGuid, string fullPath)
+            : this(package)
+        {
+            VSProject = new VisualStudio.Project(projectGuid, VisualStudio.KnownProjectTypeGuid.CSharp, Path.GetFileNameWithoutExtension(fullPath), fullPath, Guid.Empty,
+                Enumerable.Empty<VisualStudio.Section>(),
+                Enumerable.Empty<VisualStudio.PropertyItem>(),
+                Enumerable.Empty<VisualStudio.PropertyItem>());
+        }
+
+        public SolutionProject([NotNull] Package package, VisualStudio.Project vsProject)
+            : this(package)
+        {
+            VSProject = vsProject;
+        }
+
+        public VisualStudio.Project VSProject { get; set; }
+
+        public Guid Id => VSProject.Guid;
+
+        public ProjectType Type { get; set; }
+
+        public PlatformType Platform { get; set; }
+
+        public bool IsImplicitProject { get; set; }
+
+        public bool TrackDirectDependencies { get; set; }
+
+        public string Name => VSProject.Name;
+
+        public string TargetPath { get; set; }
+
+        public UFile FullPath => VSProject.FullPath;
+
+        private void DirectDependencies_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            // Ignore collection being filled during dependency resolution
+            if (Package.State < PackageState.DependenciesReady)
+                return;
+
+            var projectFile = FullPath;
+            var msbuildProject = VSProjectHelper.LoadProject(projectFile.ToWindowsPath());
+            var isProjectDirty = false;
+
+            if (e.OldItems != null && e.OldItems.Count > 0)
+            {
+                foreach (DependencyRange dependency in e.OldItems)
+                {
+                    switch (dependency.Type)
+                    {
+                        case DependencyType.Package:
+                            {
+                                var matchingReferences = msbuildProject.GetItems("PackageReference").Where(packageReference => packageReference.EvaluatedInclude == dependency.Name && packageReference.GetMetadataValue("Version") == dependency.VersionRange.ToString()).ToList();
+                                isProjectDirty = matchingReferences.Count > 0;
+                                msbuildProject.RemoveItems(matchingReferences);
+                                break;
+                            }
+                        case DependencyType.Project:
+                            {
+                                var matchingReferences = msbuildProject.GetItems("ProjectReference").Where(projectReference => (UFile)projectReference.EvaluatedInclude == ((UFile)dependency.MSBuildProject).MakeRelative(projectFile.GetFullDirectory())).ToList();
+                                isProjectDirty = matchingReferences.Count > 0;
+                                msbuildProject.RemoveItems(matchingReferences);
+                                break;
+                            }
+                    }
+                }
+            }
+
+            if (e.NewItems != null && e.NewItems.Count > 0)
+            {
+                foreach (DependencyRange dependency in e.NewItems)
+                {
+                    switch (dependency.Type)
+                    {
+                        case DependencyType.Package:
+                            msbuildProject.AddItem("PackageReference", dependency.Name, new[] { new KeyValuePair<string, string>("Version", dependency.VersionRange.ToString()) });
+                            isProjectDirty = true;
+                            break;
+                        case DependencyType.Project:
+                            msbuildProject.AddItem("ProjectReference", ((UFile)dependency.MSBuildProject).MakeRelative(projectFile.GetFullDirectory()).ToWindowsPath());
+                            isProjectDirty = true;
+                            break;
+                    }
+                }
+            }
+
+            if (isProjectDirty)
+                msbuildProject.Save();
+
+            msbuildProject.ProjectCollection.UnloadAllProjects();
+            msbuildProject.ProjectCollection.Dispose();
+        }
+
+        protected override void SavePackage()
+        {
+            if (!IsImplicitProject)
+                base.SavePackage();
+        }
+
+        public override string ToString() => $"Project: {Name}";
+    }
+
+    public sealed class ProjectCollection : ObservableCollection<PackageContainer>
+    {
+    }
+
     /// <summary>
     /// A session for editing a package.
     /// </summary>
-    public sealed class PackageSession : IDisposable, IAssetFinder
+    public sealed partial class PackageSession : IDisposable, IAssetFinder
     {
         /// <summary>
         /// The visual studio version property used for newly created project solution files
         /// </summary>
         public static readonly Version DefaultVisualStudioVersion = new Version("14.0.23107.0");
 
+        internal static readonly string SolutionHeader = @"Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = {0}
+MinimumVisualStudioVersion = {0}".ToFormat(DefaultVisualStudioVersion);
+
+        private Dictionary<Package, List<PendingPackageUpgrade>> pendingPackageUpgradesPerPackage = new Dictionary<Package, List<PendingPackageUpgrade>>();
         private readonly ConstraintProvider constraintProvider = new ConstraintProvider();
-        private readonly PackageCollection packagesCopy;
+        private readonly PackageCollection packages;
+        private readonly Dictionary<Package, Package> packagesCopy;
         private readonly object dependenciesLock = new object();
-        private Package currentPackage;
+        private SolutionProject currentProject;
         private AssetDependencyManager dependencies;
         private AssetSourceTracker sourceTracker;
         private bool? packageUpgradeAllowed;
         public event DirtyFlagChangedDelegate<AssetItem> AssetDirtyChanged;
         private TaskCompletionSource<int> saveCompletion;
 
+        internal VisualStudio.Solution VSSolution;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="PackageSession"/> class.
         /// </summary>
-        public PackageSession() : this(null)
+        public PackageSession()
         {
+            VSSolution = new VisualStudio.Solution();
+            VSSolution.Headers.Add(SolutionHeader);
+
+            Projects = new ProjectCollection();
+            Projects.CollectionChanged += ProjectsCollectionChanged;
+
+            packages = new PackageCollection();
+            packagesCopy = new Dictionary<Package, Package>();
+            AssemblyContainer = new AssemblyContainer();
+            packages.CollectionChanged += PackagesCollectionChanged;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PackageSession"/> class.
         /// </summary>
-        public PackageSession(Package package)
+        public PackageSession(Package package) : this()
         {
-            constraintProvider.AddConstraint(PackageStore.Instance.DefaultPackageName, new PackageVersionRange(PackageStore.Instance.DefaultPackageVersion));
-
-            Packages = new PackageCollection();
-            packagesCopy = new PackageCollection();
-            AssemblyContainer = new AssemblyContainer();
-            Packages.CollectionChanged += PackagesCollectionChanged;
-            if (package != null)
-            {
-                Packages.Add(package);
-            }            
+            Projects.Add(new StandalonePackage(package));
         }
 
         public bool IsDirty { get; set; }
 
         /// <summary>
-        /// Gets the packages.
+        /// Gets the packages referenced by the solution.
         /// </summary>
         /// <value>The packages.</value>
-        public PackageCollection Packages { get; }
+        public IReadOnlyPackageCollection Packages => packages;
+
+        /// <summary>
+        /// The projects referenced by the solution.
+        /// </summary>
+        public ProjectCollection Projects { get; }
 
         /// <summary>
         /// Gets the user packages (excluding system packages).
@@ -90,7 +479,11 @@ namespace Xenko.Core.Assets
         /// Gets or sets the solution path (sln) in case the session was loaded from a solution.
         /// </summary>
         /// <value>The solution path.</value>
-        public UFile SolutionPath { get; set; }
+        public UFile SolutionPath
+        {
+            get => VSSolution.FullPath;
+            set => VSSolution.FullPath = value;
+        }
 
         public AssemblyContainer AssemblyContainer { get; }
 
@@ -145,22 +538,22 @@ namespace Xenko.Core.Assets
         /// </summary>
         /// <value>The selected current package.</value>
         /// <exception cref="System.InvalidOperationException">Expecting a package that is already registered in this session</exception>
-        public Package CurrentPackage
+        public SolutionProject CurrentProject
         {
             get
             {
-                return currentPackage;
+                return currentProject;
             }
             set
             {
                 if (value != null)
                 {
-                    if (!Packages.Contains(value))
+                    if (!Projects.Contains(value))
                     {
                         throw new InvalidOperationException("Expecting a package that is already registered in this session");
                     }
                 }
-                currentPackage = value;
+                currentProject = value;
             }
         }
 
@@ -170,30 +563,18 @@ namespace Xenko.Core.Assets
         /// <returns>IEnumerable&lt;Package&gt;.</returns>
         public IEnumerable<Package> GetPackagesFromCurrent()
         {
-            if (CurrentPackage == null)
+            if (CurrentProject.Package == null)
             {
-                yield break;
+                yield return CurrentProject.Package;
             }
 
-            yield return CurrentPackage;
-
-            foreach (var storeDep in CurrentPackage.Meta.Dependencies)
+            foreach (var dependency in CurrentProject.FlattenedDependencies)
             {
-                var package = Packages.Find(storeDep);
+                var loadedPackage = packages.Find(dependency);
                 // In case the package is not found (when working with session not fully loaded/resolved with all deps)
-                if (package != null)
+                if (loadedPackage == null)
                 {
-                    yield return package;
-                }
-            }
-
-            foreach (var localDep in CurrentPackage.LocalDependencies)
-            {
-                var package = Packages.Find(localDep.Id);
-                // In case the package is not found (when working with session not fully loaded/resolved with all deps)
-                if (package != null)
-                {
-                    yield return package;
+                    yield return loadedPackage;
                 }
             }
         }
@@ -227,37 +608,32 @@ namespace Xenko.Core.Assets
         /// <summary>
         /// Adds an existing package to the current session.
         /// </summary>
-        /// <param name="packagePath">The package path.</param>
+        /// <param name="projectPath">The project or package path.</param>
         /// <param name="logger">The session result.</param>
         /// <param name="loadParametersArg">The load parameters argument.</param>
         /// <exception cref="System.ArgumentNullException">packagePath</exception>
         /// <exception cref="System.ArgumentException">Invalid relative path. Expecting an absolute package path;packagePath</exception>
         /// <exception cref="System.IO.FileNotFoundException">Unable to find package</exception>
-        public Package AddExistingPackage(UFile packagePath, ILogger logger, PackageLoadParameters loadParametersArg = null)
+        public PackageContainer AddExistingProject(UFile projectPath, ILogger logger, PackageLoadParameters loadParametersArg = null)
         {
-            if (packagePath == null) throw new ArgumentNullException(nameof(packagePath));
+            if (projectPath == null) throw new ArgumentNullException(nameof(projectPath));
             if (logger == null) throw new ArgumentNullException(nameof(logger));
-            if (!packagePath.IsAbsolute) throw new ArgumentException(@"Invalid relative path. Expecting an absolute package path", nameof(packagePath));
-            if (!File.Exists(packagePath)) throw new FileNotFoundException("Unable to find package", packagePath);
+            if (!projectPath.IsAbsolute) throw new ArgumentException(@"Invalid relative path. Expecting an absolute project path", nameof(projectPath));
+            if (!File.Exists(projectPath)) throw new FileNotFoundException("Unable to find project", projectPath);
 
             var loadParameters = loadParametersArg ?? PackageLoadParameters.Default();
 
             Package package;
+            PackageContainer project;
             try
             {
                 // Enable reference analysis caching during loading
                 AssetReferenceAnalysis.EnableCaching = true;
 
-                var packagesLoaded = new PackageCollection();
+                project = LoadProject(logger, projectPath.ToWindowsPath(), false, loadParametersArg);
+                Projects.Add(project);
 
-                package = PreLoadPackage(logger, packagePath, false, packagesLoaded, loadParameters);
-
-                if (loadParameters.AutoCompileProjects && loadParameters.ForceNugetRestore)
-                {
-                    // Note: solution needs to be saved right away so that we can restore nuget packages
-                    Save(logger);
-                    VSProjectHelper.RestoreNugetPackages(logger, SolutionPath).Wait();
-                }
+                package = project.Package;
 
                 // Load all missing references/dependencies
                 LoadMissingDependencies(logger, loadParameters);
@@ -270,18 +646,19 @@ namespace Xenko.Core.Assets
                 LoadMissingAssets(logger, new[] { package }, loadParameters);
 
                 // Run analysis after
-                foreach (var packageToAdd in packagesLoaded)
-                {
-                    var analysis = new PackageAnalysis(packageToAdd, GetPackageAnalysisParametersForLoad());
-                    analysis.Run(logger);
-                }
+                // TODO CSPROJ=XKPKG
+                //foreach (var packageToAdd in packagesLoaded)
+                //{
+                //    var analysis = new PackageAnalysis(packageToAdd, GetPackageAnalysisParametersForLoad());
+                //    analysis.Run(logger);
+                //}
             }
             finally
             {
                 // Disable reference analysis caching after loading
                 AssetReferenceAnalysis.EnableCaching = false;
             }
-            return package;
+            return project;
         }
 
         /// <summary>
@@ -300,7 +677,7 @@ namespace Xenko.Core.Assets
             }
 
             // Preset the session on the package to allow the session to look for existing asset
-            Packages.Add(package);
+            packages.Add(package);
 
             // Run analysis after
             var analysis = new PackageAnalysis(package, GetPackageAnalysisParametersForLoad());
@@ -328,6 +705,46 @@ namespace Xenko.Core.Assets
         {
             var reference = AttachedReferenceManager.GetAttachedReference(proxyObject);
             return reference != null ? (FindAsset(reference.Id) ?? FindAsset(reference.Url)) : null;
+        }
+
+        private PackageContainer LoadProject(ILogger log, string filePath, bool isSystem, PackageLoadParameters loadParameters = null)
+        {
+            var project = Package.LoadProject(log, filePath);
+
+            // Upgrade from 3.0: figure out if this was the package project
+            var vsProject = VSSolution.Projects.FirstOrDefault(x => x.FullPath == filePath);
+            var vsPackage = vsProject?.GetParentProject(VSSolution);
+            if (vsPackage != null && PackageSessionHelper.IsPackage(vsPackage, out var packagePathRelative))
+            {
+                var packagePath = Path.Combine(Path.GetDirectoryName(VSSolution.FullPath), packagePathRelative);
+                if (File.Exists(packagePath))
+                {
+                    var packageProject = Package.LoadProject(log, packagePath);
+                    if ((packageProject as SolutionProject)?.FullPath == new UFile(filePath))
+                    {
+                        project = packageProject;
+                        PackageSessionHelper.RemovePackageSections(vsPackage);
+                    }
+                }
+            }
+
+            var package = project.Package;
+            package.IsSystem = isSystem;
+
+            // If the package doesn't have a meta name, fix it here (This is supposed to be done in the above disabled analysis - but we still need to do it!)
+            if (string.IsNullOrWhiteSpace(package.Meta.Name) && package.FullPath != null)
+            {
+                package.Meta.Name = package.FullPath.GetFileNameWithoutExtension();
+                package.IsDirty = true;
+            }
+
+            // Package has been loaded, register it in constraints so that we force each subsequent loads to use this one (or fails if version doesn't match)
+            if (package.Meta.Version != null)
+            {
+                constraintProvider.AddConstraint(package.Meta.Name, new PackageVersionRange(package.Meta.Version));
+            }
+
+            return project;
         }
 
         /// <summary>
@@ -363,51 +780,56 @@ namespace Xenko.Core.Assets
 
                     var session = new PackageSession();
 
-                    var packagePaths = new List<string>();
+                    var cancelToken = loadParameters.CancelToken;
+                    SolutionProject firstProject = null;
 
                     // If we have a solution, load all packages
-                    if (PackageSessionHelper.IsSolutionFile(filePath))
+                    if (Path.GetExtension(filePath).ToLowerInvariant() == ".sln")
                     {
-                        PackageSessionHelper.LoadSolution(session, filePath, packagePaths, sessionResult);
+                        // The session should save back its changes to the solution
+                        var solution = session.VSSolution = VisualStudio.Solution.FromFile(filePath);
+
+                        // Keep header
+                        var versionHeader = solution.Properties.FirstOrDefault(x => x.Name == "VisualStudioVersion");
+                        Version version;
+                        if (versionHeader != null && Version.TryParse(versionHeader.Value, out version))
+                            session.VisualStudioVersion = version;
+                        else
+                            session.VisualStudioVersion = null;
+
+                        // Note: using ToList() because upgrade from old package system might change Projects list
+                        foreach (var vsProject in solution.Projects.ToList())
+                        {
+                            if (vsProject.TypeGuid == VisualStudio.KnownProjectTypeGuid.CSharp || vsProject.TypeGuid == VisualStudio.KnownProjectTypeGuid.CSharpNewSystem)
+                            {
+                                var project = (SolutionProject)session.LoadProject(sessionResult, vsProject.FullPath, false, loadParameters);
+                                project.VSProject = vsProject;
+                                session.Projects.Add(project);
+
+                                if (firstProject == null)
+                                    firstProject = project;
+
+                                // Output the session only if there is no cancellation
+                                if (cancelToken.HasValue && cancelToken.Value.IsCancellationRequested)
+                                {
+                                    return;
+                                }
+                            }
+                        }
+
+                        session.LoadMissingDependencies(sessionResult, loadParameters);
                     }
-                    else if (PackageSessionHelper.IsPackageFile(filePath))
+                    else if (Path.GetExtension(filePath).ToLowerInvariant() == ".csproj"
+                        || Path.GetExtension(filePath).ToLowerInvariant() == Package.PackageFileExtension)
                     {
-                        packagePaths.Add(filePath);
+                        var project = session.LoadProject(sessionResult, filePath, false, loadParameters);
+                        session.Projects.Add(project);
+                        firstProject = project as SolutionProject;
                     }
                     else
                     {
-                        sessionResult.Error($"Unsupported file extension (only .sln or {Package.PackageFileExtension} are supported)");
+                        sessionResult.Error($"Unsupported file extension (only .sln, .csproj and .xkpkg are supported)");
                         return;
-                    }
-
-                    var cancelToken = loadParameters.CancelToken;
-
-                    // Load all packages
-                    var packagesLoaded = new PackageCollection();
-                    foreach (var packageFilePath in packagePaths)
-                    {
-                        session.PreLoadPackage(sessionResult, packageFilePath, false, packagesLoaded, loadParameters);
-
-                        // Output the session only if there is no cancellation
-                        if (cancelToken.HasValue && cancelToken.Value.IsCancellationRequested)
-                        {
-                            return;
-                        }
-                    }
-
-                    if (loadParameters.AutoCompileProjects && loadParameters.ForceNugetRestore && PackageSessionHelper.IsPackageFile(filePath))
-                    {
-                        // Restore nuget packages
-                        if (PackageSessionHelper.IsSolutionFile(filePath))
-                        {
-                            VSProjectHelper.RestoreNugetPackages(sessionResult, filePath).Wait();
-                        }
-                        else
-                        {
-                            // No .sln, run NuGet restore for each project
-                            foreach (var package in session.Packages)
-                                package.RestoreNugetPackages(sessionResult);
-                        }
                     }
 
                     // Load all missing references/dependencies
@@ -437,18 +859,8 @@ namespace Xenko.Core.Assets
                     }
 
                     // Setup the current package when loading it
-                    if (packagePaths.Count == 1)
-                    {
-                        var currentPackagePath = new UFile(packagePaths[0]);
-                        foreach (var package in packagesLoaded)
-                        {
-                            if (package.FullPath == currentPackagePath)
-                            {
-                                session.CurrentPackage = package;
-                                break;
-                            }
-                        }
-                    }
+                    if (firstProject != null)
+                        session.CurrentProject = firstProject;
 
                     // The session is not dirty when loading it
                     session.IsDirty = false;
@@ -497,19 +909,21 @@ namespace Xenko.Core.Assets
 
             var cancelToken = loadParameters.CancelToken;
 
-            var packagesLoaded = new PackageCollection();
-
-            // Make a copy of Packages as it can be modified by PreLoadPackageDependencies
-            var previousPackages = Packages.ToList();
-            foreach (var package in previousPackages)
+            // Note: list can grow as dependencies get loaded
+            for (int i = 0; i < Projects.Count; ++i)
             {
+                var project = Projects[i];
+
                 // Output the session only if there is no cancellation
                 if (cancelToken.HasValue && cancelToken.Value.IsCancellationRequested)
                 {
                     return;
                 }
 
-                PreLoadPackageDependencies(log, package, packagesLoaded, loadParameters);
+                if (project is SolutionProject solutionProject)
+                    PreLoadPackageDependencies(log, solutionProject, loadParameters).Wait();
+                else if (project.Package.State < PackageState.DependenciesReady) // not handling standalone packages yet
+                    project.Package.State = PackageState.DependenciesReady;
             }
         }
 
@@ -585,7 +999,7 @@ namespace Xenko.Core.Assets
                         return;
        
                     //batch projects
-                    var vsProjs = new Dictionary<string, Project>();
+                    var vsProjs = new Dictionary<string, Microsoft.Build.Evaluation.Project>();
 
                     // Delete previous files
                     foreach (var fileIt in assetsOrPackagesToRemove)
@@ -597,18 +1011,19 @@ namespace Xenko.Core.Assets
                         try
                         {
                             //If we are within a csproj we need to remove the file from there as well
-                            if (assetItem?.SourceProject != null)
+                            var projectFullPath = (assetItem.Package.Container as SolutionProject)?.FullPath;
+                            if (projectFullPath != null)
                             {
                                 var projectAsset = assetItem.Asset as IProjectAsset;
                                 if (projectAsset != null)
                                 {
                                     var projectInclude = assetItem.GetProjectInclude();
 
-                                    Project project;
-                                    if (!vsProjs.TryGetValue(assetItem.SourceProject, out project))
+                                    Microsoft.Build.Evaluation.Project project;
+                                    if (!vsProjs.TryGetValue(projectFullPath, out project))
                                     {
-                                        project = VSProjectHelper.LoadProject(assetItem.SourceProject);
-                                        vsProjs.Add(assetItem.SourceProject, project);
+                                        project = VSProjectHelper.LoadProject(projectFullPath.ToWindowsPath());
+                                        vsProjs.Add(projectFullPath, project);
                                     }
                                     var projectItem = project.Items.FirstOrDefault(x => (x.ItemType == "Compile" || x.ItemType == "None") && x.EvaluatedInclude == projectInclude);
                                     if (projectItem != null && !projectItem.IsImported)
@@ -665,7 +1080,7 @@ namespace Xenko.Core.Assets
                     foreach (var package in LocalPackages)
                     {
                         // Save the package to disk and all its assets
-                        package.Save(loggerResult, saveParameters);
+                        package.Container.Save(loggerResult, saveParameters);
 
                         // Check if everything was saved (might not be the case if things are filtered out)
                         if (package.IsDirty || package.Assets.IsDirty)
@@ -673,7 +1088,7 @@ namespace Xenko.Core.Assets
 
                         // Clone the package (but not all assets inside, just the structure)
                         var packageClone = package.Clone();
-                        packagesCopy.Add(packageClone);
+                        packagesCopy.Add(package, packageClone);
                     }
 
                     packagesSaved = true;
@@ -687,7 +1102,7 @@ namespace Xenko.Core.Assets
                     // be setup for the packages)
                     if (packagesSaved)
                     {
-                        PackageSessionHelper.SaveSolution(this, loggerResult);
+                        VSSolution.Save();
                     }
                     saveCompletion?.SetResult(0);
                     saveCompletion = null;
@@ -702,7 +1117,7 @@ namespace Xenko.Core.Assets
         {
             // Grab all previous assets
             var previousAssets = new Dictionary<AssetId, AssetItem>();
-            foreach (var assetItem in packagesCopy.SelectMany(package => package.Assets))
+            foreach (var assetItem in packagesCopy.SelectMany(package => package.Value.Assets))
             {
                 previousAssets[assetItem.Id] = assetItem;
             }
@@ -762,6 +1177,76 @@ namespace Xenko.Core.Assets
             return false;
         }
 
+        private void ProjectsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    RegisterProject((PackageContainer)e.NewItems[0]);
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    UnRegisterProject((PackageContainer)e.OldItems[0]);
+                    break;
+
+                case NotifyCollectionChangedAction.Replace:
+                    packagesCopy.Clear();
+
+                    foreach (var oldProject in e.OldItems.OfType<PackageContainer>())
+                    {
+                        UnRegisterProject(oldProject);
+                    }
+
+                    foreach (var projectToCopy in Projects)
+                    {
+                        RegisterProject(projectToCopy);
+                    }
+                    break;
+            }
+        }
+
+        private void RegisterProject(PackageContainer project)
+        {
+            if (project.Session != null)
+            {
+                throw new InvalidOperationException("Cannot attach a project to more than one session");
+            }
+
+            project.SetSessionInternal(this);
+
+            if (project is SolutionProject solutionProject)
+            {
+                // Note: when loading, package might already be there
+                // TODO CSPROJ=XKPKG: skip it in a proper way? (context info)
+                if (!VSSolution.Projects.Contains(solutionProject.VSProject))
+                {
+                    // Special case: let's put executable windows project first, so that Visual Studio use them as startup project (first project in .sln)
+                    var insertPosition = (solutionProject.Type == ProjectType.Executable && solutionProject.Platform == PlatformType.Windows)
+                        ? 0
+                        : VSSolution.Projects.Count;
+                    VSSolution.Projects.Insert(insertPosition, solutionProject.VSProject);
+                }
+            }
+
+            packages.Add(project.Package);
+        }
+
+        private void UnRegisterProject(PackageContainer project)
+        {
+            if (project.Session != this)
+            {
+                throw new InvalidOperationException("Cannot detach a project that was not attached to this session");
+            }
+
+            if (project.Package != null)
+                packages.Remove(project.Package);
+            if (project is SolutionProject solutionProject)
+            {
+                VSSolution.Projects.Remove(solutionProject.VSProject);
+            }
+
+            project.SetSessionInternal(null);
+        }
+
         private void PackagesCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             switch (e.Action)
@@ -791,7 +1276,6 @@ namespace Xenko.Core.Assets
 
         private void RegisterPackage(Package package)
         {
-            package.Session = this;
             if (package.IsSystem)
                 return;
             package.AssetDirtyChanged += OnAssetDirtyChanged;
@@ -818,17 +1302,20 @@ namespace Xenko.Core.Assets
             if (package.State < PackageState.AssetsReady)
                 return;
 
-            packagesCopy.Add(package.Clone());
+            // Make sure it's not already been loaded by a previous Save()
+            if (!packagesCopy.ContainsKey(package))
+                packagesCopy.Add(package, package.Clone());
         }
 
         private void UnRegisterPackage(Package package)
         {
-            package.Session = null;
             if (package.IsSystem)
                 return;
             package.AssetDirtyChanged -= OnAssetDirtyChanged;
 
-            packagesCopy.RemoveById(package.Id);
+            packagesCopy.Remove(package);
+
+            pendingPackageUpgradesPerPackage.Remove(package);
 
             IsDirty = true;
         }
@@ -838,38 +1325,17 @@ namespace Xenko.Core.Assets
             AssetDirtyChanged?.Invoke(asset, oldValue, newValue);
         }
 
-        private Package PreLoadPackage(ILogger log, string filePath, bool isSystemPackage, PackageCollection loadedPackages, PackageLoadParameters loadParameters)
+        private Package PreLoadPackage(ILogger log, string filePath, bool isSystemPackage, PackageLoadParameters loadParameters)
         {
             if (log == null) throw new ArgumentNullException(nameof(log));
             if (filePath == null) throw new ArgumentNullException(nameof(filePath));
-            if (loadedPackages == null) throw new ArgumentNullException(nameof(loadedPackages));
             if (loadParameters == null) throw new ArgumentNullException(nameof(loadParameters));
 
             try
             {
-                var packageId = Package.GetPackageIdFromFile(filePath);
-
-                // Check that the package was not already loaded, otherwise return the same instance
-                if (Packages.ContainsById(packageId))
-                {
-                    return Packages.Find(packageId);
-                }
-
-                // Package is already loaded, use the instance 
-                if (loadedPackages.ContainsById(packageId))
-                {
-                    return loadedPackages.Find(packageId);
-                }
-
                 // Load the package without loading any assets
                 var package = Package.LoadRaw(log, filePath);
                 package.IsSystem = isSystemPackage;
-
-                // Remove all missing dependencies if they are not required
-                if (!loadParameters.LoadMissingDependencies)
-                {
-                    package.LocalDependencies.Clear();
-                }
 
                 // Convert UPath to absolute (Package only)
                 // Removed for now because it is called again in PackageSession.LoadAssembliesAndAssets (and running it twice result in dirty package)
@@ -891,24 +1357,11 @@ namespace Xenko.Core.Assets
                     package.IsDirty = true;
                 }
 
-                // Add the package has loaded before loading dependencies
-                loadedPackages.Add(package);
-
                 // Package has been loaded, register it in constraints so that we force each subsequent loads to use this one (or fails if version doesn't match)
                 if (package.Meta.Version != null)
                 {
                     constraintProvider.AddConstraint(package.Meta.Name, new PackageVersionRange(package.Meta.Version));
                 }
-
-                // Load package dependencies
-                // This will perform necessary asset upgrades
-                // TODO: We should probably split package loading in two recursive top-level passes (right now those two passes are mixed, making it more difficult to make proper checks)
-                //   - First, load raw packages with their dependencies recursively, then resolve dependencies and constraints (and print errors/warnings)
-                //   - Then, if everything is OK, load the actual references and assets for each packages
-                PreLoadPackageDependencies(log, package, loadedPackages, loadParameters);
-
-                // Add the package to the session but don't freeze it yet
-                Packages.Add(package);
 
                 return package;
             }
@@ -938,7 +1391,7 @@ namespace Xenko.Core.Assets
             {
                 // First, check that dependencies have their assets loaded
                 bool dependencyError = false;
-                foreach (var dependency in package.FindDependencies(false, false))
+                foreach (var dependency in package.FindDependencies(false))
                 {
                     if (!TryLoadAssets(session, log, dependency, loadParameters))
                         dependencyError = true;
@@ -947,28 +1400,14 @@ namespace Xenko.Core.Assets
                 if (dependencyError)
                     return false;
 
-                var pendingPackageUpgrades = new List<PendingPackageUpgrade>();
+                // Get pending package upgrades
+                if (!pendingPackageUpgradesPerPackage.TryGetValue(package, out var pendingPackageUpgrades))
+                    pendingPackageUpgrades = new List<PendingPackageUpgrade>();
+                pendingPackageUpgradesPerPackage.Remove(package);
 
                 // Note: Default state is upgrade failed (for early exit on error/exceptions)
                 // We will update to success as soon as loading is finished.
                 package.State = PackageState.UpgradeFailed;
-
-                // Process store dependencies for upgraders
-                foreach (var packageDependency in package.Meta.Dependencies)
-                {
-                    var dependencyPackage = session.Packages.Find(packageDependency);
-                    if (dependencyPackage == null)
-                    {
-                        continue;
-                    }
-
-                    // Check for upgraders
-                    var packageUpgrader = CheckPackageUpgrade(log, package, packageDependency, dependencyPackage);
-                    if (packageUpgrader != null)
-                    {
-                        pendingPackageUpgrades.Add(new PendingPackageUpgrade(packageUpgrader, packageDependency, dependencyPackage));
-                    }
-                }
 
                 // Prepare asset loading
                 var newLoadParameters = loadParameters.Clone();
@@ -976,9 +1415,6 @@ namespace Xenko.Core.Assets
 
                 // Default package version override
                 newLoadParameters.ExtraCompileProperties = new Dictionary<string, string>();
-                var defaultPackageOverride = NugetStore.GetPackageVersionVariable(PackageStore.Instance.DefaultPackageName) + "Override";
-                var defaultPackageVersion = PackageStore.Instance.DefaultPackageVersion.Version;
-                newLoadParameters.ExtraCompileProperties.Add(defaultPackageOverride, new Version(defaultPackageVersion.Major, defaultPackageVersion.Minor).ToString());
                 if (loadParameters.ExtraCompileProperties != null)
                 {
                     foreach (var property in loadParameters.ExtraCompileProperties)
@@ -1026,7 +1462,7 @@ namespace Xenko.Core.Assets
                 package.LoadAssemblies(log, newLoadParameters);
 
                 // Load list of assets
-                newLoadParameters.AssetFiles = Package.ListAssetFiles(log, package, true, loadParameters.CancelToken);
+                newLoadParameters.AssetFiles = Package.ListAssetFiles(log, package, true, false, loadParameters.CancelToken);
                 // Sort them by size (to improve concurrency during load)
                 newLoadParameters.AssetFiles.Sort(PackageLoadingAssetFile.FileSizeComparer.Default);
 
@@ -1125,71 +1561,6 @@ namespace Xenko.Core.Assets
             }
 
             return null;
-        }
-        
-        private void PreLoadPackageDependencies(ILogger log, Package package, PackageCollection loadedPackages, PackageLoadParameters loadParameters)
-        {
-            if (log == null) throw new ArgumentNullException(nameof(log));
-            if (package == null) throw new ArgumentNullException(nameof(package));
-            if (loadParameters == null) throw new ArgumentNullException(nameof(loadParameters));
-
-            bool packageDependencyErrors = false;
-
-            // TODO: Remove and recheck Dependencies Ready if some secondary packages are removed?
-            if (package.State >= PackageState.DependenciesReady)
-                return;
-
-            // 1. Load store package
-            foreach (var packageDependency in package.Meta.Dependencies)
-            {
-                var loadedPackage = Packages.Find(packageDependency);
-                if (loadedPackage == null)
-                {
-                    var file = PackageStore.Instance.GetPackageFileName(packageDependency.Name, packageDependency.Version, constraintProvider);
-
-                    if (file == null)
-                    {
-                        // TODO: We need to support automatic download of packages. This is not supported yet when only Xenko
-                        // package is supposed to be installed, but It will be required for full store
-                        log.Error($"The package {package.FullPath?.GetFileNameWithoutExtension() ?? "[Untitled]"} depends on package {packageDependency} which is not installed");
-                        packageDependencyErrors = true;
-                        continue;
-                    }
-
-                    // Recursive load of the system package
-                    loadedPackage = PreLoadPackage(log, file, true, loadedPackages, loadParameters);
-                }
-
-                if (loadedPackage == null || loadedPackage.State < PackageState.DependenciesReady)
-                    packageDependencyErrors = true;
-            }
-
-            // 2. Load local packages
-            foreach (var packageReference in package.LocalDependencies)
-            {
-                // Check that the package was not already loaded, otherwise return the same instance
-                if (Packages.ContainsById(packageReference.Id))
-                {
-                    continue;
-                }
-
-                // Expand the string of the location
-                var newLocation = packageReference.Location;
-
-                var subPackageFilePath = package.RootDirectory != null ? UPath.Combine(package.RootDirectory, newLocation) : newLocation;
-
-                // Recursive load
-                var loadedPackage = PreLoadPackage(log, subPackageFilePath.FullPath, false, loadedPackages, loadParameters);
-
-                if (loadedPackage == null || loadedPackage.State < PackageState.DependenciesReady)
-                    packageDependencyErrors = true;
-            }
-
-            // 3. Update package state
-            if (!packageDependencyErrors)
-            {
-                package.State = PackageState.DependenciesReady;
-            }
         }
 
         public class PendingPackageUpgrade

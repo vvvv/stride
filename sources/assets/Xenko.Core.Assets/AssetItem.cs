@@ -63,12 +63,10 @@ namespace Xenko.Core.Assets
 
         /// <summary>
         /// Gets the directory where the assets will be stored on the disk relative to the <see cref="Package"/>. The directory
-        /// will update the list found in <see cref="PackageProfile.AssetFolders"/>
+        /// will update the list found in <see cref="Package.AssetFolders"/>
         /// </summary>
         /// <value>The directory.</value>
         public UDirectory SourceFolder { get; set; }
-
-        public UFile SourceProject { get; set; }
 
         /// <summary>
         /// Gets the unique identifier of this asset.
@@ -134,8 +132,7 @@ namespace Xenko.Core.Assets
             {
                 isDirty = isDirty,
                 SourceFolder = SourceFolder,
-                SourceProject = SourceProject,
-                version = Version
+                version = Version,
             };
             YamlMetadata.CopyInto(item.YamlMetadata);
             return item;
@@ -263,7 +260,7 @@ namespace Xenko.Core.Assets
         }
 
         /// <summary>
-        /// In case <see cref="SourceFolder"/> or <see cref="SourceProject"/> were null, generates them.
+        /// In case <see cref="SourceFolder"/> was null, generates it.
         /// </summary>
         public void UpdateSourceFolders()
         {

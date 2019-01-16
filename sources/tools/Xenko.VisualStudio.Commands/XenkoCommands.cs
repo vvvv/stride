@@ -10,14 +10,15 @@ using Xenko.VisualStudio.BuildEngine;
 using Xenko.VisualStudio.Commands.Shaders;
 using Xenko.Core.Shaders.Ast;
 using Xenko.Core.Shaders.Utility;
+using Xenko.Core;
 
 namespace Xenko.VisualStudio.Commands
 {
-    public class XenkoCommands : IXenkoCommands
+    public class XenkoCommands : IXenkoCommands, IXenkoCommands2
     {
         public void Initialize(string xenkoSdkDir)
         {
-            DirectoryHelper.PackageDirectoryOverride = xenkoSdkDir;
+            //DirectoryHelper.PackageDirectoryOverride = xenkoSdkDir;
             // Don't necessarely initialize the shaders
             //XenkoShaderParser.Initialize();
         }
@@ -40,11 +41,16 @@ namespace Xenko.VisualStudio.Commands
 
         public RawShaderNavigationResult AnalyzeAndGoToDefinition(string sourceCode, RawSourceSpan span)
         {
+            return AnalyzeAndGoToDefinition(null, sourceCode, span);
+        }
+
+        public RawShaderNavigationResult AnalyzeAndGoToDefinition(string projectPath, string sourceCode, RawSourceSpan span)
+        {
             var rawResult = new RawShaderNavigationResult();
 
             var navigation = new ShaderNavigation();
 
-            var shaderDirectories = CollectShadersDirectories(null);
+            var shaderDirectories = CollectShadersDirectories(projectPath);
 
             if (span.File != null)
             {
@@ -102,13 +108,12 @@ namespace Xenko.VisualStudio.Commands
         {
             if (packagePath == null)
             {
-                packagePath = PackageStore.Instance.DefaultPackage.FullPath;
+                packagePath = PackageStore.Instance.GetPackageFileName("Xenko.Engine", new PackageVersionRange(new PackageVersion(XenkoVersion.NuGetVersion)));
             }
 
             var defaultLoad = PackageLoadParameters.Default();
             defaultLoad.AutoCompileProjects = false;
             defaultLoad.AutoLoadTemporaryAssets = false;
-            defaultLoad.ConvertUPathToAbsolute = false;
             defaultLoad.GenerateNewAssetIds = false;
             defaultLoad.LoadAssemblyReferences = false;
 
@@ -125,12 +130,11 @@ namespace Xenko.VisualStudio.Commands
             var assetsPaths = new List<string>();
             foreach (var package in session.Packages)
             {
-                foreach (var profile in package.Profiles)
+                foreach (var assetFolder in package.AssetFolders)
                 {
-                    foreach (var folder in profile.AssetFolders)
+                    var fullPath = assetFolder.Path.ToWindowsPath();
+                    if (Directory.Exists(fullPath))
                     {
-                        var fullPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(packagePath), folder.Path));
-
                         assetsPaths.Add(fullPath);
                         assetsPaths.AddRange(Directory.EnumerateDirectories(fullPath, "*.*", SearchOption.AllDirectories));
                     }

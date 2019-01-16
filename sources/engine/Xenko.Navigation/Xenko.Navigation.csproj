@@ -1,53 +1,24 @@
-<Project>
+﻿<Project>
 
   <PropertyGroup>
     <XenkoAssemblySign>true</XenkoAssemblySign>
+    <XenkoRuntime>true</XenkoRuntime>
     <XenkoNativeOutputName>libxenkonavigation</XenkoNativeOutputName>
   </PropertyGroup>
 
   <Import Project="..\..\targets\Xenko.PreSettings.targets" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
 
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
-    <TargetFramework>$(TargetFramework)</TargetFramework>
     <XenkoAssemblyProcessorOptions>--serialization</XenkoAssemblyProcessorOptions>
     <XenkoBuildTags>*</XenkoBuildTags>
     <XenkoCodeAnalysis>true</XenkoCodeAnalysis>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\core\Xenko.Core.Mathematics\Xenko.Core.Mathematics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.MicroThreading\Xenko.Core.MicroThreading.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Engine\Xenko.Engine.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Games\Xenko.Games.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Graphics\Xenko.Graphics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Physics\Xenko.Physics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Shaders\Xenko.Shaders.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko\Xenko.csproj">
-      <Private>False</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\Xenko.Physics\Xenko.Physics.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -73,6 +44,6 @@
   </ItemGroup>
 
   <Import Project="$(XenkoPostSettingsTargets)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
 
 </Project>

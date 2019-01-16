@@ -75,10 +75,6 @@ namespace Xenko.GameStudio
             PrivacyPolicyHelper.RestartApplication = RestartApplication;
             PrivacyPolicyHelper.EnsurePrivacyPolicyXenko30();
 
-            // Set the XenkoDir environment variable
-            var installDir = DirectoryHelper.GetInstallationDirectory("Xenko");
-            Environment.SetEnvironmentVariable("XenkoDir", installDir);
-
             // We use MRU of the current version only when we're trying to reload last session.
             var mru = new MostRecentlyUsedFileCollection(InternalSettings.LoadProfileCopy, InternalSettings.MostRecentlyUsedSessions, InternalSettings.WriteFile);
             mru.LoadFromSettings();
@@ -251,13 +247,6 @@ namespace Xenko.GameStudio
                     return;
                 }
 
-                // Running first time? If yes, create nuget redirect package.
-                var packageVersion = new PackageVersion(XenkoVersion.NuGetVersion);
-                if (PackageStore.Instance.IsDevelopmentStore)
-                {
-                    await PackageStore.Instance.CheckDeveloperTargetRedirects("Xenko", packageVersion, PackageStore.Instance.InstallationPath);
-                }
-
                 // We use a MRU that contains the older version projects to display in the editor
                 var mru = new MostRecentlyUsedFileCollection(InternalSettings.LoadProfileCopy, InternalSettings.MostRecentlyUsedSessions, InternalSettings.WriteFile);
                 mru.LoadFromSettings();
@@ -387,6 +376,9 @@ namespace Xenko.GameStudio
                     break;
                 case SupportedLanguage.English:
                     TranslationManager.Instance.CurrentLanguage = new CultureInfo("en-US");
+                    break;
+                case SupportedLanguage.French:
+                    TranslationManager.Instance.CurrentLanguage = new CultureInfo("fr-FR");
                     break;
                 case SupportedLanguage.Japanese:
                     TranslationManager.Instance.CurrentLanguage = new CultureInfo("ja-JP");

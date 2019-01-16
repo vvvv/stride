@@ -15,7 +15,7 @@
          Also disable BuildProjectReferences, otherwise it would try to recompile assemblies currently locked by the CompilerApp itself.
          However, that means that Tests dependencies must be compiled properly on Windows (should be the case usually).
     -->
-    <XenkoCompileAssetOptions>--compile-property:SolutionDir=$([System.IO.Path]::GetFullPath('$(XenkoDir)'))\build\;SolutionName=Xenko;BuildProjectReferences=false</XenkoCompileAssetOptions>
+    <XenkoCompileAssetOptions>--compile-property:BuildProjectReferences=false</XenkoCompileAssetOptions>
 
     <!-- Workaround for solution dependencies with incompatible frameworks: https://github.com/Microsoft/msbuild/issues/2661#issuecomment-338808156 -->
     <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
@@ -37,7 +37,8 @@
     <AssemblyOriginatorKeyFile Condition="'$(XenkoOpenSourceSign)' == 'true'">$(SolutionDir)xenko.public.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   
-  <Import Project="$(MSBuildThisFileDirectory)\..\..\Targets\Xenko.Common.targets"/>
+  <Import Project="$(MSBuildThisDirectory)..\..\sources\core\Xenko.Core\build\Xenko.Core.targets"/>
+  <Import Project="$(MSBuildThisDirectory)..\..\sources\assets\Xenko.Core.Assets.CompilerApp\build\Xenko.Core.Assets.CompilerApp.targets"/>
 
   <!-- Add Default targets used by Msbuild for undefined Platforms / or when skipping compilation under a platform -->
   <Import Condition="'$(XenkoCompilerTargetsEnable)' == 'false'" Project="$(MSBuildThisFileDirectory)Xenko.UnitTests.DisableBuild.targets"/>
@@ -53,7 +54,4 @@
       <XenkoCompileAssetOptions>$(XenkoCompileAssetOptions) --property:XenkoGraphicsApi=$(XenkoGraphicsApi)</XenkoCompileAssetOptions>
     </PropertyGroup>
   </Target>
-
-  <!-- Import target to handle ProjectReference for executables -->
-  <Import Project="$(MSBuildThisFileDirectory)Xenko.InternalReferences.targets"/>
 </Project>

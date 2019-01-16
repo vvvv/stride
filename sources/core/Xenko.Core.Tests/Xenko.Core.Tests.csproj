@@ -1,11 +1,11 @@
 ﻿<Project>
   <Import Project="..\..\targets\Xenko.Core.PreSettings.targets" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <AssemblyName>Xenko.Core.Tests</AssemblyName>
     <RootNamespace>Xenko.Core.Tests</RootNamespace>
-    <TargetFramework>net462</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <EnableDefaultItems>false</EnableDefaultItems>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -15,7 +15,7 @@
     <XenkoOutputFolder>Tests\$(AssemblyName)</XenkoOutputFolder>
     <XenkoCompilerTargetsEnable Condition="'$(XenkoPackageBuild)' == 'true'">false</XenkoCompilerTargetsEnable>
     <XenkoCompilerTargetsEnable Condition="'$(XenkoSkipUnitTests)' == 'true'">false</XenkoCompilerTargetsEnable>
-    <XenkoCompilerTargetsEnable Condition="'$(XenkoRuntime)' == 'CoreCLR'">false</XenkoCompilerTargetsEnable>
+    <XenkoCompilerTargetsEnable Condition="'$(XenkoNETRuntime)' == 'CoreCLR'">false</XenkoCompilerTargetsEnable>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="xunit" Version="2.3.1" />
@@ -45,18 +45,6 @@
     <Compile Include="TestWatcher.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Xenko.Core\Xenko.Core.csproj">
-      <Project>{0E916AB7-5A6C-4820-8AB1-AA492FE66D68}</Project>
-      <Name>Xenko.Core</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Core.IO\Xenko.Core.IO.csproj">
-      <Project>{1DE01410-22C9-489B-9796-1ADDAB1F64E5}</Project>
-      <Name>Xenko.Core.IO</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Core.MicroThreading\Xenko.Core.MicroThreading.csproj">
-      <Project>{1320F627-EE43-4115-8E89-19D1753E51F2}</Project>
-      <Name>Xenko.Core.MicroThreading</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj">
       <Project>{5210FB81-B807-49BB-AF0D-31FB6A83A572}</Project>
       <Name>Xenko.Core.Serialization</Name>
@@ -69,5 +57,5 @@
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <Import Project="$(XenkoPostSettingsTargets)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
 </Project>

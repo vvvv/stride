@@ -174,7 +174,7 @@ namespace Xenko.LauncherApp.ViewModels
             }
             try
             {
-                var localPackages = await RunLockTask(() => store.GetPackagesInstalled(store.MainPackageIds).OrderByDescending(p => p.Version).ToList());
+                var localPackages = await RunLockTask(() => store.GetPackagesInstalled(store.MainPackageIds).FilterXenkoMainPackages().OrderByDescending(p => p.Version).ToList());
                 lock (objectLock)
                 {
                     // Retrieve all local packages
@@ -231,9 +231,7 @@ namespace Xenko.LauncherApp.ViewModels
                 {
                     try
                     {
-                        var realPath = File.ReadAllText(store.GetRedirectFile(package));
-                        if (!Directory.Exists(realPath))
-                            throw new DirectoryNotFoundException();
+                        var realPath = store.GetRealPath(package);
                         var version = new XenkoDevVersionViewModel(this, store, package, realPath, true);
                         Dispatcher.Invoke(() => xenkoVersions.Add(version));
                     }
@@ -291,7 +289,7 @@ namespace Xenko.LauncherApp.ViewModels
 #if SIMULATE_OFFLINE
                 var serverPackages = new List<IPackage>();
 #else
-                var serverPackages = await RunLockTask(() => store.FindSourcePackages(store.MainPackageIds, CancellationToken.None).Result.OrderByDescending(p => p.Version).ToList());
+                var serverPackages = await RunLockTask(() => store.FindSourcePackages(store.MainPackageIds, CancellationToken.None).Result.FilterXenkoMainPackages().Where(p => !store.IsDevRedirectPackage(p)).OrderByDescending(p => p.Version).ToList());
 #endif
                 // Check if we could connect to the server
                 var wasOffline = IsOffline;
@@ -316,7 +314,7 @@ namespace Xenko.LauncherApp.ViewModels
                 {
                     // Retrieve all server packages (ignoring dev ones)
                     var packages = serverPackages
-                        .Where(x => !string.Equals(x.Source, Environment.ExpandEnvironmentVariables(store.DevSource), StringComparison.OrdinalIgnoreCase))
+                        //.Where(x => !string.Equals(x.Source, Environment.ExpandEnvironmentVariables(store.DevSource), StringComparison.OrdinalIgnoreCase))
                         .GroupBy(p => $"{p.Version.Version.Major}.{p.Version.Version.Minor}", p => p);
                     foreach (var package in packages)
                     {

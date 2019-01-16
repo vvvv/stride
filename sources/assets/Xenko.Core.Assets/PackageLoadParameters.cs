@@ -68,15 +68,6 @@ namespace Xenko.Core.Assets
         public bool AutoCompileProjects { get; set; }
 
         /// <summary>
-        /// Specifies if Nuget Restore should be run when loading a project.
-        /// Only valid when <see cref="AutoCompileProjects"/> is true.
-        /// </summary>
-        /// <remarks>
-        /// This is sometimes necessary when opening a project coming from another computer, since the lock file stores absolute paths.
-        /// </remarks>
-        public bool ForceNugetRestore { get; set; }
-
-        /// <summary>
         /// Gets or sets the build configuration used to <see cref="AutoCompileProjects"/>.
         /// </summary>
         /// <value>The build configuration.</value>
@@ -128,7 +119,7 @@ namespace Xenko.Core.Assets
         /// Gets or sets the generate new asset ids.
         /// </summary>
         /// <value>The generate new asset ids.</value>
-        /// <remarks>Only makes sense for <see cref="PackageSession.AddExistingPackage(UFile, ILogger, PackageLoadParameters)"/>.</remarks>
+        /// <remarks>Only makes sense for <see cref="PackageSession.AddExistingProject(UFile, ILogger, PackageLoadParameters)"/>.</remarks>
         public bool GenerateNewAssetIds { get; set; }
 
         /// <summary>

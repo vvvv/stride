@@ -1,9 +1,10 @@
-﻿<Project>
+<Project>
   <Import Project="..\..\targets\Xenko.PreSettings.targets" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   <PropertyGroup>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
+    <XenkoPackAssets>true</XenkoPackAssets>
     <TargetFramework>$(TargetFrameworkTool)</TargetFramework>
     <XenkoAssemblyProcessorOptions>--auto-module-initializer --serialization --parameter-key</XenkoAssemblyProcessorOptions>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\build\</SolutionDir>
@@ -144,16 +145,6 @@
       <DependentUpon>StaticThumbnails.resx</DependentUpon>
     </Compile>
     <None Include="AssetEditors.cd" />
-    <None Include="Shaders\LightConstantWhite.xksl">
-      <Generator>XenkoShaderKeyGenerator</Generator>
-      <LastGenOutput>LightConstantWhite.cs</LastGenOutput>
-    </None>
-    <Compile Update="Shaders\LightConstantWhite.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DependentUpon>LightConstantWhite.xksl</DependentUpon>
-    </Compile>
     <Compile Update="Templates\ModelAssetTemplateWindow.xaml.cs">
       <DependentUpon>ModelAssetTemplateWindow.xaml</DependentUpon>
     </Compile>
@@ -174,12 +165,6 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>SelectedSprite.xkfx</DependentUpon>
     </Compile>
-    <Compile Update="Shaders\CompilationErrorShader.cs">
-      <DependentUpon>CompilationErrorShader.xksl</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <Compile Update="Shaders\XenkoEditorHighlightingEffect.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -192,34 +177,10 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>XenkoEditorMaterialPreviewEffect.xkfx</DependentUpon>
     </Compile>
-    <Compile Update="Shaders\SelectedSpriteShader.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DependentUpon>SelectedSpriteShader.xksl</DependentUpon>
-    </Compile>
-    <Compile Update="Shaders\SharedTextureCoordinate.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DependentUpon>SharedTextureCoordinate.xksl</DependentUpon>
-    </Compile>
-    <Compile Update="Shaders\SpritePicking.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DependentUpon>SpritePicking.xksl</DependentUpon>
-    </Compile>
     <Compile Update="Resources\Strings\Scene.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Scene.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Shaders\EffectCompiling.cs">
-      <DependentUpon>EffectCompiling.xksl</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DesignTime>True</DesignTime>
     </Compile>
     <Compile Update="Shaders\XenkoEditorForwardShadingEffect.cs">
       <AutoGen>True</AutoGen>
@@ -239,24 +200,10 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>SceneEditorParameters.xkfx</DependentUpon>
     </Compile>
-    <Compile Update="Shaders\Sprite3DBase.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DependentUpon>Sprite3DBase.xksl</DependentUpon>
-    </Compile>
     <None Include="CurveEditor.cd" />
     <None Include="Shaders\SelectedSprite.xkfx">
       <Generator>XenkoShaderKeyGenerator</Generator>
       <LastGenOutput>SelectedSprite.cs</LastGenOutput>
-    </None>
-    <None Include="Shaders\CompilationErrorShader.xksl">
-      <Generator>XenkoShaderKeyGenerator</Generator>
-      <LastGenOutput>CompilationErrorShader.cs</LastGenOutput>
-    </None>
-    <None Include="Shaders\EffectCompiling.xksl">
-      <Generator>XenkoShaderKeyGenerator</Generator>
-      <LastGenOutput>EffectCompiling.cs</LastGenOutput>
     </None>
     <None Include="Shaders\XenkoEditorHighlightingEffect.xkfx">
       <Generator>XenkoShaderKeyGenerator</Generator>
@@ -351,27 +298,11 @@
       <Generator>XenkoShaderKeyGenerator</Generator>
       <LastGenOutput>SceneEditorParameters.cs</LastGenOutput>
     </None>
-    <None Include="Shaders\SelectedSpriteShader.xksl">
-      <Generator>XenkoShaderKeyGenerator</Generator>
-      <LastGenOutput>SelectedSpriteShader.cs</LastGenOutput>
-    </None>
-    <None Include="Shaders\SharedTextureCoordinate.xksl">
-      <Generator>XenkoShaderKeyGenerator</Generator>
-      <LastGenOutput>SharedTextureCoordinate.cs</LastGenOutput>
-    </None>
-    <None Include="Shaders\Sprite3DBase.xksl">
-      <Generator>XenkoShaderKeyGenerator</Generator>
-      <LastGenOutput>Sprite3DBase.cs</LastGenOutput>
-    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
-    <None Include="Shaders\SpritePicking.xksl">
-      <Generator>XenkoShaderKeyGenerator</Generator>
-      <LastGenOutput>SpritePicking.cs</LastGenOutput>
-    </None>
 	<Compile Remove="Templates\Core\**" />
 	<Compile Remove="Templates\Assets\**" />
 	<None Include="Templates\Core\**" />
@@ -380,144 +311,16 @@
 	<None Remove="EditorPackage\outputpath\**" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\assets\Xenko.Core.Assets.CompilerApp\Xenko.Core.Assets.CompilerApp.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\assets\Xenko.Core.Assets.Quantum\Xenko.Core.Assets.Quantum.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\assets\Xenko.Core.Packages\Xenko.Core.Packages.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\buildengine\Xenko.Core.BuildEngine.Common\Xenko.Core.BuildEngine.Common.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Design\Xenko.Core.Design.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.IO\Xenko.Core.IO.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.MicroThreading\Xenko.Core.MicroThreading.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Reflection\Xenko.Core.Reflection.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Yaml\Xenko.Core.Yaml.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Mathematics\Xenko.Core.Mathematics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Translation\Xenko.Core.Translation.csproj">
-      <Project>{6a7b231e-36aa-4647-8c1a-fb1540abc813}</Project>
-      <Name>Xenko.Core.Translation</Name>
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\presentation\Xenko.Core.Presentation.Dialogs\Xenko.Core.Presentation.Dialogs.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\presentation\Xenko.Core.Presentation.Graph\Xenko.Core.Presentation.Graph.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\presentation\Xenko.Core.Presentation.Quantum\Xenko.Core.Presentation.Quantum.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\presentation\Xenko.Core.Presentation\Xenko.Core.Presentation.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\presentation\Xenko.Core.Quantum\Xenko.Core.Quantum.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\assets\Xenko.Core.Assets\Xenko.Core.Assets.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\presentation\Xenko.Core.Translation.Presentation\Xenko.Core.Translation.Presentation.csproj">
-      <Project>{b686c194-d71d-4ff0-8b4f-f53afbcd962f}</Project>
-      <Name>Xenko.Core.Translation.Presentation</Name>
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\shaders\Xenko.Core.Shaders\Xenko.Core.Shaders.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.Assets.Models\Xenko.Assets.Models.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.Assets\Xenko.Assets.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.Audio\Xenko.Audio.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.Engine\Xenko.Engine.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.Games\Xenko.Games.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.Graphics\Xenko.Graphics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.Input\Xenko.Input.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.Navigation\Xenko.Navigation.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.Particles\Xenko.Particles.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.Physics\Xenko.Physics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.Shaders.Parser\Xenko.Shaders.Parser.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.Shaders\Xenko.Shaders.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.SpriteStudio.Offline\Xenko.SpriteStudio.Offline.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.SpriteStudio.Runtime\Xenko.SpriteStudio.Runtime.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.UI\Xenko.UI.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko.Video\Xenko.Video.csproj">
-      <Project>{DA355C86-866F-4843-9B4D-63A173C750FB}</Project>
-      <Name>Xenko.Video</Name>
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\engine\Xenko\Xenko.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\tools\Xenko.ConnectionRouter\Xenko.ConnectionRouter.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\tools\Xenko.Graphics.RenderDocPlugin\Xenko.Graphics.RenderDocPlugin.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\tools\Xenko.Core.ProjectTemplating\Xenko.Core.ProjectTemplating.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\tools\Xenko.TextureConverter\Xenko.TextureConverter.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Core.Assets.Editor\Xenko.Core.Assets.Editor.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Editor\Xenko.Editor.csproj">
-      <Private>False</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\..\assets\Xenko.Core.Assets.Quantum\Xenko.Core.Assets.Quantum.csproj" />
+    <ProjectReference Include="..\..\presentation\Xenko.Core.Presentation.Dialogs\Xenko.Core.Presentation.Dialogs.csproj" />
+    <ProjectReference Include="..\..\presentation\Xenko.Core.Presentation.Graph\Xenko.Core.Presentation.Graph.csproj" />
+    <ProjectReference Include="..\..\presentation\Xenko.Core.Translation.Presentation\Xenko.Core.Translation.Presentation.csproj" />
+    <ProjectReference Include="..\..\tools\Xenko.ConnectionRouter\Xenko.ConnectionRouter.csproj" />
+    <ProjectReference Include="..\..\tools\Xenko.Graphics.RenderDocPlugin\Xenko.Graphics.RenderDocPlugin.csproj" />
+    <ProjectReference Include="..\..\tools\Xenko.Core.ProjectTemplating\Xenko.Core.ProjectTemplating.csproj" />
+    <ProjectReference Include="..\Xenko.Core.Assets.Editor\Xenko.Core.Assets.Editor.csproj" />
+    <ProjectReference Include="..\Xenko.Editor\Xenko.Editor.csproj" />
+    <ProjectReference Include="..\Xenko.Samples.Templates\Xenko.Samples.Templates.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="AssetEditors\GraphicsCompositorEditor\Views\GraphicsCompositorEditorView.xaml">
@@ -970,7 +773,7 @@
     <Resource Include="Resources\Components\video-16.png" />
   </ItemGroup>
   <Import Project="$(XenkoPostSettingsTargets)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   <Target Name="RemoveVisualStudioRoslynDependencies" AfterTargets="ResolveAssemblyReferences">
     <ItemGroup>
       <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(ReferenceCopyLocalPaths.FileName)').StartsWith('Microsoft.VisualStudio.'))" />
@@ -978,6 +781,7 @@
   </Target>
   <PropertyGroup>
     <PostBuildEvent>Path=$(MSBuildBinPath)\Roslyn;$(Path)
+IF EXIST "$(SolutionDir)..\sources\localization\fr\$(TargetName).fr.po" $(SolutionDir)..\deps\Gettext.Net\GNU.Gettext.Msgfmt.exe --lib-dir $(SolutionDir)..\deps\Gettext.Net --resource $(TargetName) -d $(TargetDir) --locale fr "$(SolutionDir)..\sources\localization\fr\$(TargetName).fr.po" --verbose
 IF EXIST "$(SolutionDir)..\sources\localization\ja\$(TargetName).ja.po" $(SolutionDir)..\deps\Gettext.Net\GNU.Gettext.Msgfmt.exe --lib-dir $(SolutionDir)..\deps\Gettext.Net --resource $(TargetName) -d $(TargetDir) --locale ja "$(SolutionDir)..\sources\localization\ja\$(TargetName).ja.po" --verbose</PostBuildEvent>
   </PropertyGroup>
 </Project>

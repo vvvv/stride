@@ -56,7 +56,7 @@ namespace Xenko.Games.Testing
                     break;
             }
 
-            var url = $"/service/{XenkoVersion.NuGetVersion}/Xenko.SamplesTestServer.exe";
+            var url = $"/service/Xenko.SamplesTestServer/{XenkoVersion.NuGetVersion}/Xenko.SamplesTestServer.exe";
 
             var socketContext = RouterClient.RequestServer(url).Result;
 
@@ -86,7 +86,7 @@ namespace Xenko.Games.Testing
 
             socketMessageLayer.Send(new TestRegistrationRequest
             {
-                Platform = (int)platform, Tester = true, Cmd = cmd, GameAssembly = gameName
+                Platform = (int)platform, Tester = true, Cmd = cmd, GameAssembly = gameName + ".Game"
             }).Wait();
 
             // Wait up to one minute

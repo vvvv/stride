@@ -24,6 +24,7 @@ using Xenko.Assets.Presentation.ViewModel;
 using Xenko.Assets.Presentation.ViewModel.CopyPasteProcessors;
 using Xenko.Editor;
 using Xenko.Engine;
+using Xenko.Core.Assets.Templates;
 
 namespace Xenko.Assets.Presentation
 {
@@ -78,7 +79,25 @@ namespace Xenko.Assets.Presentation
         public XenkoDefaultAssetsPlugin()
         {
             ProfileSettings.Add(new PackageSettingsEntry(GameUserSettings.Effect.EffectCompilation, TargetPackage.Executable));
-            ProfileSettings.Add(new PackageSettingsEntry(GameUserSettings.Effect.RecordUsedEffects,  TargetPackage.Executable));
+            ProfileSettings.Add(new PackageSettingsEntry(GameUserSettings.Effect.RecordUsedEffects, TargetPackage.Executable));
+
+            LoadDefaultTemplates();
+        }
+
+        public static void LoadDefaultTemplates()
+        {
+            // Load templates
+            // Currently hardcoded, this will need to change with plugin system
+            foreach (var packageInfo in new[] { new { Name = "Xenko.Assets.Presentation", Version = XenkoVersion.NuGetVersion }, new { Name = "Xenko.SpriteStudio.Offline", Version = XenkoVersion.NuGetVersion }, new { Name = "Xenko.Samples.Templates", Version = XenkoVersion.NuGetVersionSuffix != string.Empty ? "3.1.0.1-beta01" : "3.1.0.1" } })
+            {
+                var logger = new LoggerResult();
+                var packageFile = PackageStore.Instance.GetPackageFileName(packageInfo.Name, new PackageVersionRange(new PackageVersion(packageInfo.Version)));
+                var package = Package.Load(logger, packageFile.ToWindowsPath());
+                if (logger.HasErrors)
+                    throw new InvalidOperationException($"Could not load package {packageInfo.Name}:{Environment.NewLine}{logger.ToText()}");
+
+                TemplateManager.RegisterPackage(package);
+            }
         }
 
         /// <inheritdoc />

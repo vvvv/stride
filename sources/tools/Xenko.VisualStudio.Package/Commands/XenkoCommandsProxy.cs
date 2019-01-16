@@ -6,7 +6,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using NShader;
+using NuGet.Common;
+using NuGet.Versioning;
+using Xenko.Core;
 using Xenko.Core.Assets;
 using Xenko.Core.Packages;
 
@@ -17,16 +21,15 @@ namespace Xenko.VisualStudio.Commands
     /// </summary>
     public class XenkoCommandsProxy : MarshalByRefObject
     {
-        public static readonly Version MinimumVersion = new Version(1, 4);
+        public static readonly PackageVersion MinimumVersion = new PackageVersion(1, 4, 0, 0);
 
         public struct PackageInfo
         {
-            public string StorePath;
-            public string SdkPath;
+            public List<string> SdkPaths;
 
-            public Version ExpectedVersion;
+            public PackageVersion ExpectedVersion;
 
-            public Version LoadedVersion;
+            public PackageVersion LoadedVersion;
         }
 
         private static readonly object computedPackageInfoLock = new object();
@@ -56,26 +59,12 @@ namespace Xenko.VisualStudio.Commands
             remote = (IXenkoCommands)assembly.CreateInstance("Xenko.VisualStudio.Commands.XenkoCommands");
         }
 
-        public static PackageInfo CurrentPackageInfo
-        {
-            get
-            {
-                lock (computedPackageInfoLock)
-                {
-                    if (computedPackageInfo.SdkPath == null)
-                        computedPackageInfo = FindXenkoSdkDir();
-
-                    return computedPackageInfo;
-                }
-            }
-        }
-
         /// <summary>
         /// Set the solution to use, when resolving the package containing the remote commands.
         /// </summary>
         /// <param name="solutionPath">The full path to the solution file.</param>
         /// <param name="domain">The AppDomain to set the solution on, or null the current AppDomain.</param>
-        public static void InitialzeFromSolution(string solutionPath, AppDomain domain = null)
+        public static void InitializeFromSolution(string solutionPath, PackageInfo xenkoPackageInfo, AppDomain domain = null)
         {
             if (domain == null)
             {
@@ -83,7 +72,7 @@ namespace Xenko.VisualStudio.Commands
                 {
                     // Set the new solution and clear the package info, so it will be recomputed
                     solution = solutionPath;
-                    computedPackageInfo = new PackageInfo();
+                    computedPackageInfo = xenkoPackageInfo;
                 }
 
                 lock (commandProxyLock)
@@ -94,15 +83,20 @@ namespace Xenko.VisualStudio.Commands
             else
             {
                 var initializationHelper = (InitializationHelper)domain.CreateInstanceFromAndUnwrap(typeof(InitializationHelper).Assembly.Location, typeof(InitializationHelper).FullName);
-                initializationHelper.Initialze(solutionPath);
+                initializationHelper.Initialize(solutionPath, xenkoPackageInfo.SdkPaths, xenkoPackageInfo.ExpectedVersion?.ToString(), xenkoPackageInfo.LoadedVersion?.ToString());
             }
         }
 
         private class InitializationHelper : MarshalByRefObject
         {
-            public void Initialze(string solutionPath)
+            public void Initialize(string solutionPath, List<string> sdkPaths, string expectedVersion, string loadedVersion)
             {
-                InitialzeFromSolution(solutionPath);
+                InitializeFromSolution(solutionPath, new PackageInfo
+                {
+                    SdkPaths = sdkPaths,
+                    ExpectedVersion = expectedVersion != null ? new PackageVersion(expectedVersion) : null,
+                    LoadedVersion = loadedVersion != null ? new PackageVersion(loadedVersion) : null,
+                });
             }
         }
 
@@ -146,8 +140,12 @@ namespace Xenko.VisualStudio.Commands
                         }
                     }
 
+                    var xenkoPackageInfo = FindXenkoSdkDir(solution).Result;
+                    if (xenkoPackageInfo.LoadedVersion == null)
+                        return null;
+
                     currentAppDomain = CreateXenkoDomain();
-                    InitialzeFromSolution(solution, currentAppDomain);
+                    InitializeFromSolution(solution, xenkoPackageInfo, currentAppDomain);
                     currentInstance = CreateProxy(currentAppDomain);
                     currentInstance.Initialize();
                     solutionChanged = false;
@@ -178,7 +176,7 @@ namespace Xenko.VisualStudio.Commands
 
         public void Initialize()
         {
-            remote.Initialize(CurrentPackageInfo.SdkPath);
+            remote.Initialize(null);
         }
 
         public bool ShouldReload()
@@ -214,9 +212,12 @@ namespace Xenko.VisualStudio.Commands
             return remote.GenerateShaderKeys(inputFileName, inputFileContent);
         }
 
-        public RawShaderNavigationResult AnalyzeAndGoToDefinition(string sourceCode, RawSourceSpan span)
+        public RawShaderNavigationResult AnalyzeAndGoToDefinition(string projectPath, string sourceCode, RawSourceSpan span)
         {
+
             // TODO: We need to know which package is currently selected in order to query all valid shaders
+            if (remote is IXenkoCommands2 remote2)
+                return remote2.AnalyzeAndGoToDefinition(projectPath, sourceCode, span);
             return remote.AnalyzeAndGoToDefinition(sourceCode, span);
         }
 
@@ -236,31 +237,16 @@ namespace Xenko.VisualStudio.Commands
 
         private Assembly XenkoDomainAssemblyResolve(object sender, ResolveEventArgs args)
         {
-            var xenkoSdkDir = CurrentPackageInfo.SdkPath;
-            if (xenkoSdkDir == null)
-                return null;
-
-            var xenkoSdkBinDirectories = new[]
-            {
-                // Xenko 2.x
-                Path.Combine(xenkoSdkDir, @"Bin\Windows\Direct3D11"),
-                Path.Combine(xenkoSdkDir, @"Bin\Windows"),
-                // Backward compatibility with Xenko 1.x
-                Path.Combine(xenkoSdkDir, @"Bin\Windows-Direct3D11"),
-            };
-
             var assemblyName = new AssemblyName(args.Name);
 
-            foreach (var xenkoSdkBinDirectory in xenkoSdkBinDirectories)
-            {
-                // Try to load .dll/.exe from Xenko SDK directory
-                var assemblyFile = Path.Combine(xenkoSdkBinDirectory, assemblyName.Name + ".dll");
-                if (File.Exists(assemblyFile))
-                    return LoadAssembly(assemblyFile);
+            // Necessary to avoid conflicts with Visual Studio NuGet
+            if (args.Name.StartsWith("NuGet", StringComparison.InvariantCultureIgnoreCase))
+                return Assembly.Load(assemblyName);
 
-                assemblyFile = Path.Combine(xenkoSdkBinDirectory, assemblyName.Name + ".exe");
-                if (File.Exists(assemblyFile))
-                    return LoadAssembly(assemblyFile);
+            var assemblyPath = computedPackageInfo.SdkPaths.FirstOrDefault(x => Path.GetFileNameWithoutExtension(x) == assemblyName.Name);
+            if (assemblyPath != null)
+            {
+                return LoadAssembly(assemblyPath);
             }
 
             // PCL System assemblies are using version 2.0.5.0 while we have a 4.0
@@ -294,55 +280,132 @@ namespace Xenko.VisualStudio.Commands
         /// Gets the xenko SDK dir.
         /// </summary>
         /// <returns></returns>
-        private static PackageInfo FindXenkoSdkDir()
+        internal static async Task<PackageInfo> FindXenkoSdkDir(string solution, string packageName = "Xenko.VisualStudio.Commands")
         {
             // Resolve the sdk version to load from the solution's package
-            var packageInfo = new PackageInfo { ExpectedVersion = PackageSessionHelper.GetPackageVersion(solution) };
-
-            // TODO: Maybe move it in some common class somewhere? (in this case it would be included with "Add as link" in VSPackage)
-            var xenkoSdkDir = Environment.GetEnvironmentVariable("XenkoDir");
-
-            // Failed to locate xenko
-            if (xenkoSdkDir == null)
-                return packageInfo;
-
-            // If we are in a dev directory, assume we have the right version
-            if (File.Exists(Path.Combine(xenkoSdkDir, "build\\Xenko.sln")))
-            {
-                packageInfo.StorePath = xenkoSdkDir;
-                packageInfo.SdkPath = xenkoSdkDir;
-                packageInfo.LoadedVersion = packageInfo.ExpectedVersion;
-                return packageInfo;
-            }
+            var packageInfo = new PackageInfo { ExpectedVersion = await PackageSessionHelper.GetPackageVersion(solution), SdkPaths = new List<string>() };
 
             // Check if we are in a root directory with store/packages facilities
-            var store = new NugetStore(xenkoSdkDir);
+            var store = new NugetStore(null);
             NugetLocalPackage xenkoPackage = null;
 
             // Try to find the package with the expected version
             if (packageInfo.ExpectedVersion != null && packageInfo.ExpectedVersion >= MinimumVersion)
-                xenkoPackage = store.GetPackagesInstalled(store.MainPackageIds).FirstOrDefault(package => GetVersion(package) == packageInfo.ExpectedVersion);
+            {
+                // Xenko up to 3.0
+                if (packageInfo.ExpectedVersion < new PackageVersion(3, 1, 0, 0))
+                {
+                    xenkoPackage = store.GetPackagesInstalled(new[] { "Xenko" }).FirstOrDefault(package => package.Version == packageInfo.ExpectedVersion);
+                    if (xenkoPackage != null)
+                    {
+                        var xenkoSdkDir = store.GetRealPath(xenkoPackage);
 
-            // If the expected version is not found, get the latest package
-            if (xenkoPackage == null)
-                xenkoPackage = store.GetLatestPackageInstalled(store.MainPackageIds);
+                        packageInfo.LoadedVersion = xenkoPackage.Version;
 
-            // If no package was found, return no sdk path
-            if (xenkoPackage == null)
-                return packageInfo;
-
-            // Return the loaded version and the sdk path
-            packageInfo.LoadedVersion = GetVersion(xenkoPackage);
-            packageInfo.StorePath = xenkoSdkDir;
-            packageInfo.SdkPath = store.GetRealPath(xenkoPackage);
+                        foreach (var path in new[]
+                        {
+                            // Xenko 2.x and 3.0
+                            @"Bin\Windows\Direct3D11",
+                            @"Bin\Windows",
+                            // Xenko 1.x
+                            @"Bin\Windows-Direct3D11"
+                        })
+                        {
+                            var fullPath = Path.Combine(xenkoSdkDir, path);
+                            if (Directory.Exists(fullPath))
+                            {
+                                packageInfo.SdkPaths.AddRange(Directory.EnumerateFiles(fullPath, "*.dll", SearchOption.TopDirectoryOnly));
+                                packageInfo.SdkPaths.AddRange(Directory.EnumerateFiles(fullPath, "*.exe", SearchOption.TopDirectoryOnly));
+                            }
+                        }
+                    }
+                }
+                // Xenko 3.1+
+                else
+                {
+                    var logger = new Logger();
+                    var (request, result) = await RestoreHelper.Restore(logger, packageName, new VersionRange(packageInfo.ExpectedVersion.ToNuGetVersion()));
+                    if (result.Success)
+                    {
+                        packageInfo.SdkPaths.AddRange(RestoreHelper.ListAssemblies(request, result));
+                        packageInfo.LoadedVersion = packageInfo.ExpectedVersion;
+                    }
+                }
+            }
 
             return packageInfo;
         }
 
-        private static Version GetVersion(NugetPackage package)
+        public class Logger : ILogger
         {
-            var originalVersion = package.Version.Version;
-            return new Version(originalVersion.Major, originalVersion.Minor);
+            private object logLock = new object();
+            public List<(LogLevel Level, string Message)> Logs { get; } = new List<(LogLevel, string)>();
+
+            public void LogDebug(string data)
+            {
+                Log(LogLevel.Debug, data);
+            }
+
+            public void LogVerbose(string data)
+            {
+                Log(LogLevel.Verbose, data);
+            }
+
+            public void LogInformation(string data)
+            {
+                Log(LogLevel.Information, data);
+            }
+
+            public void LogMinimal(string data)
+            {
+                Log(LogLevel.Minimal, data);
+            }
+
+            public void LogWarning(string data)
+            {
+                Log(LogLevel.Warning, data);
+            }
+
+            public void LogError(string data)
+            {
+                Log(LogLevel.Error, data);
+            }
+
+            public void LogInformationSummary(string data)
+            {
+                Log(LogLevel.Information, data);
+            }
+
+            public void LogErrorSummary(string data)
+            {
+                Log(LogLevel.Error, data);
+            }
+
+            public void Log(LogLevel level, string data)
+            {
+                lock (logLock)
+                {
+                    Debug.WriteLine($"[{level}] {data}");
+                    Logs.Add((level, data));
+                }
+            }
+
+            public Task LogAsync(LogLevel level, string data)
+            {
+                Log(level, data);
+                return Task.CompletedTask;
+            }
+
+            public void Log(ILogMessage message)
+            {
+                Log(message.Level, message.Message);
+            }
+
+            public Task LogAsync(ILogMessage message)
+            {
+                Log(message);
+                return Task.CompletedTask;
+            }
         }
     }
 }

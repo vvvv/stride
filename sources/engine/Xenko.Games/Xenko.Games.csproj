@@ -1,30 +1,35 @@
 <Project>
   <PropertyGroup>
     <XenkoAssemblySign>true</XenkoAssemblySign>
+    <XenkoRuntime>true</XenkoRuntime>
+    <XenkoRuntimeWindowsDotNet>true</XenkoRuntimeWindowsDotNet>
     <XenkoGraphicsApiDependent>true</XenkoGraphicsApiDependent>
   </PropertyGroup>
   <Import Project="..\..\targets\Xenko.PreSettings.targets" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   <PropertyGroup>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
-    <TargetFramework>$(TargetFramework)</TargetFramework>
     <XenkoAssemblyProcessorOptions>--auto-module-initializer</XenkoAssemblyProcessorOptions>
     <XenkoPlatformDependent>true</XenkoPlatformDependent>
     <XenkoProjectPlatformDependentWindows>true</XenkoProjectPlatformDependentWindows>
     <XenkoBuildTags>*</XenkoBuildTags>
     <XenkoCodeAnalysis>true</XenkoCodeAnalysis>
   </PropertyGroup>
+  <Import Condition="$(XenkoUI.Contains('SDL'))" Project="..\..\targets\SDL.targets" />
   <Choose>
-    <When Condition=" '$(AutoIncludeSystemAssembly)' != 'true'">
+    <When Condition="$(XenkoUI.Contains('WINFORMS')) OR $(XenkoUI.Contains('WPF'))">
+      <ItemGroup>
+        <Reference Include="System.Windows.Forms" />
+      </ItemGroup>
     </When>
   </Choose>
-  <Import Condition="$(XenkoUI.Contains('SDL'))" Project="..\..\targets\SDL.targets" />
   <ItemGroup>
     <Compile Include="..\..\shared\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="..\Xenko.Graphics\OpenGL\OpenGLUtils.cs" Link="OpenGLUtils.cs" />
     <Compile Update="Resources\GameResources.Designer.cs" Condition=" '$(XenkoPlatform)' == 'Windows'">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -32,23 +37,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Graphics\Xenko.Graphics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Mathematics\Xenko.Core.Mathematics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko\Xenko.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <PackageReference Include="SharpDX.Direct3D11" Version="4.0.1" Condition="'$(XenkoGraphicsApi)' == 'Direct3D11'" />
-    <PackageReference Include="SharpDX.Direct3D12" Version="4.0.1" Condition="'$(XenkoGraphicsApi)' == 'Direct3D12'" />
+    <ProjectReference Include="..\Xenko.Graphics\Xenko.Graphics.csproj" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Update="Resources\GameResources.resx" Condition=" '$(XenkoPlatform)' == 'Windows'">
@@ -60,5 +49,5 @@
     <Content Include="Resources\Logo.ico" Condition=" '$(XenkoPlatform)' == 'Windows'" />
   </ItemGroup>
   <Import Project="$(XenkoPostSettingsTargets)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
 </Project>

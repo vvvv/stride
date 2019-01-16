@@ -9,11 +9,13 @@
 
     <OutputPath>..\Bin\Windows\$(Configuration)\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+
+    <!-- Force msbuild to check to rebuild this assembly instead of letting VS IDE guess -->
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
-<#@ include file="..\Common.PropertyGroups.targets.t4" #>
 
   <ItemGroup>
-    <ProjectReference Include="..\<#= Properties.PackageName #>.Game\<#= Properties.PackageName #>.Game.csproj" />
+    <ProjectReference Include="..\<#= Properties.ProjectGameRelativePath #>" />
   </ItemGroup>
 
 </Project>

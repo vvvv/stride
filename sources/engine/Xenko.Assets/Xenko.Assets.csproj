@@ -1,6 +1,6 @@
 ﻿<Project>
   <Import Project="..\..\targets\Xenko.PreSettings.targets" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <TargetFramework>$(TargetFrameworkTool)</TargetFramework>
@@ -10,7 +10,7 @@
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\build\</SolutionDir>
     <RestorePackages>true</RestorePackages>
   </PropertyGroup>
-  <PropertyGroup Condition="('$(XenkoPlatform)' == 'Windows') and ('$(XenkoRuntime)' != 'CoreCLR')">
+  <PropertyGroup Condition="('$(XenkoPlatform)' == 'Windows') and ('$(XenkoNETRuntime)' != 'CoreCLR')">
     <DefineConstants>XENKO_VIDEO_FFMPEG;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
@@ -66,88 +66,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\assets\Xenko.Core.Assets\Xenko.Core.Assets.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\assets\Xenko.Core.Packages\Xenko.Core.Packages.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\buildengine\Xenko.Core.BuildEngine.Common\Xenko.Core.BuildEngine.Common.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Design\Xenko.Core.Design.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.IO\Xenko.Core.IO.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Reflection\Xenko.Core.Reflection.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Yaml\Xenko.Core.Yaml.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\tools\Xenko.Core.ProjectTemplating\Xenko.Core.ProjectTemplating.csproj">
-      <Private>false</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\tools\Xenko.TextureConverter\Xenko.TextureConverter.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Audio\Xenko.Audio.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Engine\Xenko.Engine.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Games\Xenko.Games.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Native\Xenko.Native.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Navigation\Xenko.Navigation.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Physics\Xenko.Physics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Shaders.Parser\Xenko.Shaders.Parser.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\shaders\Xenko.Core.Shaders\Xenko.Core.Shaders.csproj">
-      <Private>False</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\..\assets\Xenko.Core.Assets\Xenko.Core.Assets.csproj" />
+    <ProjectReference Include="..\..\tools\Xenko.Core.ProjectTemplating\Xenko.Core.ProjectTemplating.csproj" />
+    <ProjectReference Include="..\..\tools\Xenko.TextureConverter\Xenko.TextureConverter.csproj" />
+    <ProjectReference Include="..\Xenko.Engine\Xenko.Engine.csproj" />
+    <ProjectReference Include="..\Xenko.Navigation\Xenko.Navigation.csproj" />
+    <ProjectReference Include="..\Xenko.Physics\Xenko.Physics.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Graphics\Xenko.Graphics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Mathematics\Xenko.Core.Mathematics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Shaders.Compiler\Xenko.Shaders.Compiler.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Shaders\Xenko.Shaders.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.UI\Xenko.UI.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Video\Xenko.Video.csproj">
-      <Project>{DA355C86-866F-4843-9B4D-63A173C750FB}</Project>
-      <Name>Xenko.Video</Name>
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko\Xenko.csproj">
-      <Private>False</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\Xenko.UI\Xenko.UI.csproj" />
+    <ProjectReference Include="..\Xenko.Video\Xenko.Video.csproj" />
+    <ProjectReference Include="..\Xenko\Xenko.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\shared\SharedAssemblyInfo.cs">
@@ -179,9 +108,12 @@
     <Analyzer Include="Microsoft.CodeAnalysis.CSharp.Analyzers" />
   </ItemGroup-->
   <ItemGroup>
-    <None Include="..\..\..\deps\FFmpeg\ffmpeg.exe">
+    <XenkoNativeLib Include="..\..\..\deps\VHACD\**\VHACD.dll">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </XenkoNativeLib>
+    <Content Include="..\..\..\deps\FFmpeg\ffmpeg.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\..\deps\msdfgen\msdfgen.exe">
@@ -197,5 +129,14 @@
   </ItemGroup>
   <Import Project="..\..\shared\Xenko.Core.ShellHelper\Xenko.Core.ShellHelper.projitems" Label="Shared" />
   <Import Project="$(XenkoPostSettingsTargets)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
+
+  <PropertyGroup>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeExtraAssemblies</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+  <Target Name="IncludeExtraAssemblies">
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(OutputPath)VHACDSharp.dll" />
+    </ItemGroup>
+  </Target>
 </Project>

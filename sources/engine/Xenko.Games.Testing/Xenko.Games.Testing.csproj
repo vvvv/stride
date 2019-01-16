@@ -1,9 +1,11 @@
 ﻿<Project>
+  <PropertyGroup>
+    <XenkoRuntime>true</XenkoRuntime>
+  </PropertyGroup>
   <Import Project="..\..\targets\Xenko.PreSettings.targets" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   <PropertyGroup>
     <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
-    <TargetFramework>$(TargetFramework)</TargetFramework>
     <XenkoPlatformDependent>true</XenkoPlatformDependent>
     <XenkoAssemblyProcessorOptions>$(XenkoAssemblyProcessorDefaultOptions)</XenkoAssemblyProcessorOptions>
     <XenkoBuildTags>*</XenkoBuildTags>
@@ -24,34 +26,8 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\core\Xenko.Core.Mathematics\Xenko.Core.Mathematics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Engine\Xenko.Engine.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Games\Xenko.Games.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Graphics\Xenko.Graphics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Input\Xenko.Input.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko\Xenko.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\sources\engine\Xenko.Navigation\Xenko.Navigation.csproj">
-      <Private>False</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\Xenko.Engine\Xenko.Engine.csproj" />
   </ItemGroup>
   <Import Project="$(XenkoPostSettingsTargets)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
 </Project>

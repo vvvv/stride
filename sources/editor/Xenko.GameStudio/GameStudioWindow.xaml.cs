@@ -98,9 +98,9 @@ namespace Xenko.GameStudio
 
         private static void OpenMetricsProjectSession(EditorViewModel editor)
         {
-            var projectUid = editor.Session.CurrentPackage?.Id ?? Guid.Empty;
+            var projectUid = editor.Session.CurrentProject?.Project.Id ?? Guid.Empty;
 
-            var execProfiles = editor.Session.AllPackages.SelectMany(x => x.ExecutableProfiles);
+            var execProfiles = editor.Session.LocalPackages.OfType<ProjectViewModel>().Where(x => x.Type == ProjectType.Executable);
             var sessionPlatforms = new HashSet<PlatformType>();
             foreach (var execProfile in execProfiles)
             {
@@ -306,7 +306,9 @@ namespace Xenko.GameStudio
                 return;
             }
             // Open assets
-            foreach (var asset in assetIds.Select(x => Editor.Session.GetAssetById(x)).NotNull())
+            var assets = assetIds.Select(x => Editor.Session.GetAssetById(x)).NotNull().ToList();
+            Editor.Session.ActiveAssetView.SelectAssets(assets.Last().Yield());
+            foreach (var asset in assets)
             {
                 // HACK: temporary open and await asset editor sequentially
                 await assetEditorsManager.OpenAssetEditorWindow(asset, false);
@@ -319,11 +321,34 @@ namespace Xenko.GameStudio
 
         private async void OpenDefaultScene(SessionViewModel session)
         {
-            var startupPackage = session.LocalPackages.SingleOrDefault(x => x.IsCurrentPackage);
+            var startupPackage = session.LocalPackages.OfType<ProjectViewModel>().SingleOrDefault(x => x.IsCurrentProject);
             if (startupPackage == null)
                 return;
 
             var gameSettingsAsset = startupPackage.Assets.FirstOrDefault(x => x.Url == Assets.GameSettingsAsset.GameSettingsLocation);
+            if (gameSettingsAsset == null)
+            {
+                // Scan dependencies for game settings
+                // TODO: Scanning order? (direct dependencies first)
+                // TODO: Switch to using startupPackage.Dependencies view model instead
+                foreach (var dependency in startupPackage.PackageContainer.FlattenedDependencies)
+                {
+                    if (dependency.Package == null)
+                        continue;
+
+                    var dependencyPackageViewModel = session.AllPackages.First(x => x.Package == dependency.Package);
+                    if (dependencyPackageViewModel == null)
+                        continue;
+
+                    gameSettingsAsset = dependencyPackageViewModel.Assets.FirstOrDefault(x => x.Url == Assets.GameSettingsAsset.GameSettingsLocation);
+                    if (gameSettingsAsset != null)
+                        break;
+                }
+            }
+
+            if (gameSettingsAsset == null)
+                return;
+
             var defaultScene = ((Assets.GameSettingsAsset)gameSettingsAsset?.Asset)?.DefaultScene;
             if (defaultScene == null)
                 return;
@@ -335,6 +360,8 @@ namespace Xenko.GameStudio
             var asset = session.GetAssetById(defaultSceneReference.Id);
             if (asset == null)
                 return;
+
+            Editor.Session.ActiveAssetView.SelectAssets(asset.Yield());
 
             await assetEditorsManager.OpenAssetEditorWindow(asset);
         }
@@ -352,7 +379,7 @@ namespace Xenko.GameStudio
         private void CreateTestAsset()
         {
 #if DEBUG
-            var package = Editor.Session.CurrentPackage;
+            var package = Editor.Session.CurrentProject;
             if (package != null)
             {
                 using (var transaction = Editor.Session.UndoRedoService.CreateTransaction())
@@ -373,7 +400,7 @@ namespace Xenko.GameStudio
         private void CreateUnitTestAsset()
         {
 #if DEBUG
-            var package = Editor.Session.CurrentPackage;
+            var package = Editor.Session.CurrentProject;
             if (package != null)
             {
                 using (var transaction = Editor.Session.UndoRedoService.CreateTransaction())

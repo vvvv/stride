@@ -1,6 +1,8 @@
 ﻿<Project>
   <PropertyGroup>
     <XenkoAssemblySign>true</XenkoAssemblySign>
+    <XenkoRuntime>true</XenkoRuntime>
+    <XenkoRuntimeNetStandard>true</XenkoRuntimeNetStandard>
   </PropertyGroup>
   <Import Project="..\..\targets\Xenko.PreSettings.targets" />
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
@@ -9,7 +11,6 @@
     <SchemaVersion>2.0</SchemaVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
-    <TargetFramework>$(TargetFramework)</TargetFramework>
     <XenkoAssemblyProcessorOptions>--auto-module-initializer --serialization</XenkoAssemblyProcessorOptions>
     <XenkoBuildTags>*</XenkoBuildTags>
   </PropertyGroup>
@@ -23,30 +24,8 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\core\Xenko.Core.IO\Xenko.Core.IO.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Mathematics\Xenko.Core.Mathematics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\shaders\Irony\Irony.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\shaders\Xenko.Core.Shaders\Xenko.Core.Shaders.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Shaders\Xenko.Shaders.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko\Xenko.csproj">
-      <Private>False</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\..\shaders\Xenko.Core.Shaders\Xenko.Core.Shaders.csproj" />
+    <ProjectReference Include="..\Xenko.Shaders\Xenko.Shaders.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />

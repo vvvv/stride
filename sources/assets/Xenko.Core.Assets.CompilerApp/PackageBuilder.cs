@@ -58,34 +58,29 @@ namespace Xenko.Core.Assets.CompilerApp
 
         private BuildResultCode BuildMaster()
         {
-            // Only querying graphics platform, let's load package, print it and exit
-            if (builderOptions.GetGraphicsPlatform)
+            try
             {
-                return BuildGetGraphicsPlatform();
+                PackageSessionPublicHelper.FindAndSetMSBuildVersion();
+            }
+            catch (Exception e)
+            {
+                var message = "Could not find a compatible version of MSBuild.\r\n\r\n" +
+                              "Check that you have a valid installation with the required workloads, or go to [www.visualstudio.com/downloads](https://www.visualstudio.com/downloads) to install a new one.\r\n\r\n" +
+                              e;
+                builderOptions.Logger.Error(message);
+                return BuildResultCode.BuildError;
             }
 
             AssetCompilerContext context = null;
             PackageSession projectSession = null;
             try
             {
-                try
-                {
-                    PackageSessionPublicHelper.FindAndSetMSBuildVersion();
-                }
-                catch (Exception e)
-                {
-                    var message = "Could not find a compatible version of MSBuild.\r\n\r\n" +
-                                  "Check that you have a valid installation with the required workloads, or go to [www.visualstudio.com/downloads](https://www.visualstudio.com/downloads) to install a new one.\r\n\r\n" +
-                                  e;
-                    builderOptions.Logger.Error(message);
-                    return BuildResultCode.BuildError;
-                }
-
                 var sessionLoadParameters = new PackageLoadParameters
                 {
                     AutoCompileProjects = !builderOptions.DisableAutoCompileProjects,
                     ExtraCompileProperties = builderOptions.ExtraCompileProperties,
                     RemoveUnloadableObjects = true,
+                    BuildConfiguration = builderOptions.ProjectConfiguration,
                 };
 
                 // Loads the root Package
@@ -100,14 +95,6 @@ namespace Xenko.Core.Assets.CompilerApp
 
                 // Check build configuration
                 var package = projectSession.LocalPackages.Last();
-
-                // Check build profile
-                var buildProfile = package.Profiles.FirstOrDefault(pair => pair.Name == builderOptions.BuildProfile);
-                if (buildProfile == null)
-                {
-                    builderOptions.Logger.Error($"Unable to find profile [{builderOptions.BuildProfile}] in package [{package.FullPath}]");
-                    return BuildResultCode.BuildError;
-                }
 
                 // Setup variables
                 var buildDirectory = builderOptions.BuildDirectory;
@@ -124,7 +111,6 @@ namespace Xenko.Core.Assets.CompilerApp
                 // Create context
                 context = new AssetCompilerContext
                 {
-                    Profile = builderOptions.BuildProfile,
                     Platform = builderOptions.Platform,
                     CompilationContext = typeof(AssetCompilationContext),
                     BuildConfiguration = builderOptions.ProjectConfiguration
@@ -151,8 +137,8 @@ namespace Xenko.Core.Assets.CompilerApp
                 var remoteBuilderHelper = new PackageBuilderRemoteHelper(projectSession.AssemblyContainer, builderOptions);
 
                 // Create the builder
-                var indexName = "index." + builderOptions.BuildProfile;
-                builder = new Builder(builderOptions.Logger, buildDirectory, builderOptions.BuildProfile, indexName) { ThreadCount = builderOptions.ThreadCount, TryExecuteRemote = remoteBuilderHelper.TryExecuteRemote };
+                var indexName = "index." + package.Meta.Name;
+                builder = new Builder(builderOptions.Logger, buildDirectory, indexName) { ThreadCount = builderOptions.ThreadCount, TryExecuteRemote = remoteBuilderHelper.TryExecuteRemote };
 
                 builder.MonitorPipeNames.AddRange(builderOptions.MonitorPipeNames);
 
@@ -165,7 +151,7 @@ namespace Xenko.Core.Assets.CompilerApp
 
                 // Fill list of bundles
                 var bundlePacker = new BundlePacker();
-                bundlePacker.Build(builderOptions.Logger, projectSession, buildProfile, indexName, outputDirectory, builder.DisableCompressionIds, context.GetCompilationMode() != CompilationMode.AppStore);
+                bundlePacker.Build(builderOptions.Logger, projectSession, indexName, outputDirectory, builder.DisableCompressionIds, context.GetCompilationMode() != CompilationMode.AppStore);
 
                 return result;
             }
@@ -179,39 +165,6 @@ namespace Xenko.Core.Assets.CompilerApp
                 // Make sure that MSBuild doesn't hold anything else
                 VSProjectHelper.Reset();
             }
-        }
-
-        private BuildResultCode BuildGetGraphicsPlatform()
-        {
-            var localLogger = new LoggerResult();
-            var simplePackage = Package.Load(localLogger, builderOptions.PackageFile, new PackageLoadParameters
-            {
-                AutoLoadTemporaryAssets = true,
-                LoadAssemblyReferences = false,
-                AutoCompileProjects = false,
-                TemporaryAssetFilter = (asset) => asset.AssetLocation == GameSettingsAsset.GameSettingsLocation,
-                TemporaryAssetsInMsbuild = false,
-            });
-
-            if (simplePackage == null
-                || localLogger.HasErrors)
-            {
-                localLogger.CopyTo(builderOptions.Logger);
-                return BuildResultCode.BuildError;
-            }
-
-            var settings = simplePackage.GetGameSettingsAsset();
-            var renderingSettings = settings.GetOrCreate<RenderingSettings>();
-
-            var buildProfile = simplePackage.Profiles.FirstOrDefault(pair => pair.Name == builderOptions.BuildProfile);
-            if (buildProfile == null)
-            {
-                builderOptions.Logger.Error($"Package {builderOptions.PackageFile} did not contain platform {builderOptions.BuildProfile}");
-                return BuildResultCode.BuildError;
-            }
-
-            Console.WriteLine(RenderingSettings.GetGraphicsPlatform(builderOptions.Platform, renderingSettings.PreferredGraphicsPlatform));
-            return BuildResultCode.Successful;
         }
 
         private void RegisterBuildStepProcessedHandler(object sender, AssetCompiledArgs e)
@@ -409,7 +362,7 @@ namespace Xenko.Core.Assets.CompilerApp
             }
 
             var address = "net.pipe://localhost/" + Guid.NewGuid();
-            var arguments = $"--slave=\"{address}\" --build-path=\"{builderOptions.BuildDirectory}\" --profile=\"{builderOptions.BuildProfile}\"";
+            var arguments = $"--slave=\"{address}\" --build-path=\"{builderOptions.BuildDirectory}\"";
 
             using (var debugger = VisualStudioDebugger.GetAttached())
             {

@@ -1,6 +1,6 @@
-﻿<Project>
+<Project>
   <Import Project="..\..\targets\Xenko.Core.PreSettings.targets" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   <PropertyGroup>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
@@ -21,38 +21,23 @@
     <Compile Include="..\..\shared\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="..\Xenko.Core.Serialization\IO\NativeLockFile.cs">
+    <Compile Include="..\Xenko.Core.IO\NativeLockFile.cs">
       <Link>Windows\NativeLockFile.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Xenko.Core.Mathematics\Xenko.Core.Mathematics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Core.MicroThreading\Xenko.Core.MicroThreading.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Core.Reflection\Xenko.Core.Reflection.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Core.Yaml\Xenko.Core.Yaml.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Core\Xenko.Core.csproj">
-      <Private>False</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\Xenko.Core.Mathematics\Xenko.Core.Mathematics.csproj" />
+    <ProjectReference Include="..\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj" />
+    <ProjectReference Include="..\Xenko.Core.Yaml\Xenko.Core.Yaml.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Setup.Configuration.Interop" Version="1.16.30" />
-    <PackageReference Include="SharpDX" Version="4.0.1" Condition="'$(TargetFramework)' == 'uap10.0'" />
+    <PackageReference Include="SharpDX" Version="4.0.1" />
+    <PackageReference Include="System.Management" Version="4.5.0" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Management" />
   </ItemGroup>
   
   <Import Project="$(XenkoPostSettingsTargets)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
 
 </Project>

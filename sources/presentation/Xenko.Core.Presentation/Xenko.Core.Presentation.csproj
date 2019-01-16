@@ -1,7 +1,7 @@
 <Project>
 
   <Import Project="..\..\targets\Xenko.Core.PreSettings.targets" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
 
   <PropertyGroup>
     <XenkoBuildTags>WindowsTools</XenkoBuildTags>
@@ -50,24 +50,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\core\Xenko.Core.Design\Xenko.Core.Design.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Reflection\Xenko.Core.Reflection.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Mathematics\Xenko.Core.Mathematics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Translation\Xenko.Core.Translation.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\presentation\Xenko.Core.Translation.Presentation\Xenko.Core.Translation.Presentation.csproj">
-      <Private>False</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\..\core\Xenko.Core.Design\Xenko.Core.Design.csproj" />
+    <ProjectReference Include="..\..\presentation\Xenko.Core.Translation.Presentation\Xenko.Core.Translation.Presentation.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -90,10 +74,20 @@
   </ItemGroup>
 
   <Import Project="$(XenkoPostSettingsTargets)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
 
   <PropertyGroup>
     <PostBuildEvent>Path=$(MSBuildBinPath)\Roslyn;$(Path)
+IF EXIST "$(SolutionDir)..\sources\localization\fr\$(TargetName).fr.po" $(SolutionDir)..\deps\Gettext.Net\GNU.Gettext.Msgfmt.exe --lib-dir $(SolutionDir)..\deps\Gettext.Net --resource $(TargetName) -d $(TargetDir) --locale fr "$(SolutionDir)..\sources\localization\fr\$(TargetName).fr.po" --verbose
 IF EXIST "$(SolutionDir)..\sources\localization\ja\$(TargetName).ja.po" $(SolutionDir)..\deps\Gettext.Net\GNU.Gettext.Msgfmt.exe --lib-dir $(SolutionDir)..\deps\Gettext.Net --resource $(TargetName) -d $(TargetDir) --locale ja "$(SolutionDir)..\sources\localization\ja\$(TargetName).ja.po" --verbose</PostBuildEvent>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeExtraAssemblies</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+  <Target Name="IncludeExtraAssemblies">
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(OutputPath)System.Windows.Interactivity.dll" />
+    </ItemGroup>
+  </Target>
 </Project>

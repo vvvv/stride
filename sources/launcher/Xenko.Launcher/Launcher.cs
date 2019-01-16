@@ -99,11 +99,6 @@ namespace Xenko.LauncherApp
                     result.Actions.Clear();
                     result.Actions.Add(LauncherArguments.ActionType.Uninstall);
                 }
-                else if (string.Equals(arg, "/UpdateTargets", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    // UpdateTargets should be run first.
-                    result.Actions.Insert(0, LauncherArguments.ActionType.UpdateTargets);
-                }
             }
 
             return result;
@@ -118,9 +113,6 @@ namespace Xenko.LauncherApp
                 {
                     case LauncherArguments.ActionType.Run:
                         result = TryRun();
-                        break;
-                    case LauncherArguments.ActionType.UpdateTargets:
-                        result = ForceUpdateTargets();
                         break;
                     case LauncherArguments.ActionType.Uninstall:
                         result = Uninstall();
@@ -163,7 +155,7 @@ namespace Xenko.LauncherApp
         {
             try
             {
-                // Setup the XenkoDir to make sure that it is passed to the underlying process (msbuild...etc.)
+                // Only needed for Xenko up to 2.x (and possibly 3.0): setup the XenkoDir to make sure that it is passed to the underlying process (msbuild...etc.)
                 Environment.SetEnvironmentVariable("SiliconStudioXenkoDir", AppDomain.CurrentDomain.BaseDirectory);
                 Environment.SetEnvironmentVariable("XenkoDir", AppDomain.CurrentDomain.BaseDirectory);
 
@@ -191,23 +183,6 @@ namespace Xenko.LauncherApp
             }
         }
 
-        private static LauncherErrorCode ForceUpdateTargets()
-        {
-            try
-            {
-                // Force update targets
-                var store = InitializeNugetStore();
-                store.UpdateTargets();
-                return LauncherErrorCode.Success;
-            }
-            catch
-            {
-                // TODO: localize
-                MessageBox.Show("Target files couldn't be updated.", "Xenko", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-                return LauncherErrorCode.ErrorUpdatingTargetFiles;
-            }
-        }
-
         private static LauncherErrorCode Uninstall()
         {
             try
@@ -219,7 +194,7 @@ namespace Xenko.LauncherApp
 
                 // Uninstall packages (they might have uninstall actions)
                 var store = new NugetStore(path);
-                foreach (var package in store.MainPackageIds.SelectMany(store.GetLocalPackages).ToList())
+                foreach (var package in store.MainPackageIds.SelectMany(store.GetLocalPackages).FilterXenkoMainPackages().ToList())
                 {
                     store.UninstallPackage(package, null).Wait();
                 }

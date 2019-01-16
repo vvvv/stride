@@ -25,7 +25,7 @@ using Xenko.Graphics;
 namespace Xenko.Assets
 {
 #if XENKO_SUPPORT_BETA_UPGRADE
-    [PackageUpgrader(XenkoConfig.PackageName, "1.10.0-alpha01", CurrentVersion)]
+    [PackageUpgrader(new[] { XenkoConfig.PackageName, "Xenko.Core", "Xenko.Engine" }, "1.10.0-alpha01", CurrentVersion)]
 #else
     [PackageUpgrader(XenkoConfig.PackageName, "2.0.0.0", CurrentVersion)]
 #endif
@@ -417,98 +417,63 @@ namespace Xenko.Assets
 
         public override bool UpgradeBeforeAssembliesLoaded(PackageLoadParameters loadParameters, PackageSession session, ILogger log, Package dependentPackage, PackageDependency dependency, Package dependencyPackage)
         {
-            if (dependency.Version.MinVersion < new PackageVersion("2.3.0.1-dev"))
-            {
-                var sharedProjects = dependentPackage.Profiles.FindSharedProfile().ProjectReferences;
-                var sharedProject = sharedProjects.FirstOrDefault(x => x.Type == ProjectType.Library);
-                if (sharedProject != null)
-                {
-                    var parameters = new PackageTemplateGeneratorParameters
-                    {
-                        Name = dependentPackage.Meta.Name,
-                        Namespace = dependentPackage.Meta.RootNamespace,
-                        Description = TemplateManager.FindTemplates().Single(x => x.Id == UpdatePlatformsTemplateId),
-                        OutputDirectory = dependentPackage.FullPath.GetFullDirectory(),
-                        Logger = new ForwardingLoggerResult(log),
-                        Unattended = true,
-                    };
-
-                    var existingPlatforms = new HashSet<PlatformType>(dependentPackage.Profiles.Select(x => x.Platform).Distinct());
-                    var platforms = AssetRegistry.SupportedPlatforms.Where(x => existingPlatforms.Contains(x.Type)).Select(x => new SelectedSolutionPlatform(x, x.Templates.FirstOrDefault())).ToList();
-
-                    // Regenerate shared project
-                    for (var i = 0; i < sharedProjects.Count; i++)
-                    {
-                        var project = sharedProjects[i];
-                        var projectGameReference = ProjectTemplateGeneratorHelper.GenerateTemplate(parameters, platforms, dependentPackage,
-                            i == 0 ? "ProjectLibrary.Game/ProjectLibrary.Game.ttproj" : "ProjectLibrary/ProjectLibrary.ttproj",
-                            project.Location.GetFileNameWithoutExtension(), PlatformType.Shared, null, null, ProjectType.Library, DisplayOrientation.Default, project.Id);
-                    }
-
-                    // Regenerate executable projects
-                    ProjectTemplateGeneratorHelper.UpdatePackagePlatforms(parameters, platforms, DisplayOrientation.Default, sharedProject.Id, parameters.Name, dependentPackage, true);
-
-                    // Make sure paths are rooted
-                    foreach (var project in dependentPackage.Profiles.SelectMany(x => x.ProjectReferences))
-                    {
-                        if (!project.Location.IsAbsolute)
-                            project.Location = UPath.Combine(dependentPackage.FullPath.GetFullDirectory(), project.Location);
-                    }
-
-                    // Delete files that are not needed anymore
-                    var filesToDelete = new List<string>();
-                    filesToDelete.Add(UPath.Combine(dependentPackage.FullPath.GetParent(), (UFile)(dependentPackage.FullPath.GetFileNameWithoutExtension() + ".props")));
-                    foreach (var profile in dependentPackage.Profiles)
-                    {
-                        foreach (var project in profile.ProjectReferences)
-                        {
-                            // Do we use the new csproj format?
-                            var filesToDeleteCurrentProject = profile.Platform == PlatformType.Shared || profile.Platform == PlatformType.Windows
-                                ? new[] { "project.json", "project.lock.json", @"Properties\AssemblyInfo.cs" }
-                                : new[] { "project.json", "project.lock.json" };
-
-                            foreach (var file in filesToDeleteCurrentProject)
-                            {
-                                filesToDelete.Add(Path.Combine(project.Location.GetFullDirectory().ToWindowsPath(), file));
-                            }
-                        }
-                    }
-
-                    foreach (var file in filesToDelete)
-                    {
-                        try
-                        {
-                            if (File.Exists(file))
-                                File.Delete(file);
-                        }
-                        catch (Exception)
-                        {
-                            log.Warning($"Unable to delete file [{file}]");
-                        }
-                    }
-                }
-            }
-
             if (dependency.Version.MinVersion < new PackageVersion("3.0.0.0"))
             {
                 UpgradeCode(dependentPackage, log, new RenameToXenkoCodeUpgrader());
             }
 
             // Update NuGet references
-            foreach (var projectReference in dependentPackage.Profiles.SelectMany(x => x.ProjectReferences))
+            var projectFullPath = (dependentPackage.Container as SolutionProject)?.FullPath;
+            if (projectFullPath != null)
             {
                 try
                 {
-                    var projectFile = UPath.Combine(dependentPackage.FullPath.GetFullDirectory(), projectReference.Location);
-                    var project = VSProjectHelper.LoadProject(projectFile.ToWindowsPath());
+                    var project = VSProjectHelper.LoadProject(projectFullPath.ToWindowsPath());
                     var isProjectDirty = false;
 
                     var packageReferences = project.GetItems("PackageReference").ToList();
+
+                    // Upgrade from 3.0 to 3.1 (Xenko split in several nuget packages)
+                    if (dependency.Version.MinVersion < new PackageVersion("3.1.0.0"))
+                    {
+                        var xenkoReference = packageReferences.FirstOrDefault(packageReference => packageReference.EvaluatedInclude == "Xenko");
+                        if (xenkoReference != null)
+                        {
+                            var items = new List<Microsoft.Build.Evaluation.ProjectItem> { xenkoReference };
+
+                            // Turn Xenko reference into Xenko.Engine
+                            xenkoReference.UnevaluatedInclude = "Xenko.Engine";
+                            xenkoReference.SetMetadataValue("Version", CurrentVersion);
+
+                            // Add plugins (old Xenko is equivalent to a meta package with all plugins)
+                            items.AddRange(project.AddItem("PackageReference", "Xenko.Video", new[] { new KeyValuePair<string, string>("Version", CurrentVersion), new KeyValuePair<string, string>("PrivateAssets", "contentfiles;analyzers") }));
+                            items.AddRange(project.AddItem("PackageReference", "Xenko.Physics", new[] { new KeyValuePair<string, string>("Version", CurrentVersion), new KeyValuePair<string, string>("PrivateAssets", "contentfiles;analyzers") }));
+                            items.AddRange(project.AddItem("PackageReference", "Xenko.Navigation", new[] { new KeyValuePair<string, string>("Version", CurrentVersion), new KeyValuePair<string, string>("PrivateAssets", "contentfiles;analyzers") }));
+                            items.AddRange(project.AddItem("PackageReference", "Xenko.Particles", new[] { new KeyValuePair<string, string>("Version", CurrentVersion), new KeyValuePair<string, string>("PrivateAssets", "contentfiles;analyzers") }));
+                            items.AddRange(project.AddItem("PackageReference", "Xenko.UI", new[] { new KeyValuePair<string, string>("Version", CurrentVersion), new KeyValuePair<string, string>("PrivateAssets", "contentfiles;analyzers") }));
+                            // Necessary until "build" flows transitively
+                            items.AddRange(project.AddItem("PackageReference", "Xenko.Core", new[] { new KeyValuePair<string, string>("Version", CurrentVersion), new KeyValuePair<string, string>("PrivateAssets", "contentfiles;analyzers") }));
+
+                            // Asset compiler
+                            items.AddRange(project.AddItem("PackageReference", "Xenko.Core.Assets.CompilerApp", new[] { new KeyValuePair<string, string>("Version", CurrentVersion), new KeyValuePair<string, string>("PrivateAssets", "contentfiles;analyzers"), new KeyValuePair<string, string>("IncludeAssets", "build") }));
+
+                            foreach (var item in items)
+                            {
+                                foreach (var metadata in item.Metadata)
+                                    metadata.Xml.ExpressedAsAttribute = true;
+                            }
+
+                            isProjectDirty = true;
+                        }
+                    }
+
                     foreach (var packageReference in packageReferences)
                     {
-                        if (packageReference.EvaluatedInclude == "Xenko" && packageReference.GetMetadataValue("Version") != CurrentVersion)
+                        if (packageReference.EvaluatedInclude.StartsWith("Xenko.") && packageReference.GetMetadataValue("Version") != CurrentVersion)
                         {
-                            packageReference.SetMetadataValue("Version", CurrentVersion);
+                            packageReference.SetMetadataValue("Version", CurrentVersion).Xml.ExpressedAsAttribute = true;
+                            foreach (var metadata in packageReference.Metadata)
+                                metadata.Xml.ExpressedAsAttribute = true;
                             isProjectDirty = true;
                         }
                     }
@@ -521,22 +486,7 @@ namespace Xenko.Assets
                 }
                 catch (Exception e)
                 {
-                    log.Warning($"Unable to load project [{projectReference.Location.GetFileName()}]", e);
-                }
-            }
-
-            // Run NuGet restore
-            if (loadParameters.AutoCompileProjects)
-            {
-                if (session.SolutionPath != null)
-                {
-                    // .sln needs to be up to date -> save everything
-                    session.Save(new ForwardingLoggerResult(log));
-                    VSProjectHelper.RestoreNugetPackages(log, session.SolutionPath).Wait();
-                }
-                else
-                {
-                    dependentPackage.RestoreNugetPackages(log);
+                    log.Warning($"Unable to load project [{projectFullPath.GetFileName()}]", e);
                 }
             }
 

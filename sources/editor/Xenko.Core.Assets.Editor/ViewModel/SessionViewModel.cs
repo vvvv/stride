@@ -48,11 +48,11 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
         private readonly IUndoRedoService undoRedoService;
         private readonly Dictionary<string, PackageCategoryViewModel> packageCategories = new Dictionary<string, PackageCategoryViewModel>();
-        private readonly Dictionary<PackageViewModel, Package> packageMap = new Dictionary<PackageViewModel, Package>();
+        private readonly Dictionary<PackageViewModel, PackageContainer> packageMap = new Dictionary<PackageViewModel, PackageContainer>();
         private readonly ConcurrentDictionary<AssetId, AssetViewModel> assetIdMap = new ConcurrentDictionary<AssetId, AssetViewModel>();
         private bool sessionStateUpdating;
 
-        private PackageViewModel currentPackage;
+        private ProjectViewModel currentProject;
         private readonly PackageSession session;
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
         public UFile SolutionPath => session.SolutionPath;
 
-        public UFile SessionFilePath => SolutionPath ?? LocalPackages.First().PackagePath;
+        public UFile SessionFilePath => SolutionPath;
 
         public IObservableCollection<PackageViewModel> StorePackages => PackageCategories[StorePackageCategoryName].Content;
 
@@ -134,7 +134,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
         /// Gets the current active project for build/startup operations.
         /// </summary>
         // TODO: this property should become cancellable to maintain action stack consistency! Undoing a "mark as root" operation after changing the current package wouldn't work.
-        public PackageViewModel CurrentPackage { get => currentPackage; private set { var oldValue = currentPackage;  SetValueUncancellable(ref currentPackage, value, () => UpdateCurrentPackage(oldValue, value)); } }
+        public ProjectViewModel CurrentProject { get => currentProject; private set { var oldValue = currentProject;  SetValueUncancellable(ref currentProject, value, () => UpdateCurrentProject(oldValue, value)); } }
 
         [NotNull]
         public ThumbnailsViewModel Thumbnails { get; }
@@ -153,9 +153,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
         public ICommandBase SaveSessionCommand { get; }
 
-        public ICommandBase NewPackageCommand { get; }
-
-        public ICommandBase AddExistingPackageCommand { get; }
+        public ICommandBase NewProjectCommand { get; }
 
         public ICommandBase AddExistingProjectCommand { get; }
 
@@ -180,7 +178,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
         public ICommandBase OpenSourceFileCommand { get; }
 
-        public ICommandBase SetCurrentPackageCommand { get; }
+        public ICommandBase SetCurrentProjectCommand { get; }
 
         public ICommandBase EditSelectedContentCommand { get; }
 
@@ -266,7 +264,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
             var solutionDir = hasSolutionlocation ? newSessionParameters.SolutionLocation : baseOutputDir;
             // Output dir is Output/Name/Name
-            var outputDir = hasSolutionlocation ? baseOutputDir : UPath.Combine<UDirectory>(baseOutputDir, Xenko.Utilities.BuildValidNamespaceName(newSessionParameters.OutputName));
+            var outputDir = baseOutputDir;
 
             var parameters = new SessionTemplateGeneratorParameters
             {
@@ -326,7 +324,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
                 sessionViewModel.LoadAssetsFromPackages(loggerResult, workProgress);
 
                 // Automatically select a start-up package.
-                sessionViewModel.AutoSelectCurrentPackage();
+                sessionViewModel.AutoSelectCurrentProject();
 
                 // Copy the result of the asset loading to the log panel.
                 sessionViewModel.AssetLog.AddLogger(LogKey.Get("Session"), loggerResult);
@@ -398,7 +396,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
                 }
                 catch (Exception e)
                 {
-                    sessionResult.Error(string.Format(Tr._p("Log", "There was a problem opening the solution."), e));
+                    sessionResult.Error(string.Format(Tr._p("Log", "There was a problem opening the solution.")), e);
                     result = null;
                 }
                 return result;
@@ -414,7 +412,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             // Register the node container to the copy/paste service.
             sessionViewModel.ServiceProvider.Get<CopyPasteService>().PropertyGraphContainer = sessionViewModel.GraphContainer;
 
-            sessionViewModel.AutoSelectCurrentPackage();
+            sessionViewModel.AutoSelectCurrentProject();
 
             // Now resize the undo stack to the correct size.
             undoRedoService.Resize(200);
@@ -440,7 +438,6 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             return new PackageLoadParameters
             {
                 CancelToken = cancellationSource.Token,
-                ForceNugetRestore = true,
                 PackageUpgradeRequested = (package, pendingUpgrades) =>
                 {
                     // Generate message (in markdown, so we need to double line feeds)
@@ -451,7 +448,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
                     foreach (var pendingUpgrade in pendingUpgrades)
                     {
-                        message.AppendLine(string.Format(Tr._p("Message", "- Dependency to **{0}** must be upgraded from version **{1}** to **{2}**"), pendingUpgrade.Dependency.Name, pendingUpgrade.Dependency.Version, pendingUpgrade.DependencyPackage.Meta.Version));
+                        message.AppendLine(string.Format(Tr._p("Message", "- Dependency to **{0}** must be upgraded from version **{1}** to **{2}**"), pendingUpgrade.Dependency.Name, pendingUpgrade.Dependency.Version, pendingUpgrade.PackageUpgrader.Attribute.UpdatedVersionRange.MinVersion));
                     }
 
                     message.AppendLine();
@@ -493,12 +490,12 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             base.Destroy();
         }
 
-        private void AutoSelectCurrentPackage()
+        private void AutoSelectCurrentProject()
         {
-            var currentProject = LocalPackages.SelectMany(x => x.Content).OfType<ProjectViewModel>().FirstOrDefault(x => x.Type == ProjectType.Executable && x.Profile.Platform == PlatformType.Windows);
+            var currentProject = LocalPackages.OfType<ProjectViewModel>().FirstOrDefault(x => x.Type == ProjectType.Executable && x.Platform == PlatformType.Windows) ?? LocalPackages.FirstOrDefault();
             if (currentProject != null)
             {
-                SetCurrentPackage(currentProject.Package);
+                SetCurrentProject(currentProject);
             }
         }
 
@@ -573,8 +570,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
             // Initialize commands
             SaveSessionCommand = new AnonymousTaskCommand(ServiceProvider, SaveSession);
-            NewPackageCommand = new AnonymousTaskCommand(ServiceProvider, NewPackage);
-            AddExistingPackageCommand = new AnonymousTaskCommand(ServiceProvider, AddExistingPackage);
+            NewProjectCommand = new AnonymousTaskCommand(ServiceProvider, NewProject);
             AddExistingProjectCommand = new AnonymousTaskCommand(ServiceProvider, AddExistingProject);
             ActivatePackagePropertiesCommand = new AnonymousTaskCommand(ServiceProvider, async () => { var directory = ActiveAssetView.GetSelectedDirectories(false).FirstOrDefault(); if (directory != null) await directory.Package.Properties.GenerateSelectionPropertiesAsync(directory.Package.Yield()); });
             OpenInIDECommand = new AnonymousTaskCommand<IDEInfo>(ServiceProvider, OpenInIDE);
@@ -586,7 +582,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             OpenWithTextEditorCommand = new AnonymousTaskCommand<AssetViewModel>(ServiceProvider, OpenWithTextEditor);
             OpenAssetFileCommand = new AnonymousTaskCommand<AssetViewModel>(ServiceProvider, OpenAssetFile);
             OpenSourceFileCommand = new AnonymousTaskCommand<AssetViewModel>(ServiceProvider, OpenSourceFile);
-            SetCurrentPackageCommand = new AnonymousCommand(ServiceProvider, SetCurrentPackage);
+            SetCurrentProjectCommand = new AnonymousCommand(ServiceProvider, SetCurrentProject);
             EditSelectedContentCommand = new AnonymousCommand(ServiceProvider, EditSelectedAsset);
             ToggleIsRootOnSelectedAssetCommand = new AnonymousCommand(ServiceProvider, ToggleIsRootOnSelectedAsset);
             PreviousSelectionCommand = new AnonymousCommand(serviceProvider, () => { ServiceProvider.Get<SelectionService>().NavigateBackward(); UpdateSelectionCommands(); });
@@ -596,7 +592,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             PackageCategories.ForEach(x => x.Value.Content.CollectionChanged += PackageCollectionChanged);
 
             // Create package view models
-            session.Packages.ForEach(x => CreatePackageViewModel(x, true));
+            session.Projects.ForEach(x => CreateProjectViewModel(x, true));
 
             // Initialize other sub view models
             Thumbnails = new ThumbnailsViewModel(this);
@@ -606,13 +602,6 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
         public void PluginsInitialized()
         {
-            // Select the first package of the session
-            var packageToSelect = CurrentPackage ?? LocalPackages.FirstOrDefault();
-            Dispatcher.InvokeAsync(() =>
-            {
-                ActiveAssetView.SelectedLocations.Clear();
-                ActiveAssetView.SelectedLocations.Add(packageToSelect != null ? (object)packageToSelect : PackageCategories[LocalPackageCategoryName]);
-            });
             IsEditorInitialized = true;
         }
 
@@ -795,30 +784,21 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             }
             else if (package != null)
             {
-                var defaultProfile = package.DefaultProfile;
-                if (defaultProfile != null)
-                {
-                    path = defaultProfile.Package.Package.GetDefaultAssetFolder();
+                path = package.Package.GetDefaultAssetFolder();
 
-                    if (folder != null)
-                    {
-                        var dir = folder.Root is AssetMountPointViewModel ? new UDirectory(path.FullPath) : defaultProfile.Package.Package.RootDirectory;
-                        path = UPath.Combine(dir, new UDirectory(folder.Path));
-                    }
-                    else
-                    {
-                        var attrib = (AssetDescriptionAttribute)asset?.AssetType.GetCustomAttributes(typeof(AssetDescriptionAttribute), true).FirstOrDefault();
-                        if (attrib != null)
-                        {
-                            path = asset.AssetItem.FullPath;
-                            fileSelection = true;
-                        }
-                    }
+                if (folder != null)
+                {
+                    var dir = folder.Root is AssetMountPointViewModel ? new UDirectory(path.FullPath) : package.Package.RootDirectory;
+                    path = UPath.Combine(dir, new UDirectory(folder.Path));
                 }
                 else
                 {
-                    path = package.PackagePath;
-                    fileSelection = true;
+                    var attrib = (AssetDescriptionAttribute)asset?.AssetType.GetCustomAttributes(typeof(AssetDescriptionAttribute), true).FirstOrDefault();
+                    if (attrib != null)
+                    {
+                        path = asset.AssetItem.FullPath;
+                        fileSelection = true;
+                    }
                 }
             }
             else if (solution != null && solution.Content == LocalPackages && !string.IsNullOrEmpty(SolutionPath))
@@ -893,7 +873,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
                 }
                 catch (Exception e)
                 {
-                    sessionResult.Error(string.Format(Tr._p("Log", "There was a problem saving the solution. {0}"), e));
+                    sessionResult.Error(string.Format(Tr._p("Log", "There was a problem saving the solution. {0}"), e.Message), e);
                 }
             });
 
@@ -1048,45 +1028,56 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             return IsDirty || LocalPackages.Any(package => package.IsDirty || package.Assets.Any(asset => asset.IsDirty));
         }
 
-        private PackageViewModel CreatePackageViewModel(Package package, bool packageAlreadyInSession)
+        private PackageViewModel CreateProjectViewModel(PackageContainer packageContainer, bool packageAlreadyInSession)
         {
-            var packageViewModel = new PackageViewModel(this, package, packageAlreadyInSession);
-            packageMap.Add(packageViewModel, package);
-            session.Packages.Add(package);
-            return packageViewModel;
+            switch (packageContainer)
+            {
+                case SolutionProject project:
+                {
+                    var packageContainerViewModel = new ProjectViewModel(this, project, packageAlreadyInSession);
+                    packageMap.Add(packageContainerViewModel, project);
+                    if (!packageAlreadyInSession)
+                        session.Projects.Add(project);
+                    return packageContainerViewModel;
+                }
+                case StandalonePackage standalonePackage:
+                {
+                    var packageContainerViewModel = new PackageViewModel(this, standalonePackage, packageAlreadyInSession);
+                    packageMap.Add(packageContainerViewModel, standalonePackage);
+                    if (!packageAlreadyInSession)
+                        session.Projects.Add(standalonePackage);
+                    return packageContainerViewModel;
+                }
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(packageContainer));
+            }
         }
 
-        private void SetCurrentPackage(object selectedItem)
+        private void SetCurrentProject(object selectedItem)
         {
-            var package = selectedItem as PackageViewModel;
-            if (package == null || !package.HasExecutables)
+            var project = selectedItem as ProjectViewModel;
+            if (project == null)
             {
                 // Editor.MessageBox(Resources.Strings.SessionViewModel.SelectExecutableAsCurrentProject, MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            // Set the selected profile for the package (don't reset it if it is already set. This behavior could change)
-            if (package.SelectedProfile == null)
-            {
-                package.SelectedProfile = package.DefaultProfile;
-            }
-
-            CurrentPackage = package;
+            CurrentProject = project;
             AllAssets.ForEach(x => x.Dependencies.NotifyRootAssetChange(false));
             SelectionIsRoot = ActiveAssetView.SelectedAssets.All(x => x.Dependencies.IsRoot);
         }
 
-        private void UpdateCurrentPackage(PackageViewModel oldValue, PackageViewModel newValue)
+        private void UpdateCurrentProject(ProjectViewModel oldValue, ProjectViewModel newValue)
         {
             if (oldValue != null)
             {
-                oldValue.IsCurrentPackage = false;
+                oldValue.IsCurrentProject = false;
             }
             if (newValue != null)
             {
-                newValue.IsCurrentPackage = true;
+                newValue.IsCurrentProject = true;
             }
-            ToggleIsRootOnSelectedAssetCommand.IsEnabled = CurrentPackage != null;
+            ToggleIsRootOnSelectedAssetCommand.IsEnabled = CurrentProject != null;
             UpdateSessionState();
         }
 
@@ -1099,23 +1090,23 @@ namespace Xenko.Core.Assets.Editor.ViewModel
         {
             if (e.Action == NotifyCollectionChangedAction.Reset)
             {
-                session.Packages.RemoveWhere(x => !x.IsSystem);
+                session.Projects.RemoveWhere(x => !x.Package.IsSystem);
             }
             if (e.NewItems != null)
             {
                 // When a PackageViewModel is built, we will add it before the Package instance is added to the package map.
                 // So we can't assume that the view model will always exists in the packageMap.
-                packageMap.Where(x => e.NewItems.Cast<PackageViewModel>().Contains(x.Key)).ForEach(x => session.Packages.Add(x.Value));
+                packageMap.Where(x => e.NewItems.Cast<PackageViewModel>().Contains(x.Key)).ForEach(x => session.Projects.Add(x.Value));
             }
-            e.OldItems?.Cast<PackageViewModel>().Select(x => packageMap[x]).ForEach(x => session.Packages.Remove(x));
+            e.OldItems?.Cast<PackageViewModel>().Select(x => packageMap[x]).ForEach(x => session.Projects.Remove(x));
         }
 
-        private async Task NewPackage()
+        private async Task NewProject()
         {
             var loggerResult = new LoggerResult();
 
             // Display the template dialog to let the user select which template he want to use.
-            var templateDialog = ServiceProvider.Get<IEditorDialogService>().CreateNewPackageDialog(this);
+            var templateDialog = ServiceProvider.Get<IEditorDialogService>().CreateNewProjectDialog(this);
             templateDialog.DefaultOutputDirectory = SolutionPath.GetFullDirectory();
             var dialogResult = await templateDialog.ShowModal();
 
@@ -1124,20 +1115,17 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
             var workProgress = new WorkProgressViewModel(ServiceProvider, loggerResult)
             {
-                Title = Tr._p("Title", "Creating package..."),
+                Title = Tr._p("Title", "Creating project..."),
                 KeepOpen = KeepOpen.OnWarningsOrErrors,
                 IsIndeterminate = true,
                 IsCancellable = false
             };
             workProgress.RegisterProgressStatus(loggerResult, true);
 
-            // Output dir is Output/Name
-            var outputDir = UPath.Combine<UDirectory>(templateDialog.Parameters.OutputDirectory, Xenko.Utilities.BuildValidNamespaceName(templateDialog.Parameters.OutputName));
-
             var parameters = new SessionTemplateGeneratorParameters
             {
                 Name = templateDialog.Parameters.OutputName,
-                OutputDirectory = outputDir,
+                OutputDirectory = templateDialog.Parameters.OutputDirectory,
                 Description = templateDialog.Parameters.TemplateDescription,
                 Session = session,
                 Logger = loggerResult,
@@ -1154,41 +1142,33 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             // Set the range of the work in progress according to the created assets
             workProgress.Minimum = 0;
             workProgress.ProgressValue = 0;
-            workProgress.Maximum = session.LocalPackages.Where(x => !packageMap.ContainsValue(x)).Sum(x => x.Assets.Count);
+            workProgress.Maximum = session.Projects.OfType<SolutionProject>().Where(x => !packageMap.ContainsValue(x)).Sum(x => x.Package.Assets.Count);
 
-            var newPackages = new List<PackageViewModel>();
             // This action is uncancellable - In case of errors, we still try to create view models to match what is currently in the PackageSession, but the template has responsibility to clean itself up in case of failure.
             // TODO: check what is created here and try to avoid it
-            foreach (var package in session.LocalPackages.Where(x => !packageMap.ContainsValue(x)))
-            {
-                var viewModel = CreatePackageViewModel(package, true);
-                viewModel.LoadPackageInformation(loggerResult, workProgress);
-                newPackages.Add(viewModel);
-            }
+            ProcessAddedProjects(loggerResult, workProgress, true);
 
-            if (CurrentPackage == null)
-                AutoSelectCurrentPackage();
-
-            ProcessAddedPackages(newPackages);
+            if (CurrentProject == null)
+                AutoSelectCurrentProject();
 
             await workProgress.NotifyWorkFinished(false, loggerResult.HasErrors);
         }
 
-        private async Task AddExistingPackage()
+        private async Task AddExistingProject()
         {
             var fileDialog = ServiceProvider.Get<IEditorDialogService>().CreateFileOpenModalDialog();
-            fileDialog.Filters.Add(new FileDialogFilter("Package", EditorViewModel.PackageFileExtension));
+            fileDialog.Filters.Add(new FileDialogFilter("Visual Studio C# project", "csproj"));
             fileDialog.InitialDirectory = session.SolutionPath;
             var result = await fileDialog.ShowModal();
 
-            var packagePath = fileDialog.FilePaths.FirstOrDefault();
-            if (result == DialogResult.Ok && packagePath != null)
+            var projectPath = fileDialog.FilePaths.FirstOrDefault();
+            if (result == DialogResult.Ok && projectPath != null)
             {
                 var loggerResult = new LoggerResult();
 
                 var workProgress = new WorkProgressViewModel(ServiceProvider, loggerResult)
                 {
-                    Title = Tr._p("Title", "Importing package..."),
+                    Title = Tr._p("Title", "Importing project..."),
                     KeepOpen = KeepOpen.OnWarningsOrErrors,
                     IsIndeterminate = true,
                     IsCancellable = false
@@ -1204,7 +1184,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
                 {
                     try
                     {
-                        session.AddExistingPackage(packagePath, loggerResult, CreatePackageLoadParameters(workProgress, cancellationSource));
+                        session.AddExistingProject(projectPath, loggerResult, CreatePackageLoadParameters(workProgress, cancellationSource));
                     }
                     catch (Exception e)
                     {
@@ -1216,24 +1196,36 @@ namespace Xenko.Core.Assets.Editor.ViewModel
                 // Set the range of the work in progress according to the created assets
                 workProgress.Minimum = 0;
                 workProgress.ProgressValue = 0;
-                workProgress.Maximum = session.LocalPackages.Where(x => !packageMap.ContainsValue(x)).Sum(x => x.Assets.Count);
+                workProgress.Maximum = session.Projects.OfType<SolutionProject>().Where(x => !packageMap.ContainsValue(x)).Sum(x => x.Package.Assets.Count);
 
                 using (var transaction = UndoRedoService.CreateTransaction())
                 {
-                    var newPackages = new List<PackageViewModel>();
-                    foreach (var package in session.LocalPackages.Where(x => !packageMap.ContainsValue(x)))
-                    {
-                        var viewModel = CreatePackageViewModel(package, false);
-                        viewModel.LoadPackageInformation(loggerResult, workProgress);
-                        newPackages.Add(viewModel);
-                    }
-                    ProcessAddedPackages(newPackages);
-
-                    UndoRedoService.SetName(transaction, $"Import package '{new UFile(packagePath).GetFileNameWithoutExtension()}'");
+                    ProcessAddedProjects(loggerResult, workProgress, false);
+                    UndoRedoService.SetName(transaction, $"Import project '{new UFile(projectPath).GetFileNameWithoutExtension()}'");
                 }
 
                 // Notify that the task is finished
                 await workProgress.NotifyWorkFinished(cancellationSource.IsCancellationRequested, loggerResult.HasErrors);
+            }
+        }
+
+        internal void ProcessAddedProjects(LoggerResult loggerResult, WorkProgressViewModel workProgress, bool packageAlreadyInSession)
+        {
+            var newPackages = new List<PackageViewModel>();
+            foreach (var package in session.Projects.OfType<SolutionProject>().Where(x => !packageMap.ContainsValue(x)))
+            {
+                var viewModel = CreateProjectViewModel(package, packageAlreadyInSession);
+                viewModel.LoadPackageInformation(loggerResult, workProgress);
+                newPackages.Add(viewModel);
+            }
+            ProcessAddedPackages(newPackages);
+        }
+
+        internal void ProcessRemovedProjects()
+        {
+            foreach (var package in packageMap.Where(x => !session.Projects.Contains(x.Value)))
+            {
+                LocalPackages.Remove(package.Key);
             }
         }
 
@@ -1273,15 +1265,6 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             await selectedPackage.UpdatePackageTemplate(templateDescription);
         }
 
-        private async Task AddExistingProject()
-        {
-            PackageViewModel selectedPackage = await RequestSingleSelectedPackage();
-            if (selectedPackage == null)
-                return;
-
-            await selectedPackage.AddExistingProject();
-        }
-
         private async Task AddDependency()
         {
             var selectedPackage = await RequestSingleSelectedPackage();
@@ -1289,11 +1272,11 @@ namespace Xenko.Core.Assets.Editor.ViewModel
                 return;
 
             var packagePicker = Dialogs.CreatePackagePickerDialog(this);
-            // Filter out the selected package, packages that are dependent on the selected package,
-            // packages that are already referenced and (for the moment) forbid to add store package.
+            // Filter out the selected package, packages that are dependent on the selected package
+            // and packages that are already referenced.
             packagePicker.Filter = x =>
             {
-                return !(x == selectedPackage || !LocalPackages.Contains(x) || x.DependsOn(selectedPackage) ||
+                return !(x == selectedPackage || x.DependsOn(selectedPackage) ||
                          selectedPackage.Dependencies.Content.Select(r => r.Target).Contains(x));
             };
 
@@ -1434,31 +1417,30 @@ namespace Xenko.Core.Assets.Editor.ViewModel
                 return;
 
             var packageSelected = false;
-            var packageHasExecutables = false;
-            var dependenciesSelected = false;
+            var projectSelected = false;
             var directorySelected = false;
+            var canAddDependency = false;
             var canDelete = ActiveAssetView.SelectedLocations.Count > 0;
             var canRename = ActiveAssetView.SelectedLocations.Count > 0;
             foreach (var location in ActiveAssetView.SelectedLocations.Cast<SessionObjectViewModel>())
             {
-                var package = location as PackageViewModel;
-                if (package != null && package.IsEditable)
+                if (location is PackageViewModel package && package.IsEditable)
                 {
                     packageSelected = true;
-                    packageHasExecutables = package.HasExecutables;
+                    canAddDependency = true;
+                    projectSelected = package is ProjectViewModel;
                 }
                 if (location is DirectoryBaseViewModel)
                 {
-                    var project = location as ProjectViewModel;
-                    directorySelected = project == null || project.Type != ProjectType.Executable;
+                    directorySelected = true;
                 }
-                if (location is DependencyCategoryViewModel)
+                if (location is DependencyCategoryViewModel dependencies)
                 {
-                    dependenciesSelected = true;
+                    canAddDependency = dependencies.Parent.IsEditable;
                 }
-                if (location is PackageReferenceViewModel)
+                if (location is PackageReferenceViewModel packageReference)
                 {
-                    dependenciesSelected = true;
+                    canAddDependency = packageReference.Referencer.IsEditable;
                     canRename = false;
                 }
                 if (!location.IsEditable)
@@ -1470,11 +1452,10 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
             var asset = ActiveAssetView.SingleSelectedAsset;
 
-            NewPackageCommand.IsEnabled = !string.IsNullOrWhiteSpace(SolutionPath);
-            AddExistingProjectCommand.IsEnabled = packageSelected;
-            IsUpdatePackageEnabled = packageSelected && packageHasExecutables;
-            AddDependencyCommand.IsEnabled = packageSelected || dependenciesSelected;
-            SetCurrentPackageCommand.IsEnabled = packageHasExecutables;
+            NewProjectCommand.IsEnabled = !string.IsNullOrWhiteSpace(SolutionPath);
+            IsUpdatePackageEnabled = projectSelected;
+            AddDependencyCommand.IsEnabled = canAddDependency;
+            SetCurrentProjectCommand.IsEnabled = projectSelected;
             DeleteSelectedSolutionItemsCommand.IsEnabled = canDelete;
             ExploreCommand.IsEnabled = ActiveAssetView.SelectedContent.Count > 0 || ActiveAssetView.SelectedLocations.Count == 1;
             RenameDirectoryOrPackageCommand.IsEnabled = canRename;
@@ -1743,7 +1724,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
 
         private void ToggleIsRootOnSelectedAsset()
         {
-            if (CurrentPackage == null)
+            if (CurrentProject?.Package == null)
                 return;
 
             var currentValue = ActiveAssetView.SelectedAssets.All(x => x.Dependencies.IsRoot);
@@ -1751,7 +1732,7 @@ namespace Xenko.Core.Assets.Editor.ViewModel
             {
                 foreach (var selectedAsset in ActiveAssetView.SelectedAssets)
                 {
-                    if (CurrentPackage.IsInScope(selectedAsset))
+                    if (CurrentProject.IsInScope(selectedAsset))
                         selectedAsset.Dependencies.IsRoot = !currentValue;
                 }
                 UndoRedoService.SetName(transaction, "Change root assets");

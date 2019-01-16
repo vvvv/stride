@@ -36,9 +36,23 @@ namespace Xenko.Assets
             if (context.OptionProperties.TryGetValue("XenkoGraphicsApi", out graphicsApi))
                 return (GraphicsPlatform)Enum.Parse(typeof(GraphicsPlatform), graphicsApi);
 
-            // Ohterwise, use game settings, or default as fallback
-            var settings = package.GetGameSettingsAsset();
-            return settings == null ? context.Platform.GetDefaultGraphicsPlatform() : RenderingSettings.GetGraphicsPlatform(context.Platform, settings.GetOrCreate<RenderingSettings>(context.Profile).PreferredGraphicsPlatform);
+            if (context.OptionProperties.TryGetValue("RuntimeIdentifier", out var runtimeIdentifier))
+            {
+                if (runtimeIdentifier.Contains("-d3d11"))
+                    return GraphicsPlatform.Direct3D11;
+                else if (runtimeIdentifier.Contains("-d3d12"))
+                    return GraphicsPlatform.Direct3D12;
+                // Note: testing opengles before opengl since one string contains another
+                else if (runtimeIdentifier.Contains("-opengles"))
+                    return GraphicsPlatform.OpenGLES;
+                else if (runtimeIdentifier.Contains("-opengl"))
+                    return GraphicsPlatform.OpenGL;
+                else if (runtimeIdentifier.Contains("-vulkan"))
+                    return GraphicsPlatform.Vulkan;
+            }
+
+            // Ohterwise, use default as fallback
+            return context.Platform.GetDefaultGraphicsPlatform();
         }
 
         public static GraphicsPlatform GetDefaultGraphicsPlatform(this PlatformType platformType)
@@ -52,8 +66,9 @@ namespace Xenko.Assets
                 case PlatformType.iOS:
                     return GraphicsPlatform.OpenGLES;
                 case PlatformType.Linux:
-                case PlatformType.macOS:
                     return GraphicsPlatform.OpenGL;
+                case PlatformType.macOS:
+                    return GraphicsPlatform.Vulkan;
                 default:
                     throw new ArgumentOutOfRangeException();
             }

@@ -1,6 +1,6 @@
-﻿<Project>
+<Project>
   <Import Project="..\..\targets\Xenko.PreSettings.targets" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   <PropertyGroup>
     <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
     <XenkoAssemblyProcessorOptions>$(XenkoAssemblyProcessorDefaultOptions)</XenkoAssemblyProcessorOptions>
@@ -19,61 +19,29 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\assets\Xenko.Core.Assets\Xenko.Core.Assets.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\assets\Xenko.Core.Packages\Xenko.Core.Packages.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\buildengine\Xenko.Core.BuildEngine.Common\Xenko.Core.BuildEngine.Common.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Design\Xenko.Core.Design.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Mathematics\Xenko.Core.Mathematics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Yaml\Xenko.Core.Yaml.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\tools\Xenko.Importer.Assimp\Xenko.Importer.Assimp.vcxproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\tools\Xenko.Importer.Common\Xenko.Importer.Common.vcxproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\tools\Xenko.Importer.FBX\Xenko.Importer.FBX.vcxproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Assets\Xenko.Assets.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Engine\Xenko.Engine.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Games\Xenko.Games.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Graphics\Xenko.Graphics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Shaders\Xenko.Shaders.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko\Xenko.csproj">
-      <Private>False</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\..\tools\Xenko.Importer.Assimp\Xenko.Importer.Assimp.vcxproj" PrivateAssets="All" />
+    <ProjectReference Include="..\..\tools\Xenko.Importer.Common\Xenko.Importer.Common.vcxproj" PrivateAssets="All" />
+    <ProjectReference Include="..\..\tools\Xenko.Importer.FBX\Xenko.Importer.FBX.vcxproj" PrivateAssets="All" />
+    <ProjectReference Include="..\Xenko.Assets\Xenko.Assets.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Analysis\" />
   </ItemGroup>
   <Import Project="$(XenkoPostSettingsTargets)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
+
+  <PropertyGroup>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeExtraAssemblies</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+  <Target Name="IncludeExtraAssemblies">
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(OutputPath)Xenko.Importer.Assimp.dll" />
+      <BuildOutputInPackage Include="$(OutputPath)Xenko.Importer.Assimp.ssdeps" />
+      <BuildOutputInPackage Include="$(OutputPath)Xenko.Importer.FBX.dll" />
+      <BuildOutputInPackage Include="$(OutputPath)Xenko.Importer.FBX.ssdeps" />
+      <BuildOutputInPackage Include="$(OutputPath)Xenko.Importer.Common.dll" />
+      <TfmSpecificPackageFile Include="$(OutputPath)x64\assimp-vc120-mt.dll" PackagePath="lib\$(TargetFramework)\x64" />
+      <TfmSpecificPackageFile Include="$(OutputPath)x64\libfbxsdk.dll" PackagePath="lib\$(TargetFramework)\x64" />
+    </ItemGroup>
+  </Target>
 </Project>

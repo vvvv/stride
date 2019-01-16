@@ -1,14 +1,16 @@
 ﻿<Project>
+  <Import Project="..\..\sources\shared\Xenko.NuGetResolver\Xenko.NuGetResolver.projitems" Label="Shared" />
   <Import Project="..\..\sources\targets\Xenko.PreSettings.targets" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   <PropertyGroup>
-    <TargetFramework>net462</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <XenkoOutputFolder>Tests\$(AssemblyName)</XenkoOutputFolder>
     <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
     <XenkoAssemblyProcessorOptions>--auto-module-initializer</XenkoAssemblyProcessorOptions>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -24,10 +26,12 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\sources\assets\Xenko.Core.Assets\Xenko.Core.Assets.csproj" />
     <ProjectReference Include="..\..\sources\editor\Xenko.Assets.Presentation\Xenko.Assets.Presentation.csproj" />
+    <ProjectReference Include="..\..\sources\editor\Xenko.Samples.Templates\Xenko.Samples.Templates.csproj" />
     <ProjectReference Include="..\..\sources\engine\Xenko.Games.Testing\Xenko.Games.Testing.csproj" />
+    <ProjectReference Include="..\..\sources\tools\Xenko.ConnectionRouter\Xenko.ConnectionRouter.csproj" />
+    <ProjectReference Include="..\..\sources\tools\Xenko.SamplesTestServer\Xenko.SamplesTestServer.csproj" />
   </ItemGroup>
   <Import Project="$(XenkoPostSettingsTargets)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
 </Project>

@@ -58,7 +58,7 @@ namespace Xenko.Assets
                 base.ComputeParameterHash(writer);
 
                 // Hash used parameters from package
-                writer.Write(package.Id);
+                writer.Write(package.Meta.Name);
                 writer.Write(package.UserSettings.GetValue(GameUserSettings.Effect.EffectCompilation));
                 writer.Write(package.UserSettings.GetValue(GameUserSettings.Effect.RecordUsedEffects));
                 writer.Write(compilationMode);
@@ -71,7 +71,6 @@ namespace Xenko.Assets
             {
                 var result = new GameSettings
                 {
-                    PackageId = package.Id,
                     PackageName = package.Meta.Name,
                     DefaultSceneUrl = Parameters.DefaultScene != null ? AttachedReferenceManager.GetUrl(Parameters.DefaultScene) : null,
                     DefaultGraphicsCompositorUrl = Parameters.GraphicsCompositor != null ? AttachedReferenceManager.GetUrl(Parameters.GraphicsCompositor) : null,
@@ -104,7 +103,8 @@ namespace Xenko.Assets
                 result.Configurations.PlatformFilters = Parameters.PlatformFilters;
 
                 //make sure we modify platform specific files to set the wanted orientation
-                SetPlatformOrientation(package, platform, Parameters.GetOrCreate<RenderingSettings>().DisplayOrientation);
+                if (package.Container is SolutionProject solutionProject)
+                    SetPlatformOrientation(solutionProject, Parameters.GetOrCreate<RenderingSettings>().DisplayOrientation);
 
                 var assetManager = new ContentManager(MicrothreadLocalDatabases.ProviderService);
                 assetManager.Save(Url, result);
@@ -113,87 +113,79 @@ namespace Xenko.Assets
             }
         }
 
-        public static void SetPlatformOrientation(Package package, PlatformType platform, RequiredDisplayOrientation orientation)
+        public static void SetPlatformOrientation(SolutionProject project, RequiredDisplayOrientation orientation)
         {
-            foreach (var profile in package.Profiles)
+            switch (project.Platform)
             {
-                if (profile.Platform != platform) continue;
+                case PlatformType.Android:
+                    {
+                        if (project.FullPath == null) return;
 
-                switch (profile.Platform)
-                {
-                    case PlatformType.Android:
+                        var activityFileName = project.Name + "Activity.cs";
+                        var activityFile = UPath.Combine(project.FullPath.GetFullDirectory(), new UFile(activityFileName));
+                        if (!File.Exists(activityFile)) return;
+
+                        var activitySource = File.ReadAllText(activityFile);
+
+                        string orientationString;
+                        switch (orientation)
                         {
-                            var exeProjectLocation = profile.ProjectReferences.FirstOrDefault(x => x.Type == ProjectType.Executable);
-                            if (exeProjectLocation == null) continue;
+                            case RequiredDisplayOrientation.Default:
+                                orientationString = "Android.Content.PM.ScreenOrientation.Landscape";
+                                break;
+                            case RequiredDisplayOrientation.LandscapeLeft:
+                                orientationString = "Android.Content.PM.ScreenOrientation.Landscape";
+                                break;
+                            case RequiredDisplayOrientation.LandscapeRight:
+                                orientationString = "Android.Content.PM.ScreenOrientation.ReverseLandscape";
+                                break;
+                            case RequiredDisplayOrientation.Portrait:
+                                orientationString = "Android.Content.PM.ScreenOrientation.Portrait";
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException();
+                        }
 
-                            var path = exeProjectLocation.Location;
-                            var activityFileName = package.Meta.Name + "Activity.cs";
-                            var activityFile = UPath.Combine(path.GetFullDirectory(), new UFile(activityFileName));
-                            if (!File.Exists(activityFile)) continue;
+                        activitySource = Regex.Replace(activitySource, @"(\[Activity(?:.*[\n,\r]*)+?[\n,\r,\s]*ScreenOrientation\s*=\s*)([\w,\d,\.]+)(\s*,)", $"$1{orientationString}$3");
 
-                            var activitySource = File.ReadAllText(activityFile);
+                        File.WriteAllText(activityFile, activitySource);
+                    }
+                    break;
+                case PlatformType.iOS:
+                    {
+                        var exeProjectLocation = project.FullPath;
+                        if (exeProjectLocation == null) return;
 
-                            string orientationString;
+                        var plistFile = UPath.Combine(exeProjectLocation.GetFullDirectory(), new UFile("Info.plist"));
+                        if (!File.Exists(plistFile)) return;
+
+                        var xmlDoc = XDocument.Load(plistFile);
+                        var orientationKey = xmlDoc.Descendants("key").FirstOrDefault(x => x.Value == "UISupportedInterfaceOrientations");
+                        var orientationElement = ((XElement)orientationKey?.NextNode)?.Descendants("string").FirstOrDefault();
+                        if (orientationElement != null)
+                        {
                             switch (orientation)
                             {
                                 case RequiredDisplayOrientation.Default:
-                                    orientationString = "Android.Content.PM.ScreenOrientation.Landscape";
+                                    orientationElement.Value = "UIInterfaceOrientationLandscapeRight";
                                     break;
                                 case RequiredDisplayOrientation.LandscapeLeft:
-                                    orientationString = "Android.Content.PM.ScreenOrientation.Landscape";
+                                    orientationElement.Value = "UIInterfaceOrientationLandscapeLeft";
                                     break;
                                 case RequiredDisplayOrientation.LandscapeRight:
-                                    orientationString = "Android.Content.PM.ScreenOrientation.ReverseLandscape";
+                                    orientationElement.Value = "UIInterfaceOrientationLandscapeRight";
                                     break;
                                 case RequiredDisplayOrientation.Portrait:
-                                    orientationString = "Android.Content.PM.ScreenOrientation.Portrait";
+                                    orientationElement.Value = "UIInterfaceOrientationPortrait";
                                     break;
                                 default:
                                     throw new ArgumentOutOfRangeException();
                             }
-
-                            activitySource = Regex.Replace(activitySource, @"(\[Activity(?:.*[\n,\r]*)+?[\n,\r,\s]*ScreenOrientation\s*=\s*)([\w,\d,\.]+)(\s*,)", $"$1{orientationString}$3");
-
-                            File.WriteAllText(activityFile, activitySource);
                         }
-                        break;
-                    case PlatformType.iOS:
-                        {
-                            var exeProjectLocation = profile.ProjectReferences.FirstOrDefault(x => x.Type == ProjectType.Executable);
-                            if (exeProjectLocation == null) continue;
 
-                            var path = exeProjectLocation.Location;
-                            var plistFile = UPath.Combine(path.GetFullDirectory(), new UFile("Info.plist"));
-                            if (!File.Exists(plistFile)) continue;
-
-                            var xmlDoc = XDocument.Load(plistFile);
-                            var orientationKey = xmlDoc.Descendants("key").FirstOrDefault(x => x.Value == "UISupportedInterfaceOrientations");
-                            var orientationElement = ((XElement)orientationKey?.NextNode)?.Descendants("string").FirstOrDefault();
-                            if (orientationElement != null)
-                            {
-                                switch (orientation)
-                                {
-                                    case RequiredDisplayOrientation.Default:
-                                        orientationElement.Value = "UIInterfaceOrientationLandscapeRight";
-                                        break;
-                                    case RequiredDisplayOrientation.LandscapeLeft:
-                                        orientationElement.Value = "UIInterfaceOrientationLandscapeLeft";
-                                        break;
-                                    case RequiredDisplayOrientation.LandscapeRight:
-                                        orientationElement.Value = "UIInterfaceOrientationLandscapeRight";
-                                        break;
-                                    case RequiredDisplayOrientation.Portrait:
-                                        orientationElement.Value = "UIInterfaceOrientationPortrait";
-                                        break;
-                                    default:
-                                        throw new ArgumentOutOfRangeException();
-                                }
-                            }
-
-                            xmlDoc.Save(plistFile);
-                        }
-                        break;
-                }
+                        xmlDoc.Save(plistFile);
+                    }
+                    break;
             }
         }
     }

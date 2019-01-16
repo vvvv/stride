@@ -7,7 +7,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net462</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <PublishUrl>publish\</PublishUrl>
@@ -33,13 +33,14 @@
     <OutputPath>bin\Debug\</OutputPath>
     <Prefer32Bit>false</Prefer32Bit>
     <UseVSHostingProcess>false</UseVSHostingProcess>
+    <DefineConstants>TRACE;XENKO_LAUNCHER</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;XENKO_LAUNCHER</DefineConstants>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
@@ -50,16 +51,9 @@
     <None Remove="Announcements\Release30.md" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Xenko.Metrics" Version="1.0.0" />
+    <PackageReference Include="Xenko.CrashReport" Version="1.0.0" />
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\deps\Metrics\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="Xenko.CrashReport">
-      <HintPath>..\..\..\deps\Metrics\Xenko.CrashReport.dll</HintPath>
-    </Reference>
-    <Reference Include="Xenko.Metrics">
-      <HintPath>..\..\..\deps\Metrics\Xenko.Metrics.dll</HintPath>
-    </Reference>
     <Reference Include="System.Diagnostics.Debug" />
     <Reference Include="System.Management" />
     <Reference Include="System.Net.Http.Formatting">
@@ -82,6 +76,9 @@
   <ItemGroup>
     <Compile Include="..\..\assets\Xenko.Core.Assets\PackageSessionHelper.Solution.cs">
       <Link>Packages\PackageSessionHelper.Solution.cs</Link>
+    </Compile>
+    <Compile Include="..\..\assets\Xenko.Core.Assets\Package.Constants.cs">
+      <Link>Packages\Package.Constants.cs</Link>
     </Compile>
     <Compile Include="..\..\editor\Xenko.Core.Assets.Editor\EditorPath.cs">
       <Link>Editor\EditorPath.cs</Link>
@@ -137,7 +134,7 @@
     <Resource Include="Resources\switch-version.png" />
     <Resource Include="Resources\visual-studio.png" />
     <Resource Include="Resources\chat-16.png" />
-    <Resource Include="Resources\gitter.png" />
+    <Resource Include="Resources\discord.png" />
     <Resource Include="Resources\showcase.png" />
     <Resource Include="Resources\Robot.jpg" />
     <Resource Include="Resources\twitch.png" />
@@ -165,9 +162,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.6.2">
+    <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
       <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4.6.2 %28x86 and x64%29</ProductName>
+      <ProductName>Microsoft .NET Framework 4.7.2 %28x86 and x64%29</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
@@ -207,6 +204,7 @@
   <Import Project="..\..\editor\Xenko.Core.MostRecentlyUsedFiles\Xenko.Core.MostRecentlyUsedFiles.projitems" Label="Shared" />
   <Import Project="..\..\assets\Xenko.Core.Assets.Yaml\Xenko.Core.Assets.Yaml.projitems" Label="Shared" />
   <Import Project="..\..\editor\Xenko.Editor.CrashReport\Xenko.Editor.CrashReport.projitems" Label="Shared" />
+  <Import Project="..\..\targets\Xenko.Core.Sign.targets" />
   <!--   <Target Name="AfterResolveReferences">
     <ItemGroup>
       <EmbeddedResource Update="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'">

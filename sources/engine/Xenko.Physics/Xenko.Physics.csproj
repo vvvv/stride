@@ -2,15 +2,15 @@
 <Project>
   <PropertyGroup>
     <XenkoAssemblySign>true</XenkoAssemblySign>
+    <XenkoRuntime>true</XenkoRuntime>
   </PropertyGroup>
   <Import Project="..\..\targets\Xenko.PreSettings.targets" />
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
   <PropertyGroup>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
-    <TargetFramework>$(TargetFramework)</TargetFramework>
     <XenkoAssemblyProcessorOptions>--serialization --parameter-key</XenkoAssemblyProcessorOptions>
     <XenkoBuildTags>*</XenkoBuildTags>
     <XenkoBulletPlatform>Windows</XenkoBulletPlatform>
@@ -18,15 +18,6 @@
     <XenkoBulletSignedDir Condition="'$(XenkoSign)' == 'true'">Signed\</XenkoBulletSignedDir>
     <XenkoCodeAnalysis>true</XenkoCodeAnalysis>
   </PropertyGroup>
-  <Choose>
-    <When Condition="'$(XenkoPlatform)' == 'Windows'">
-      <ItemGroup>
-        <XenkoNativeLib Include="..\..\..\deps\VHACD\**\VHACD.dll">
-          <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-        </XenkoNativeLib>
-      </ItemGroup>
-    </When>
-  </Choose>
   <ItemGroup>
     <XenkoNativeLib Include="..\..\..\deps\BulletPhysics\$(XenkoPlatform)\**\libbulletc.*">
       <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
@@ -50,35 +41,18 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\core\Xenko.Core.Mathematics\Xenko.Core.Mathematics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.MicroThreading\Xenko.Core.MicroThreading.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core.Serialization\Xenko.Core.Serialization.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Engine\Xenko.Engine.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Games\Xenko.Games.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Graphics\Xenko.Graphics.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko.Shaders\Xenko.Shaders.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xenko\Xenko.csproj">
-      <Private>False</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\Xenko.Engine\Xenko.Engine.csproj" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(XenkoPostSettingsTargets)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="1.6.65" />
+
+  <PropertyGroup>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeExtraAssemblies</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+  <Target Name="IncludeExtraAssemblies">
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(OutputPath)BulletSharp.dll" />
+    </ItemGroup>
+  </Target>
 </Project>

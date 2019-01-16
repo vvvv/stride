@@ -175,14 +175,13 @@ namespace Xenko.Assets.Scripts
             // Try to get root namespace from containing project
             // Since ProjectReference.Location is sometimes absolute sometimes not, we have to handle both case
             // TODO: ideally we should stop converting those and handle this automatically in a custom Yaml serializer?
-            var sourceProjectAbsolute = assetItem.SourceProject;
+            var sourceProjectAbsolute = (assetItem.Package.Container as SolutionProject)?.FullPath;
             var sourceProjectRelative = sourceProjectAbsolute?.MakeRelative(assetItem.Package.FullPath.GetFullDirectory());
-            var projectReference = assetItem.Package.Profiles.SelectMany(x => x.ProjectReferences).FirstOrDefault(x => x.Location == (x.Location.IsAbsolute ? sourceProjectAbsolute : sourceProjectRelative));
 
-            if (projectReference != null)
+            if (sourceProjectAbsolute != null)
             {
                 // Find root namespace from project
-                var rootNamespace = projectReference?.RootNamespace ?? projectReference.Location.GetFileName();
+                var rootNamespace = assetItem.Package.RootNamespace ?? sourceProjectAbsolute.GetFileName();
                 if (rootNamespace != null)
                 {
                     compilerOptions.DefaultNamespace = rootNamespace;

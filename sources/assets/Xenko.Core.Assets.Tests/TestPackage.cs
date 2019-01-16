@@ -21,16 +21,12 @@ namespace Xenko.Core.Assets.Tests
             var dirPath = DirectoryTestBase + @"TestBasicPackageCreateSaveLoad";
 
             string testGenerated1 = Path.Combine(dirPath, "TestPackage_TestBasicPackageCreateSaveLoad_Generated1.xkpkg");
-            string testGenerated2 = Path.Combine(dirPath,"TestPackage_TestBasicPackageCreateSaveLoad_Generated2.xkpkg");
-            string referenceFilePath = Path.Combine(dirPath,"TestPackage_TestBasicPackageCreateSaveLoad_Reference.xkpkg");
 
             // Force the PackageId to be the same each time we run the test
             // Usually the PackageId is unique and generated each time we create a new project
-            var project = new Package { Id = Guid.Empty, FullPath = testGenerated1 };
-            var sharedProfile = new PackageProfile("Shared", new AssetFolder("."));
-            project.Profiles.Add(sharedProfile);
-            var projectReference = new ProjectReference(Guid.Empty, Path.Combine(dirPath, "test.csproj"), ProjectType.Executable);
-            sharedProfile.ProjectReferences.Add(projectReference);
+            var project = new Package { FullPath = testGenerated1 };
+            project.AssetFolders.Clear();
+            project.AssetFolders.Add(new AssetFolder("."));
 
             var session = new PackageSession(project);
             // Write the solution when saving
@@ -48,37 +44,18 @@ namespace Xenko.Core.Assets.Tests
 
             // Reload the raw package and if UFile and UDirectory were saved relative
             var rawPackage = AssetFileSerializer.Load<Package>(testGenerated1).Asset;
-            var rawPackageSharedProfile = rawPackage.Profiles.FirstOrDefault();
-            Assert.NotNull(rawPackageSharedProfile);
-            var rawSourceFolder = rawPackage.Profiles.First().AssetFolders.FirstOrDefault();
+            var rawSourceFolder = rawPackage.AssetFolders.FirstOrDefault();
             Assert.NotNull(rawSourceFolder);
             Assert.Equal(".", (string)rawSourceFolder.Path);
-            Assert.Equal("test.csproj", (string)rawPackageSharedProfile.ProjectReferences[0].Location);
 
             // Reload the package directly from the xkpkg
             var project2Result = PackageSession.Load(testGenerated1);
             AssertResult(project2Result);
             var project2 = project2Result.Session.LocalPackages.FirstOrDefault();
             Assert.NotNull(project2);
-            Assert.Equal(project.Id, project2.Id);
-            Assert.True(project2.Profiles.Count > 0);
-            Assert.True(project2.Profiles.First().AssetFolders.Count > 0);
-            Assert.Equal(project2, project2Result.Session.CurrentPackage); // Check that the current package is setup when loading a single package
-            var sourceFolder = project.Profiles.First().AssetFolders.First().Path;
-            Assert.Equal(sourceFolder, project2.Profiles.First().AssetFolders.First().Path);
-
-            // Reload the package from the sln
-            var sessionResult = PackageSession.Load(session.SolutionPath);
-            Assert.False(sessionResult.HasErrors);
-
-            var sessionReload = sessionResult.Session;
-            Assert.Single(sessionReload.LocalPackages);
-            Assert.Equal(project.Id, sessionReload.LocalPackages.First().Id);
-            Assert.Single(sessionReload.LocalPackages.First().Profiles);
-
-            var sharedProfileReload = sessionReload.LocalPackages.First().Profiles.First();
-            Assert.Single(sharedProfileReload.ProjectReferences);
-            Assert.Equal(projectReference, sharedProfileReload.ProjectReferences[0]);
+            Assert.True(project2.AssetFolders.Count > 0);
+            var sourceFolder = project.AssetFolders.First().Path;
+            Assert.Equal(sourceFolder, project2.AssetFolders.First().Path);
         }
 
         [Fact]
@@ -108,34 +85,30 @@ namespace Xenko.Core.Assets.Tests
             AssertResult(sessionResult);
             var session = sessionResult.Session;
 
-            var rootPackageId = new Guid("4102BF96-796D-4800-9983-9C227FAB7BBD");
-
-            var project = session.Packages.Find(rootPackageId);
+            var project = session.Packages.Single(x => x.FullPath.GetFileNameWithoutExtension() == "TestPackageLoadingWithAssets");
             Assert.NotNull(project);
             Assert.True(3 == project.Assets.Count, "Invalid number of assets loaded");
 
-            Assert.True(1 == project.LocalDependencies.Count, "Expecting subproject");
+            Assert.True(1 == project.Container.FlattenedDependencies.Count, "Expecting subproject");
 
             Assert.NotEqual(AssetId.Empty, project.Assets.First().Id);
 
             // Check for UPathRelativeTo
-            var profile = project.Profiles.FirstOrDefault();
-            Assert.NotNull(profile);
-            var folder = profile.AssetFolders.FirstOrDefault();
+            var folder = project.AssetFolders.FirstOrDefault();
             Assert.NotNull(folder);
             Assert.NotNull(folder.Path);
             Assert.NotNull(folder.Path.IsAbsolute);
 
             // Save project back to disk on a different location
             project.FullPath = Path.Combine(DirectoryTestBase, @"TestPackage2\TestPackage2.xkpkg");
-            var subPackage = session.Packages.Find(Guid.Parse("281321F0-7664-4523-B1DC-3CFC26F80F77"));
+            var subPackage = session.Packages.Single(x => x.FullPath.GetFileNameWithoutExtension() == "SubPackage");
             subPackage.FullPath = Path.Combine(DirectoryTestBase, @"TestPackage2\SubPackage\SubPackage.xkpkg");
             var result = new LoggerResult();
             session.Save(result);
 
             var project2Result = PackageSession.Load(DirectoryTestBase + @"TestPackage2\TestPackage2.xkpkg");
             AssertResult(project2Result);
-            var project2 = project2Result.Session.Packages.Find(rootPackageId);
+            var project2 = project2Result.Session.Packages.Single(x => x.FullPath.GetFileNameWithoutExtension() == "TestPackage2");
             Assert.NotNull(project2);
             Assert.Equal(3, project2.Assets.Count);
         }
@@ -146,7 +119,6 @@ namespace Xenko.Core.Assets.Tests
             var basePath = Path.Combine(DirectoryTestBase, @"TestPackage");
             var projectPath = Path.Combine(basePath, "TestPackageLoadingWithAssets.xkpkg");
 
-            var rootPackageId = new Guid("4102BF96-796D-4800-9983-9C227FAB7BBD");
             var testAssetId = new AssetId("C2D80EF9-2160-43B2-9FEE-A19A903A0BE0");
 
             // Load the project from the original location
@@ -154,7 +126,7 @@ namespace Xenko.Core.Assets.Tests
             {
                 AssertResult(sessionResult1);
                 var session = sessionResult1.Session;
-                var project = session.Packages.Find(rootPackageId);
+                var project = session.Packages.Single(x => x.FullPath.GetFileNameWithoutExtension() == "TestPackageLoadingWithAssets");
                 Assert.NotNull(project);
 
                 Assert.True(3 == project.Assets.Count, "Invalid number of assets loaded");
@@ -168,7 +140,7 @@ namespace Xenko.Core.Assets.Tests
 
                 // First save a copy of the project to TestPackageMovingAssets1
                 project.FullPath = Path.Combine(DirectoryTestBase, @"TestPackageMovingAssets1\TestPackage2.xkpkg");
-                var subPackage = session.Packages.Find(Guid.Parse("281321F0-7664-4523-B1DC-3CFC26F80F77"));
+                var subPackage = session.Packages.Single(x => x.FullPath.GetFileNameWithoutExtension() == "SubPackage");
                 subPackage.FullPath = Path.Combine(DirectoryTestBase, @"TestPackageMovingAssets1\SubPackage\SubPackage.xkpkg");
                 var result = new LoggerResult();
                 session.Save(result);
@@ -179,7 +151,7 @@ namespace Xenko.Core.Assets.Tests
             {
                 AssertResult(sessionResult2);
                 var session = sessionResult2.Session;
-                var project = session.Packages.Find(rootPackageId);
+                var project = session.Packages.Single(x => x.FullPath.GetFileNameWithoutExtension() == "TestPackage2");
                 Assert.NotNull(project);
                 Assert.True(3 == project.Assets.Count, "Invalid number of assets loaded");
 
@@ -193,7 +165,7 @@ namespace Xenko.Core.Assets.Tests
 
                 // Save the whole project to a different location
                 project.FullPath = Path.Combine(DirectoryTestBase, @"TestPackageMovingAssets2\TestPackage2.xkpkg");
-                var subPackage = session.Packages.Find(Guid.Parse("281321F0-7664-4523-B1DC-3CFC26F80F77"));
+                var subPackage = session.Packages.Single(x => x.FullPath.GetFileNameWithoutExtension() == "TestPackage2");
                 subPackage.FullPath = Path.Combine(DirectoryTestBase, @"TestPackageMovingAssets2\SubPackage\SubPackage.xkpkg");
                 var result = new LoggerResult();
                 session.Save(result);
@@ -204,7 +176,7 @@ namespace Xenko.Core.Assets.Tests
             {
                 AssertResult(sessionResult3);
                 var session = sessionResult3.Session;
-                var project = session.Packages.Find(rootPackageId);
+                var project = session.Packages.Single(x => x.FullPath.GetFileNameWithoutExtension() == "TestPackage2");
                 Assert.NotNull(project);
                 Assert.True(3 == project.Assets.Count, "Invalid number of assets loaded");
 

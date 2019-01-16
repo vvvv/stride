@@ -24,6 +24,7 @@ using Xenko.Core.IO;
 using Xenko.Core.Presentation.Dirtiables;
 using Xenko.Core.Translation;
 using Xenko.Assets.Scripts;
+using System.Collections.Specialized;
 
 namespace Xenko.Assets.Presentation.ViewModel
 {
@@ -72,6 +73,28 @@ namespace Xenko.Assets.Presentation.ViewModel
                     if (project != null)
                         workspace.AddOrUpdateProject(project);
                 }
+
+                void TrackedAssemblies_CollectionChanged(object sender, Core.Collections.TrackingCollectionChangedEventArgs e)
+                {
+                    var project = ((ProjectWatcher.TrackedAssembly)e.Item).Project;
+                    if (project != null)
+                    {
+                        switch (e.Action)
+                        {
+                            case NotifyCollectionChangedAction.Add:
+                            {
+                                workspace.AddOrUpdateProject(project);
+                                break;
+                            }
+                            case NotifyCollectionChangedAction.Remove:
+                            {
+                                workspace.RemoveProject(project.Id);
+                                break;
+                            }
+                        }
+                    }
+                }
+                projectWatcher.TrackedAssemblies.CollectionChanged += TrackedAssemblies_CollectionChanged;
 
                 // TODO: Right now, we simply replace the solution with newly loaded one
                 // Ideally, we should keep our existing solution and update it to follow external changes after initial loading (similar to VisualStudioWorkspace)
@@ -170,13 +193,13 @@ namespace Xenko.Assets.Presentation.ViewModel
             var projectFiles = Package.FindAssetsInProject(project.FilePath, out projectNamespace);
 
             // Find associated ProjectViewModel
-            var projectViewModel = session.AllPackages.SelectMany(x => x.Profiles).SelectMany(x => x.Projects).FirstOrDefault(y => y.Name == project.Name);
+            var projectViewModel = session.LocalPackages.FirstOrDefault(y => y.Name == project.Name) as ProjectViewModel;
             if (projectViewModel == null)
                 return;
 
             // List current assets
             var projectAssets = new List<AssetViewModel>();
-            var isProjectDirty = GetAssets(projectViewModel, projectAssets);
+            var isProjectDirty = GetAssets(projectViewModel.Code, projectAssets);
 
             // Project is dirty, ask user if he really wants to auto-reload
             if (isProjectDirty)
@@ -202,7 +225,7 @@ namespace Xenko.Assets.Presentation.ViewModel
 
             // Mark project as non dirty
             // TODO: Does that work properly with Undo/Redo?
-            UpdateDirtiness(projectViewModel, false);
+            UpdateDirtiness(projectViewModel.Code, false);
         }
 
         /// <summary>
@@ -289,11 +312,10 @@ namespace Xenko.Assets.Presentation.ViewModel
                     {
                         IsDirty = true, //todo review / this is actually very important in the case of renaming, to propagate the change from VS to Game Studio, if we set it false here, during renaming the renamed asset won't be removed
                         SourceFolder = projectViewModel.Package.RootDirectory,
-                        SourceProject = projFile.ToWindowsPath(),
                     };
 
-                    var directory = projectViewModel.Package.GetOrCreateProjectDirectory(projectViewModel, assetItem.Location.GetFullDirectory().FullPath, false);
-                    var newScriptAsset = projectViewModel.Package.CreateAsset(directory, assetItem, false, null);
+                    var directory = projectViewModel.GetOrCreateProjectDirectory(assetItem.Location.GetFullDirectory().FullPath, false);
+                    var newScriptAsset = projectViewModel.CreateAsset(directory, assetItem, false, null);
                     newScriptAssets.Add(newScriptAsset);
                 }
 

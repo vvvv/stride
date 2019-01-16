@@ -14,6 +14,7 @@ Thank you everybody for your generous contributions!
 * Jason Kinzer
 * [Marshmallow Laser Feast](http://www.marshmallowlaserfeast.com/)
 * Jean-Baptiste Perrier
+* Cody Lee
 
 ## Backers
 
@@ -29,7 +30,6 @@ Thank you everybody for your generous contributions!
 * Nathan Warden
 * Empty Keys
 * Dmitry Terentev
-* Chris Beckwith
 * Harald Mühleder
 * Philippe Monteil
 * Cobalt
@@ -43,6 +43,11 @@ Thank you everybody for your generous contributions!
 * Marko Viitanen
 * David R Miller
 * Sven-Bertil Blom
+* Natan Sinigaglia
+* Jarmo
+* Eideren
+* Connie
+* Berwyn
 
 ## Mini Backers
 

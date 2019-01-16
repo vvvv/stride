@@ -1,6 +1,8 @@
-﻿<Project>
+<Project>
   <PropertyGroup>
     <XenkoAssemblySign>true</XenkoAssemblySign>
+    <XenkoRuntime>true</XenkoRuntime>
+    <XenkoRuntimeNetStandard>true</XenkoRuntimeNetStandard>
   </PropertyGroup>
   <Import Project="..\..\targets\Xenko.Core.PreSettings.targets" />
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
@@ -9,7 +11,6 @@
     <SchemaVersion>2.0</SchemaVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <XenkoAssemblyProcessor>true</XenkoAssemblyProcessor>
-    <TargetFramework>$(TargetFramework)</TargetFramework>
     <XenkoAssemblyProcessorOptions>--serialization</XenkoAssemblyProcessorOptions>
     <XenkoBuildTags>*</XenkoBuildTags>
   </PropertyGroup>
@@ -21,10 +22,10 @@
         </Reference>
       </ItemGroup>
     </When>
-    <When Condition="'$(XenkoRuntime)' != ''">
+    <When Condition="'$(XenkoNETRuntime)' != ''">
       <ItemGroup>
         <Reference Include="CppNet">
-          <HintPath>..\..\..\deps\CppNet\$(XenkoRuntime)\CppNet.dll</HintPath>
+          <HintPath>..\..\..\deps\CppNet\$(XenkoNETRuntime)\CppNet.dll</HintPath>
         </Reference>
       </ItemGroup>
     </When>
@@ -69,12 +70,8 @@
     <None Include="Analysis\Hlsl\HlslDeclarations.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj">
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Irony\Irony.csproj">
-      <Private>False</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\..\core\Xenko.Core\Xenko.Core.csproj" />
+    <ProjectReference Include="..\Irony\Irony.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\Resources.tt">
@@ -93,4 +90,13 @@
   </ItemGroup>
   <Import Project="$(XenkoPostSettingsTargets)" />
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+  <PropertyGroup>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeExtraAssemblies</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+  <Target Name="IncludeExtraAssemblies">
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(OutputPath)CppNet.dll" />
+    </ItemGroup>
+  </Target>
 </Project>

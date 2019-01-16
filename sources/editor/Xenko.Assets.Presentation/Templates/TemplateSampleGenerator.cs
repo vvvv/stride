@@ -26,13 +26,18 @@ namespace Xenko.Assets.Presentation.Templates
     {
         private static readonly PropertyKey<Package> GeneratedPackageKey = new PropertyKey<Package>("GeneratedPackage", typeof(TemplateSampleGenerator));
         private static readonly PropertyKey<List<SelectedSolutionPlatform>> PlatformsKey = new PropertyKey<List<SelectedSolutionPlatform>>("Platforms", typeof(TemplateSampleGenerator));
+        private static readonly PropertyKey<bool> AddGamesTestingKey = new PropertyKey<bool>("AddGamesTesting", typeof(TemplateSampleGenerator));
 
         public static readonly TemplateSampleGenerator Default = new TemplateSampleGenerator();
 
         /// <summary>
         /// Sets the parameters required by this template when running in <see cref="TemplateGeneratorParameters.Unattended"/> mode.
         /// </summary>
-        public static void SetParameters(SessionTemplateGeneratorParameters parameters, IEnumerable<SelectedSolutionPlatform> platforms) => parameters.SetTag(PlatformsKey, new List<SelectedSolutionPlatform>(platforms));
+        public static void SetParameters(SessionTemplateGeneratorParameters parameters, IEnumerable<SelectedSolutionPlatform> platforms, bool addGamesTesting = false)
+        {
+            parameters.SetTag(PlatformsKey, new List<SelectedSolutionPlatform>(platforms));
+            parameters.SetTag(AddGamesTestingKey, addGamesTesting);
+        }
 
         public override bool IsSupportingTemplate(TemplateDescription templateDescription)
         {
@@ -75,73 +80,7 @@ namespace Xenko.Assets.Presentation.Templates
             //  Setting this to true will enforce all package dependencies to be moved to a folder local to the project
             bool doMoveParentDependencies = true;
 
-            var packageFile = Path.ChangeExtension(description.FullPath, Package.PackageFileExtension);
-
-            if (!File.Exists(packageFile))
-            {
-                log.Error($"Unable to find package [{packageFile}]");
-                return false;
-            }
-
-            var packageLoadResult = new LoggerResult();
-            var package = Package.Load(packageLoadResult, packageFile, new PackageLoadParameters
-            {
-                AutoLoadTemporaryAssets = false,
-                AutoCompileProjects = false,
-                LoadAssemblyReferences = false,
-            });
-            packageLoadResult.CopyTo(log);
-            if (packageLoadResult.HasErrors)
-            {
-                return false;
-            }
-
-            // We are going to replace all projects id by new ids
-            var idsToReplace = package.Profiles.SelectMany(profile => profile.ProjectReferences).Select(project => project.Id).Distinct().ToDictionary(guid => guid.ToString("D"), guid => Guid.NewGuid(), StringComparer.OrdinalIgnoreCase);
-            idsToReplace.Add(package.Id.ToString("D"), Guid.NewGuid());
-
-            // Add dependencies
-            foreach (var packageReference in package.LocalDependencies)
-            {
-                description.FullPath.GetFullDirectory();
-
-                var referencePath = UPath.Combine(description.FullPath.GetFullDirectory(), packageReference.Location);
-
-                if (!File.Exists(referencePath))
-                {
-                    log.Error($"Unable to find dependency package [{referencePath}]");
-                    return false;
-                }
-
-                var referenceLoadResult = new LoggerResult();
-                var reference = Package.Load(referenceLoadResult, referencePath, new PackageLoadParameters
-                {
-                    AutoLoadTemporaryAssets = false,
-                    AutoCompileProjects = false,
-                    LoadAssemblyReferences = false,
-                });
-                referenceLoadResult.CopyTo(log);
-                if (referenceLoadResult.HasErrors)
-                {
-                    return false;
-                }
-
-                var extraIdsToReplace = reference.Profiles.SelectMany(profile => profile.ProjectReferences).Select(project => project.Id).Distinct().ToDictionary(guid => guid.ToString("D"), guid => Guid.NewGuid(), StringComparer.OrdinalIgnoreCase);
-
-                idsToReplace.AddRange(extraIdsToReplace);
-            }
-
-            var guidRegexPattern = new StringBuilder();
-            guidRegexPattern.Append("(");
-            guidRegexPattern.Append(string.Join("|", idsToReplace.Keys));
-            guidRegexPattern.Append(")");
-
             var regexes = new List<Tuple<Regex, MatchEvaluator>>();
-
-            var guidRegex = new Tuple<Regex, MatchEvaluator>(new Regex(guidRegexPattern.ToString(), RegexOptions.IgnoreCase),
-                match => idsToReplace[match.Groups[1].Value].ToString("D"));
-
-            regexes.Add(guidRegex);
             var patternName = description.PatternName ?? description.DefaultOutputName;
 
             // Samples don't support spaces and dot in name (we would need to separate package name, package short name and namespace renaming for that).
@@ -169,7 +108,8 @@ namespace Xenko.Assets.Presentation.Templates
             //write gitignore
             WriteGitIgnore(parameters);
 
-            UFile packageOutputFile = null;
+            UFile projectOutputFile = null;
+            UFile projectInputFile = null;
 
             // Process files
             foreach (var directory in FileUtility.EnumerateDirectories(description.TemplateDirectory, SearchDirection.Down))
@@ -195,12 +135,13 @@ namespace Xenko.Assets.Presentation.Templates
                     var outputFile = UPath.Combine(outputDirectory, relativeFile);
                     var outputFileDirectory = outputFile.GetParent();
 
-                    // Grab the name of the output package file
-                    var isPackageFile = (packageOutputFile == null && file.FullName.EndsWith(Package.PackageFileExtension));
+                    // Determine if we are processing the main game project
+                    var isPackageFile = (projectOutputFile == null && Path.GetExtension(file.FullName).ToLowerInvariant() == ".csproj" && !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".Windows"));
 
                     if (isPackageFile)
                     {
-                        packageOutputFile = outputFile;
+                        projectInputFile = file.FullName;
+                        projectOutputFile = outputFile;
                     }
 
                     if (!Directory.Exists(outputFileDirectory))
@@ -219,72 +160,94 @@ namespace Xenko.Assets.Presentation.Templates
                 }
             }
 
-            // Copy dependency files locally
-            //  We only want to copy the asset files. The raw files are in Resources and the game assets are in Assets.
-            //  If we copy each file locally they will be included in the package and we can then delete the dependency packages.
-            foreach (var packageReference in package.LocalDependencies)
+            if (projectOutputFile != null)
             {
-                var packageDirectory = packageReference.Location.GetFullDirectory();
-                foreach (var directory in FileUtility.EnumerateDirectories(packageDirectory, SearchDirection.Down))
+                var inputProject = (SolutionProject)Package.LoadProject(log, projectInputFile);
+                var outputProject = (SolutionProject)Package.LoadProject(log, projectOutputFile);
+                var msbuildProject = VSProjectHelper.LoadProject(outputProject.FullPath, platform: "NoPlatform");
+
+                // If requested, add reference to Xenko.Games.Testing
+                if (parameters.TryGetTag(AddGamesTestingKey))
                 {
-                    foreach (var file in directory.GetFiles())
+                    var items = msbuildProject.AddItem("PackageReference", "Xenko.Games.Testing", new[] { new KeyValuePair<string, string>("Version", XenkoVersion.NuGetVersion), new KeyValuePair<string, string>("PrivateAssets", "contentfiles;analyzers") });
+                    foreach (var item in items)
                     {
-                        // If the file is ending with the Template extension or a directory with the sample extension, don`t copy it
-                        if (file.FullName.EndsWith(TemplateDescription.FileExtension) ||
-                            string.Compare(directory.Name, TemplateDescription.FileExtension, StringComparison.OrdinalIgnoreCase) == 0)
-                        {
-                            continue;
-                        }
-
-                        var relativeFile = new UFile(file.FullName).MakeRelative(packageDirectory);
-                        var relativeFilename = relativeFile.ToString();
-
-                        bool isAsset    = relativeFilename.Contains("Assets");
-                        bool isResource = relativeFilename.Contains("Resources");
-
-                        if (!isAsset && !isResource)
-                            continue;
-
-                        // Replace the name in the files if necessary
-                        foreach (var nameRegex in regexes)
-                        {
-                            relativeFile = nameRegex.Item1.Replace(relativeFile, nameRegex.Item2);
-                        }
-
-                        var outputFile = UPath.Combine(outputDirectory, relativeFile);
-                        {   // Create the output directory if needed
-                            var outputFileDirectory = outputFile.GetParent();
-                            if (!Directory.Exists(outputFileDirectory))
-                            {
-                                Directory.CreateDirectory(outputFileDirectory);
-                            }
-                        }
-
-                        if (IsBinaryFile(file.FullName))
-                        {
-                            File.Copy(file.FullName, outputFile, true);
-                        }
-                        else
-                        {
-                            ProcessTextFile(file.FullName, outputFile, regexes);
-                        }
+                        foreach (var metadata in item.Metadata)
+                            metadata.Xml.ExpressedAsAttribute = true;
                     }
                 }
-            }
 
-            if (packageOutputFile != null)
-            {
+                // Copy dependency files locally
+                //  We only want to copy the asset files. The raw files are in Resources and the game assets are in Assets.
+                //  If we copy each file locally they will be included in the package and we can then delete the dependency packages.
+                foreach (var projectReference in msbuildProject.GetItems("ProjectReference").ToList())
+                {
+                    var packageDirectory = UPath.Combine(inputProject.FullPath.GetFullDirectory(), (UFile)projectReference.EvaluatedInclude).GetFullDirectory();
+                    foreach (var directory in FileUtility.EnumerateDirectories(packageDirectory, SearchDirection.Down))
+                    {
+                        foreach (var file in directory.GetFiles())
+                        {
+                            // If the file is ending with the Template extension or a directory with the sample extension, don`t copy it
+                            if (file.FullName.EndsWith(TemplateDescription.FileExtension) ||
+                                string.Compare(directory.Name, TemplateDescription.FileExtension, StringComparison.OrdinalIgnoreCase) == 0)
+                            {
+                                continue;
+                            }
+
+                            var relativeFile = new UFile(file.FullName).MakeRelative(packageDirectory);
+                            var relativeFilename = relativeFile.ToString();
+
+                            bool isAsset = relativeFilename.Contains("Assets");
+                            bool isResource = relativeFilename.Contains("Resources");
+
+                            if (!isAsset && !isResource)
+                                continue;
+
+                            // Replace the name in the files if necessary
+                            foreach (var nameRegex in regexes)
+                            {
+                                relativeFile = nameRegex.Item1.Replace(relativeFile, nameRegex.Item2);
+                            }
+
+                            var outputFile = UPath.Combine(outputDirectory, relativeFile);
+                            {   // Create the output directory if needed
+                                var outputFileDirectory = outputFile.GetParent();
+                                if (!Directory.Exists(outputFileDirectory))
+                                {
+                                    Directory.CreateDirectory(outputFileDirectory);
+                                }
+                            }
+
+                            if (IsBinaryFile(file.FullName))
+                            {
+                                File.Copy(file.FullName, outputFile, true);
+                            }
+                            else
+                            {
+                                ProcessTextFile(file.FullName, outputFile, regexes);
+                            }
+                        }
+                    }
+
+                    msbuildProject.RemoveItem(projectReference);
+                }
+
+                // Save csproj without ProjectReferences
+                msbuildProject.Save();
+                msbuildProject.ProjectCollection.UnloadAllProjects();
+                msbuildProject.ProjectCollection.Dispose();
+
                 // Add package to session
                 var loadParams = PackageLoadParameters.Default();
-                loadParams.ForceNugetRestore = true;
                 loadParams.GenerateNewAssetIds = true;
                 loadParams.LoadMissingDependencies = false;
                 var session = parameters.Session;
-                var loadedPackage = session.AddExistingPackage(packageOutputFile, log, loadParams);
+                // We should switch to loading .csproj once all samples are upgraded
+                var loadedProject = session.AddExistingProject(projectOutputFile, log, loadParams);
 
-                RemoveUnusedAssets(loadedPackage, session);
+                RemoveUnusedAssets(loadedProject.Package, session);
 
-                parameters.Tags.Add(GeneratedPackageKey, loadedPackage);
+                parameters.Tags.Add(GeneratedPackageKey, loadedProject.Package);
             }
             else
             {
@@ -379,9 +342,8 @@ namespace Xenko.Assets.Presentation.Templates
             // Save again post update
             SaveSession(parameters);
 
-            // Restore NuGet packages again
-            parameters.Logger.Verbose("Restore NuGet packages...");
-            await VSProjectHelper.RestoreNugetPackages(parameters.Logger, parameters.Session.SolutionPath);
+            // Make sure platform projects also gets in fully loaded state
+            package.Session.LoadMissingReferences(parameters.Logger);
 
             return true;
         }

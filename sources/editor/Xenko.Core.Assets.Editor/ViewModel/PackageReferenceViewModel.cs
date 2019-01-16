@@ -14,12 +14,11 @@ namespace Xenko.Core.Assets.Editor.ViewModel
     {
         private readonly DependencyCategoryViewModel dependencies;
 
-        protected PackageReferenceViewModel(PackageViewModel target, PackageViewModel referencer, DependencyCategoryViewModel dependencies)
-            : base(target.SafeArgument(nameof(target)).Session)
+        protected PackageReferenceViewModel(PackageViewModel referencer, DependencyCategoryViewModel dependencies)
+            : base(referencer.SafeArgument(nameof(referencer)).Session)
         {
             this.dependencies = dependencies;
             Referencer = referencer;
-            Target = target;
         }
 
         /// <summary>
@@ -30,13 +29,13 @@ namespace Xenko.Core.Assets.Editor.ViewModel
         /// <summary>
         /// Gets the target package of this package reference.
         /// </summary>
-        public PackageViewModel Target { get; }
+        public PackageViewModel Target { get; protected set; }
 
         public override string TypeDisplayName => "Package Reference";
 
         public override IEnumerable<IDirtiable> Dirtiables => dependencies.Dirtiables;
 
-        public override bool IsEditable => Referencer.IsEditable && Target.IsEditable;
+        public override bool IsEditable => Referencer.IsEditable;
 
         /// <inheritdoc/>
         public int CompareTo(PackageReferenceViewModel other)
@@ -68,93 +67,34 @@ namespace Xenko.Core.Assets.Editor.ViewModel
         }
     }
 
-    /// <summary>
-    /// Implementation of the <see cref="PackageReferenceViewModel"/> for local package references.
-    /// </summary>
-    public class LocalPackageReferenceViewModel : PackageReferenceViewModel
+    public class DirectDependencyReferenceViewModel : PackageReferenceViewModel
     {
-        private readonly PackageReference reference;
+        private readonly DependencyRange dependency;
 
-        /// <summary>
-        /// Creates a new instance of <see cref="LocalPackageReferenceViewModel"/>.
-        /// </summary>
-        /// <param name="reference">The package reference asset.</param>
-        /// <param name="target">The target of the reference.</param>
-        /// <param name="referencer">The referencer.</param>
-        /// <param name="dependencies">The dependencies.</param>
-        /// <param name="canUndoRedoCreation">Indicates whether the creation of this view model should create a transaction in the undo/redo service</param>
-        public LocalPackageReferenceViewModel(PackageReference reference, PackageViewModel target, PackageViewModel referencer, DependencyCategoryViewModel dependencies, bool canUndoRedoCreation)
-            : base(target, referencer, dependencies)
-        {
-            this.reference = reference;
-            InitialUndelete(canUndoRedoCreation);
-        }
-
-        /// <summary>
-        /// Gets the name of the referenced package.
-        /// </summary>
-        public override string Name
-        {
-            get { return reference.Location.GetFileNameWithoutExtension(); }
-            set { throw new InvalidOperationException("The name of a package reference cannot be set"); }
-        }
-
-        public override void AddReference()
-        {
-            if (!Referencer.Package.LocalDependencies.Contains(reference))
-            {
-                Referencer.Package.LocalDependencies.Add(reference);
-            }
-        }
-
-        public override void RemoveReference()
-        {
-            Referencer.Package.LocalDependencies.Remove(reference);
-        }
-    }
-
-    /// <summary>
-    /// Implementation of the <see cref="PackageReferenceViewModel"/> for store package references.
-    /// </summary>
-    public class StorePackageReferenceViewModel : PackageReferenceViewModel
-    {
-        private readonly PackageDependency dependency;
-
-        /// <summary>
-        /// Creates a new instance of <see cref="StorePackageReferenceViewModel"/>.
-        /// </summary>
-        /// <param name="dependency">The package dependency asset.</param>
-        /// <param name="target">The target of the reference.</param>
-        /// <param name="referencer">The referencer.</param>
-        /// <param name="dependencies">The dependencies.</param>
-        /// <param name="canUndoRedoCreation">Indicates whether the creation of this view model should create a transaction in the undo/redo service</param>
-        public StorePackageReferenceViewModel(PackageDependency dependency, PackageViewModel target, PackageViewModel referencer, DependencyCategoryViewModel dependencies, bool canUndoRedoCreation)
-            : base(target, referencer, dependencies)
+        public DirectDependencyReferenceViewModel(DependencyRange dependency, PackageViewModel referencer, DependencyCategoryViewModel dependencies, bool canUndoRedoCreation)
+            : base(referencer, dependencies)
         {
             this.dependency = dependency;
             InitialUndelete(canUndoRedoCreation);
         }
 
-        /// <summary>
-        /// Gets the name of the referenced package.
-        /// </summary>
         public override string Name
         {
-            get { return dependency.Name; }
-            set { throw new InvalidOperationException("The name of a package reference cannot be set"); }
+            get => dependency.Name;
+            set => throw new InvalidOperationException("The name of a package reference cannot be set");
         }
 
         public override void AddReference()
         {
-            if (!Referencer.Package.Meta.Dependencies.Contains(dependency))
+            if (!Referencer.Package.Container.DirectDependencies.Contains(dependency))
             {
-                Referencer.Package.Meta.Dependencies.Add(dependency);
+                Referencer.Package.Container.DirectDependencies.Add(dependency);
             }
         }
 
         public override void RemoveReference()
         {
-            Referencer.Package.Meta.Dependencies.Remove(dependency);
+            Referencer.Package.Container.DirectDependencies.Remove(dependency);
         }
     }
 }

@@ -1,6 +1,10 @@
-﻿<!-- Build file post-included by all Xenko projects -->
+<!-- Build file post-included by all Xenko projects -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <PropertyGroup>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>.ssdeps; $(AllowedOutputExtensionsInPackageBuildOutputFolder)</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);_XenkoRegisterDependenciesOutputs</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
   <!-- 
   *****************************************************************************************************************************
   Dependencies reading (from .ssdeps)
@@ -12,6 +16,7 @@
     <ItemGroup>
       <_XenkoDepsFile Include="@(ReferencePath->'%(RootDir)%(Directory)%(Filename).ssdeps')" Condition="'%(CopyLocal)' != 'false' And Exists('%(RootDir)%(Directory)%(Filename).ssdeps')"/>
       <_XenkoDepsFile Include="@(ReferenceDependencyPaths->'%(RootDir)%(Directory)%(Filename).ssdeps')" Condition="'%(CopyLocal)' != 'false' And Exists('%(RootDir)%(Directory)%(Filename).ssdeps')"/>
+      <None Include="@(_XenkoDepsFile)" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
   </Target>
 
@@ -46,7 +51,7 @@
       <_XenkoDependencyLocal Remove="@(_XenkoDependencyLocal)"/>
     </ItemGroup>
   </Target>
-  
+
   <Target Name="_XenkoCopyContent" DependsOnTargets="_XenkoBuildDependencies" AfterTargets="ResolveAssemblyReferences" Condition="'$(XenkoDependenciesCopy)' != 'false'">
     <ItemGroup>
       <Content Include="@(_XenkoDependencyContent)"/>
@@ -60,15 +65,11 @@
   -->
   <Target Name="_XenkoSetupNativeLibraries" DependsOnTargets="_XenkoBuildDependencies" AfterTargets="ResolveAssemblyReferences" Condition="'$(XenkoDependenciesCopy)' != 'false'">
     <!-- Windows, UWP, Linux & macOS -->
-    <ItemGroup Condition=" '$(XenkoPlatform)' == '' Or '$(XenkoPlatform)' == 'Windows' Or '$(XenkoPlatform)' == 'Linux' Or '$(XenkoPlatform)' == 'macOS' ">
+    <ItemGroup Condition=" '$(XenkoPlatform)' == '' Or '$(XenkoPlatform)' == 'Windows' Or '$(XenkoPlatform)' == 'Linux' Or '$(XenkoPlatform)' == 'macOS' Or '$(XenkoPlatform)' == 'UWP' ">
       <None Include="@(_XenkoDependencyNativeLib)">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>
-
-    <!-- TODO: Implement this for UWP unit tests (need to know current CPU? or maybe there is a CPU-agnostic way?)
-         Note: already implemented in Xenko.targets for Game (one solution platform per CPU) -->
-    <Error Condition="'$(XenkoPlatform)' == 'UWP'" Message="Native Library copy for UWP inside dev solution is not supported yet"/>
 
     <!-- Android -->
     <ItemGroup Condition=" '$(XenkoPlatform)' == 'Android' ">
@@ -98,7 +99,7 @@
   Dependencies generation (to .ssdeps)
   *****************************************************************************************************************************
   -->
-  <Target Name="_XenkoWriteNativeDependencies" AfterTargets="Build">
+  <Target Name="_XenkoGenerateDependencies">
     <!-- Set TargetPath on XenkoContent and XenkoNativeLib -->
     <AssignTargetPath RootFolder="$(MSBuildProjectDirectory)" Files="@(XenkoContent)">
       <Output TaskParameter="AssignedFiles" ItemName="_XenkoContentAssigned"/>
@@ -106,6 +107,10 @@
     <AssignTargetPath RootFolder="$(MSBuildProjectDirectory)" Files="@(XenkoNativeLib)">
       <Output TaskParameter="AssignedFiles" ItemName="_XenkoNativeLibAssigned"/>
     </AssignTargetPath>
+
+    <PropertyGroup>
+      <_XenkoAppendRuntimeIdentifier Condition="'$(AppendRuntimeIdentifierToOutputPath)' == 'true' and '$(RuntimeIdentifier)' != '' and '$(_UsingDefaultRuntimeIdentifier)' != 'true'">true</_XenkoAppendRuntimeIdentifier>
+    </PropertyGroup>
 
     <!-- Combine into _XenkoDependencyToCopy (and add RelativePath and Type) -->
     <ItemGroup>
@@ -122,6 +127,11 @@
       </_XenkoDependencyToCopy>
       
       <_XenkoDependencyToCopy Remove="@(_XenkoNativeLibAssigned)" Condition=" '$(XenkoPackageBuild)' == 'true' And '%(_XenkoNativeLibAssigned.Extension)' == '.pdb' "/>
+
+      <_XenkoDependencyToCopy>
+        <PackagePath Condition="'$(_XenkoAppendRuntimeIdentifier)' != 'true'">lib\$(TargetFramework)\$([System.IO.Path]::GetDirectoryName('%(TargetPath)'))</PackagePath>
+        <PackagePath Condition="'$(_XenkoAppendRuntimeIdentifier)' == 'true'">runtimes\$(RuntimeIdentifier)\lib\$(TargetFramework)\$([System.IO.Path]::GetDirectoryName('%(TargetPath)'))</PackagePath>
+      </_XenkoDependencyToCopy>
     </ItemGroup>
 
     <!-- Copy files -->
@@ -139,4 +149,15 @@
     <WriteLinesToFile Condition="'@(_XenkoDependencyToCopy)' != ''" File="$(OutputPath)$(TargetName).ssdeps" Lines="@(_XenkoDependencyToCopy->'%(Type);%(TargetPath);%(RelativePath)')" Overwrite="true"/>
     <Delete Condition="'@(_XenkoDependencyToCopy)' == ''" Files="$(OutputPath)$(TargetName).ssdeps"/>
   </Target>
+
+  <!-- C# -->
+  <Target Name="_XenkoRegisterDependenciesOutputs" Condition="'$(TargetFramework)' != ''" DependsOnTargets="_XenkoGenerateDependencies">
+    <ItemGroup Condition="'@(_XenkoDependencyToCopy)' != ''">
+      <TfmSpecificPackageFile Include="$(OutputPath)\$(AssemblyName).ssdeps" Condition="'$(_XenkoAppendRuntimeIdentifier)' != 'true'" PackagePath="lib\$(TargetFramework)" />
+      <TfmSpecificPackageFile Include="$(OutputPath)\$(AssemblyName).ssdeps" Condition="'$(_XenkoAppendRuntimeIdentifier)' == 'true'" PackagePath="runtimes\$(RuntimeIdentifier)\lib\$(TargetFramework)" />
+      <TfmSpecificPackageFile Include="@(_XenkoDependencyToCopy)" />
+    </ItemGroup>
+  </Target>
+  <!-- C++/CLI -->
+  <Target Name="_XenkoGenerateDependenciesAfterBuild" DependsOnTargets="_XenkoGenerateDependencies" AfterTargets="Build" Condition="'$(XenkoProjectType)' == 'Cpp'"/>
 </Project>

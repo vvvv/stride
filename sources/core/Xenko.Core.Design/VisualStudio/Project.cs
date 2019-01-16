@@ -38,36 +38,15 @@ namespace Xenko.Core.VisualStudio
         private readonly Guid guid;
         private readonly PropertyItemCollection platformProperties;
         private readonly SectionCollection sections;
-        private readonly Solution solution;
         private readonly PropertyItemCollection versionControlProperties;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Project"/> class.
         /// </summary>
-        /// <param name="solution">The solution.</param>
-        /// <param name="original">The original.</param>
-        public Project([NotNull] Solution solution, [NotNull] Project original)
-            : this(
-                solution,
-                original.Guid,
-                original.TypeGuid,
-                original.Name,
-                original.RelativePath,
-                original.ParentGuid,
-                original.Sections,
-                original.VersionControlProperties,
-                original.PlatformProperties)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Project"/> class.
-        /// </summary>
-        /// <param name="solution">The solution.</param>
         /// <param name="guid">The unique identifier.</param>
         /// <param name="typeGuid">The type unique identifier.</param>
         /// <param name="name">The name.</param>
-        /// <param name="relativePath">The relative path.</param>
+        /// <param name="fullPath">The relative path.</param>
         /// <param name="parentGuid">The parent unique identifier.</param>
         /// <param name="projectSections">The project sections.</param>
         /// <param name="versionControlLines">The version control lines.</param>
@@ -82,26 +61,23 @@ namespace Xenko.Core.VisualStudio
         /// name
         /// </exception>
         public Project(
-            [NotNull] Solution solution,
             Guid guid,
             Guid typeGuid,
             [NotNull] string name,
-            string relativePath,
+            string fullPath,
             Guid parentGuid,
             IEnumerable<Section> projectSections,
             IEnumerable<PropertyItem> versionControlLines,
             IEnumerable<PropertyItem> projectConfigurationPlatformsLines)
         {
-            if (solution == null) throw new ArgumentNullException(nameof(solution));
             if (guid == null) throw new ArgumentNullException(nameof(guid));
             if (typeGuid == null) throw new ArgumentNullException(nameof(typeGuid));
             if (name == null) throw new ArgumentNullException(nameof(name));
 
-            this.solution = solution;
             this.guid = guid;
             TypeGuid = typeGuid;
             Name = name;
-            RelativePath = relativePath;
+            FullPath = fullPath;
             ParentGuid = parentGuid;
             sections = new SectionCollection(projectSections);
             versionControlProperties = new PropertyItemCollection(versionControlLines);
@@ -112,17 +88,14 @@ namespace Xenko.Core.VisualStudio
         /// Gets all descendants <see cref="Project"/>
         /// </summary>
         /// <value>All descendants.</value>
-        public IEnumerable<Project> AllDescendants
+        public IEnumerable<Project> GetAllDescendants(Solution solution)
         {
-            get
+            foreach (var child in GetChildren(solution))
             {
-                foreach (var child in Children)
+                yield return child;
+                foreach (var subchild in child.GetAllDescendants(solution))
                 {
-                    yield return child;
-                    foreach (var subchild in child.AllDescendants)
-                    {
-                        yield return subchild;
-                    }
+                    yield return subchild;
                 }
             }
         }
@@ -144,17 +117,14 @@ namespace Xenko.Core.VisualStudio
         /// </summary>
         /// <value>The children.</value>
         [ItemNotNull]
-        public IEnumerable<Project> Children
+        public IEnumerable<Project> GetChildren(Solution solution)
         {
-            get
+            if (IsSolutionFolder)
             {
-                if (IsSolutionFolder)
+                foreach (var project in solution.Projects)
                 {
-                    foreach (var project in solution.Projects)
-                    {
-                        if (project.ParentGuid == guid)
-                            yield return project;
-                    }
+                    if (project.ParentGuid == guid)
+                        yield return project;
                 }
             }
         }
@@ -165,145 +135,135 @@ namespace Xenko.Core.VisualStudio
         /// <value>The dependencies.</value>
         /// <exception cref="SolutionFileException">
         /// </exception>
-        public IEnumerable<Project> Dependencies
+        public IEnumerable<Project> GetDependencies(Solution solution)
         {
-            get
+            if (GetParentProject(solution) != null)
             {
-                if (ParentProject != null)
+                yield return GetParentProject(solution);
+            }
+
+            if (sections.Contains("ProjectDependencies"))
+            {
+                foreach (var propertyLine in sections["ProjectDependencies"].Properties)
                 {
-                    yield return ParentProject;
+                    var dependencyGuid = propertyLine.Name;
+                    yield return FindProjectInContainer(
+                        solution,
+                        dependencyGuid,
+                        "Cannot find one of the dependency of project '{0}'.\nProject guid: {1}\nDependency guid: {2}\nReference found in: ProjectDependencies section of the solution file",
+                        Name,
+                        guid,
+                        dependencyGuid);
+                }
+            }
+
+            if (TypeGuid == KnownProjectTypeGuid.VisualC)
+            {
+                if (!File.Exists(FullPath))
+                {
+                    throw new SolutionFileException($"Cannot detect dependencies of projet '{Name}' because the project file cannot be found.\nProject full path: '{FullPath}'");
                 }
 
-                if (sections.Contains("ProjectDependencies"))
+                var docVisualC = new XmlDocument();
+                docVisualC.Load(FullPath);
+
+                foreach (XmlNode xmlNode in docVisualC.SelectNodes(@"//ProjectReference"))
                 {
-                    foreach (var propertyLine in sections["ProjectDependencies"].Properties)
+                    var dependencyGuid = xmlNode.Attributes["ReferencedProjectIdentifier"].Value; // TODO handle null
+                    XmlNode relativePathToProjectNode = xmlNode.Attributes["RelativePathToProject"];
+                    var dependencyRelativePathToProject = relativePathToProjectNode != null ? relativePathToProjectNode.Value : "???";
+                    yield return FindProjectInContainer(
+                        solution,
+                        dependencyGuid,
+                        "Cannot find one of the dependency of project '{0}'.\nProject guid: {1}\nDependency guid: {2}\nDependency relative path: '{3}'\nReference found in: ProjectReference node of file '{4}'",
+                        Name,
+                        guid,
+                        dependencyGuid,
+                        dependencyRelativePathToProject,
+                        FullPath);
+                }
+            }
+            else if (TypeGuid == KnownProjectTypeGuid.Setup)
+            {
+                if (!File.Exists(FullPath))
+                {
+                    throw new SolutionFileException($"Cannot detect dependencies of projet '{Name}' because the project file cannot be found.\nProject full path: '{FullPath}'");
+                }
+
+                foreach (var line in File.ReadAllLines(FullPath))
+                {
+                    var regex = new Regex("^\\s*\"OutputProjectGuid\" = \"\\d*\\:(?<PROJECTGUID>.*)\"$");
+                    var match = regex.Match(line);
+                    if (match.Success)
                     {
-                        var dependencyGuid = propertyLine.Name;
+                        var dependencyGuid = match.Groups["PROJECTGUID"].Value.Trim();
                         yield return FindProjectInContainer(
+                            solution,
                             dependencyGuid,
-                            "Cannot find one of the dependency of project '{0}'.\nProject guid: {1}\nDependency guid: {2}\nReference found in: ProjectDependencies section of the solution file",
-                            Name,
-                            guid,
-                            dependencyGuid);
-                    }
-                }
-
-                if (TypeGuid == KnownProjectTypeGuid.VisualC)
-                {
-                    if (!File.Exists(FullPath))
-                    {
-                        throw new SolutionFileException($"Cannot detect dependencies of projet '{Name}' because the project file cannot be found.\nProject full path: '{FullPath}'");
-                    }
-
-                    var docVisualC = new XmlDocument();
-                    docVisualC.Load(FullPath);
-
-                    foreach (XmlNode xmlNode in docVisualC.SelectNodes(@"//ProjectReference"))
-                    {
-                        var dependencyGuid = xmlNode.Attributes["ReferencedProjectIdentifier"].Value; // TODO handle null
-                        XmlNode relativePathToProjectNode = xmlNode.Attributes["RelativePathToProject"];
-                        var dependencyRelativePathToProject = relativePathToProjectNode != null ? relativePathToProjectNode.Value : "???";
-                        yield return FindProjectInContainer(
-                            dependencyGuid,
-                            "Cannot find one of the dependency of project '{0}'.\nProject guid: {1}\nDependency guid: {2}\nDependency relative path: '{3}'\nReference found in: ProjectReference node of file '{4}'",
-                            Name,
-                            guid,
-                            dependencyGuid,
-                            dependencyRelativePathToProject,
-                            FullPath);
-                    }
-                }
-                else if (TypeGuid == KnownProjectTypeGuid.Setup)
-                {
-                    if (!File.Exists(FullPath))
-                    {
-                        throw new SolutionFileException($"Cannot detect dependencies of projet '{Name}' because the project file cannot be found.\nProject full path: '{FullPath}'");
-                    }
-
-                    foreach (var line in File.ReadAllLines(FullPath))
-                    {
-                        var regex = new Regex("^\\s*\"OutputProjectGuid\" = \"\\d*\\:(?<PROJECTGUID>.*)\"$");
-                        var match = regex.Match(line);
-                        if (match.Success)
-                        {
-                            var dependencyGuid = match.Groups["PROJECTGUID"].Value.Trim();
-                            yield return FindProjectInContainer(
-                                dependencyGuid,
-                                "Cannot find one of the dependency of project '{0}'.\nProject guid: {1}\nDependency guid: {2}\nReference found in: OutputProjectGuid line of file '{3}'",
-                                Name,
-                                guid,
-                                dependencyGuid,
-                                FullPath);
-                        }
-                    }
-                }
-                else if (TypeGuid == KnownProjectTypeGuid.WebProject)
-                {
-                    // Format is: "({GUID}|ProjectName;)*"
-                    // Example: "{GUID}|Infra.dll;{GUID2}|Services.dll;"
-                    var propertyItem = sections["WebsiteProperties"].Properties["ProjectReferences"];
-                    var value = propertyItem.Value;
-                    if (value.StartsWith("\""))
-                        value = value.Substring(1);
-                    if (value.EndsWith("\""))
-                        value = value.Substring(0, value.Length - 1);
-
-                    foreach (var dependency in value.Split(';'))
-                    {
-                        if (dependency.Trim().Length > 0)
-                        {
-                            var parts = dependency.Split('|');
-                            var dependencyGuid = parts[0];
-                            var dependencyName = parts[1]; // TODO handle null
-                            yield return FindProjectInContainer(
-                                dependencyGuid,
-                                "Cannot find one of the dependency of project '{0}'.\nProject guid: {1}\nDependency guid: {2}\nDependency name: {3}\nReference found in: ProjectReferences line in WebsiteProperties section of the solution file",
-                                Name,
-                                guid,
-                                dependencyGuid,
-                                dependencyName);
-                        }
-                    }
-                }
-                else if (!IsSolutionFolder)
-                {
-                    if (!File.Exists(FullPath))
-                    {
-                        throw new SolutionFileException($"Cannot detect dependencies of projet '{Name}' because the project file cannot be found.\nProject full path: '{FullPath}'");
-                    }
-
-                    var docManaged = new XmlDocument();
-                    docManaged.Load(FullPath);
-
-                    var xmlManager = new XmlNamespaceManager(docManaged.NameTable);
-                    xmlManager.AddNamespace("prefix", "http://schemas.microsoft.com/developer/msbuild/2003");
-
-                    foreach (XmlNode xmlNode in docManaged.SelectNodes(@"//prefix:ProjectReference", xmlManager))
-                    {
-                        var dependencyGuid = xmlNode.SelectSingleNode(@"prefix:Project", xmlManager).InnerText.Trim(); // TODO handle null
-                        var dependencyName = xmlNode.SelectSingleNode(@"prefix:Name", xmlManager).InnerText.Trim(); // TODO handle null
-                        yield return FindProjectInContainer(
-                            dependencyGuid,
-                            "Cannot find one of the dependency of project '{0}'.\nProject guid: {1}\nDependency guid: {2}\nDependency name: {3}\nReference found in: ProjectReference node of file '{4}'",
+                            "Cannot find one of the dependency of project '{0}'.\nProject guid: {1}\nDependency guid: {2}\nReference found in: OutputProjectGuid line of file '{3}'",
                             Name,
                             guid,
                             dependencyGuid,
-                            dependencyName,
                             FullPath);
                     }
                 }
             }
-        }
-
-        /// <summary>
-        /// Gets the solution.
-        /// </summary>
-        /// <value>The solution.</value>
-        public Solution Solution
-        {
-            get
+            else if (TypeGuid == KnownProjectTypeGuid.WebProject)
             {
-                return solution;
+                // Format is: "({GUID}|ProjectName;)*"
+                // Example: "{GUID}|Infra.dll;{GUID2}|Services.dll;"
+                var propertyItem = sections["WebsiteProperties"].Properties["ProjectReferences"];
+                var value = propertyItem.Value;
+                if (value.StartsWith("\""))
+                    value = value.Substring(1);
+                if (value.EndsWith("\""))
+                    value = value.Substring(0, value.Length - 1);
+
+                foreach (var dependency in value.Split(';'))
+                {
+                    if (dependency.Trim().Length > 0)
+                    {
+                        var parts = dependency.Split('|');
+                        var dependencyGuid = parts[0];
+                        var dependencyName = parts[1]; // TODO handle null
+                        yield return FindProjectInContainer(
+                            solution,
+                            dependencyGuid,
+                            "Cannot find one of the dependency of project '{0}'.\nProject guid: {1}\nDependency guid: {2}\nDependency name: {3}\nReference found in: ProjectReferences line in WebsiteProperties section of the solution file",
+                            Name,
+                            guid,
+                            dependencyGuid,
+                            dependencyName);
+                    }
+                }
+            }
+            else if (!IsSolutionFolder)
+            {
+                if (!File.Exists(FullPath))
+                {
+                    throw new SolutionFileException($"Cannot detect dependencies of projet '{Name}' because the project file cannot be found.\nProject full path: '{FullPath}'");
+                }
+
+                var docManaged = new XmlDocument();
+                docManaged.Load(FullPath);
+
+                var xmlManager = new XmlNamespaceManager(docManaged.NameTable);
+                xmlManager.AddNamespace("prefix", "http://schemas.microsoft.com/developer/msbuild/2003");
+
+                foreach (XmlNode xmlNode in docManaged.SelectNodes(@"//prefix:ProjectReference", xmlManager))
+                {
+                    var dependencyGuid = xmlNode.SelectSingleNode(@"prefix:Project", xmlManager).InnerText.Trim(); // TODO handle null
+                    var dependencyName = xmlNode.SelectSingleNode(@"prefix:Name", xmlManager).InnerText.Trim(); // TODO handle null
+                    yield return FindProjectInContainer(
+                        solution,
+                        dependencyGuid,
+                        "Cannot find one of the dependency of project '{0}'.\nProject guid: {1}\nDependency guid: {2}\nDependency name: {3}\nReference found in: ProjectReference node of file '{4}'",
+                        Name,
+                        guid,
+                        dependencyGuid,
+                        dependencyName,
+                        FullPath);
+                }
             }
         }
 
@@ -312,33 +272,25 @@ namespace Xenko.Core.VisualStudio
         /// </summary>
         /// <value>The full path.</value>
         [NotNull]
-        public string FullPath
-        {
-            get
-            {
-                return Path.Combine(Path.GetDirectoryName(solution.FullPath), RelativePath);
-            }
-        }
+        public string FullPath { get; set; }
 
         /// <summary>
         /// Gets the parent project.
         /// </summary>
         /// <value>The parent project.</value>
         [CanBeNull]
-        public Project ParentProject
+        public Project GetParentProject(Solution solution)
         {
-            get
-            {
-                if (ParentGuid == Guid.Empty)
-                    return null;
+            if (ParentGuid == Guid.Empty)
+                return null;
 
-                return FindProjectInContainer(
-                    ParentGuid,
-                    "Cannot find the parent folder of project '{0}'. \nProject guid: {1}\nParent folder guid: {2}",
-                    Name,
-                    guid,
-                    ParentGuid);
-            }
+            return FindProjectInContainer(
+                solution,
+                ParentGuid,
+                "Cannot find the parent folder of project '{0}'. \nProject guid: {1}\nParent folder guid: {2}",
+                Name,
+                guid,
+                ParentGuid);
         }
 
         /// <summary>
@@ -351,16 +303,13 @@ namespace Xenko.Core.VisualStudio
         /// Gets the full name of the project.
         /// </summary>
         /// <value>The full name of the project.</value>
-        public string FullName
+        public string GetFullName(Solution solution)
         {
-            get
+            if (GetParentProject(solution) != null)
             {
-                if (ParentProject != null)
-                {
-                    return ParentProject.FullName + @"\" + Name;
-                }
-                return Name;
+                return GetParentProject(solution).GetFullName(solution) + @"\" + Name;
             }
+            return Name;
         }
 
         /// <summary>
@@ -415,7 +364,12 @@ namespace Xenko.Core.VisualStudio
         /// Gets or sets the relative path.
         /// </summary>
         /// <value>The relative path.</value>
-        public string RelativePath { get; set; }
+        public string GetRelativePath(Solution solution)
+        {
+            if (TypeGuid == KnownProjectTypeGuid.SolutionFolder)
+                return FullPath;
+            return Uri.UnescapeDataString(new Uri(solution.FullPath, UriKind.Absolute).MakeRelativeUri(new Uri(FullPath, UriKind.Absolute)).ToString()).Replace('/', '\\');
+        }
 
         /// <summary>
         /// Gets the version control properties.
@@ -431,11 +385,11 @@ namespace Xenko.Core.VisualStudio
 
         public override string ToString()
         {
-            return $"Project '{FullName}'";
+            return $"Project '{Name}'";
         }
 
         [NotNull]
-        private Project FindProjectInContainer(Guid projectGuidToFind, string errorMessageFormat, params object[] errorMessageParams)
+        private Project FindProjectInContainer(Solution solution, Guid projectGuidToFind, string errorMessageFormat, params object[] errorMessageParams)
         {
             var project = solution.Projects.FindByGuid(projectGuidToFind);
             if (project == null)
@@ -446,9 +400,9 @@ namespace Xenko.Core.VisualStudio
         }
 
         [NotNull]
-        private Project FindProjectInContainer([NotNull] string projectGuidToFind, string errorMessageFormat, params object[] errorMessageParams)
+        private Project FindProjectInContainer(Solution solution, [NotNull] string projectGuidToFind, string errorMessageFormat, params object[] errorMessageParams)
         {
-            return FindProjectInContainer(Guid.Parse(projectGuidToFind), errorMessageFormat, errorMessageParams);
+            return FindProjectInContainer(solution, Guid.Parse(projectGuidToFind), errorMessageFormat, errorMessageParams);
         }
     }
 }

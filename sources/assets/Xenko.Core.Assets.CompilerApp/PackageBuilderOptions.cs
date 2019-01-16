@@ -17,15 +17,12 @@ namespace Xenko.Core.Assets.CompilerApp
         public bool Debug = false;
         // This should not be a list
         public bool DisableAutoCompileProjects { get; set; }
-        public string BuildProfile;
         public string ProjectConfiguration { get; set; }
         public string OutputDirectory { get; set; }
         public string BuildDirectory { get; set; }
         public string SolutionFile { get; set; }
         public Guid PackageId { get; set; }
         public PlatformType Platform { get; set; }
-        public Xenko.Graphics.GraphicsPlatform? GraphicsPlatform { get; set; }
-        public bool GetGraphicsPlatform { get; set; }
         public string PackageFile { get; set; }
         public List<string> LogPipeNames = new List<string>();
         public List<string> MonitorPipeNames = new List<string>();
@@ -71,27 +68,20 @@ namespace Xenko.Core.Assets.CompilerApp
         /// The given working directory \ + workingDir + \ does not exist.;workingdir</exception>
         public void ValidateOptions()
         {
-            // --get-graphics-profile doesn't require a build path
-            if (!GetGraphicsPlatform)
-            {
-                if (string.IsNullOrWhiteSpace(BuildDirectory))
-                    throw new ArgumentException("This tool requires a build path.", "build-path");
+            if (string.IsNullOrWhiteSpace(BuildDirectory))
+                throw new ArgumentException("This tool requires a build path.", "build-path");
 
-                try
-                {
-                    BuildDirectory = Path.GetFullPath(BuildDirectory);
-                }
-                catch (Exception)
-                {
-                    throw new ArgumentException("The provided path is not a valid path name.", "build-path");
-                }
+            try
+            {
+                BuildDirectory = Path.GetFullPath(BuildDirectory);
+            }
+            catch (Exception)
+            {
+                throw new ArgumentException("The provided path is not a valid path name.", "build-path");
             }
 
             if (SlavePipe == null)
             {
-                if (string.IsNullOrWhiteSpace(BuildProfile))
-                    throw new ArgumentException("This tool requires a selected profile.", "profile");
-
                 if (string.IsNullOrWhiteSpace(PackageFile))
                 {
                     if (string.IsNullOrWhiteSpace(SolutionFile) || PackageId == Guid.Empty)

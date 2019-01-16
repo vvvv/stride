@@ -6,18 +6,26 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
-using Xenko.Core;
 using Xenko.Core.Diagnostics;
 
 namespace Xenko.Core.Assets
 {
+    public interface IReadOnlyPackageCollection : IReadOnlyCollection<Package>, INotifyCollectionChanged
+    {
+        Package Find(Dependency dependency);
+
+        Package Find(PackageDependency packageDependency);
+
+        Package Find(string name, PackageVersionRange versionRange);
+    }
+
     /// <summary>
     /// A collection of <see cref="Package"/>.
     /// </summary>
     [DebuggerTypeProxy(typeof(CollectionDebugView))]
     [DebuggerDisplay("Count = {Count}")]
     [DataContract("PackageCollection")]
-    public sealed class PackageCollection : ICollection<Package>, INotifyCollectionChanged
+    public sealed class PackageCollection : ICollection<Package>, INotifyCollectionChanged, IReadOnlyPackageCollection
     {
         private readonly List<Package> packages;
 
@@ -61,13 +69,23 @@ namespace Xenko.Core.Assets
         }
 
         /// <summary>
-        /// Finds the specified package by its unique identifier.
+        /// Finds the a package already in this collection from the specified dependency.
         /// </summary>
-        /// <param name="packageGuid">The package unique identifier.</param>
+        /// <param name="packageDependency">The package dependency.</param>
         /// <returns>Package.</returns>
-        public Package Find(Guid packageGuid)
+        public Package Find(Dependency dependency)
         {
-            return packages.FirstOrDefault(package => package.Id == packageGuid);
+            if (dependency == null) throw new ArgumentNullException(nameof(dependency));
+            switch (dependency.Type)
+            {
+                case DependencyType.Package:
+                    return Find(dependency.Name, new PackageVersionRange(dependency.Version));
+                case DependencyType.Project:
+                    // Project versions might not be properly loaded so we check only by name
+                    return packages.FirstOrDefault(package => package.Meta.Name == dependency.Name && package.Container is SolutionProject);
+                default:
+                    throw new ArgumentException($"Unhandled value: {dependency.Type}");
+            }
         }
 
         /// <summary>
@@ -98,11 +116,8 @@ namespace Xenko.Core.Assets
         public void Add(Package item)
         {
             if (item == null) throw new ArgumentNullException("item");
-            if (Find(item.Id) == null)
-            {
-                packages.Add(item);
-                OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item));
-            }
+            packages.Add(item);
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item));
         }
 
         public void Clear()
@@ -112,20 +127,10 @@ namespace Xenko.Core.Assets
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, packages, oldPackages));
         }
 
-        /// <summary>
-        /// Determines whether this collection contains a package with the specified package unique identifier.
-        /// </summary>
-        /// <param name="packageGuid">The package unique identifier.</param>
-        /// <returns><c>true</c> if this collection contains a package with the specified package unique identifier; otherwise, <c>false</c>.</returns>
-        public bool ContainsById(Guid packageGuid)
-        {
-            return packages.Any(package => package.Id == packageGuid);
-        }
-
         public bool Contains(Package item)
         {
             if (item == null) throw new ArgumentNullException("item");
-            return ContainsById(item.Id);
+            return packages.Contains(item);
         }
 
         public void CopyTo(Package[] array, int arrayIndex)
@@ -133,23 +138,10 @@ namespace Xenko.Core.Assets
             packages.CopyTo(array, arrayIndex);
         }
 
-        public bool RemoveById(Guid packageGuid)
-        {
-            var item = Find(packageGuid);
-            if (item != null)
-            {
-
-                packages.Remove(item);
-                OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item));
-                return true;
-            }
-            return false;
-        }
-
         public bool Remove(Package item)
         {
             if (item == null) throw new ArgumentNullException("item");
-            return RemoveById(item.Id);
+            return packages.Remove(item);
         }
 
         private void OnCollectionChanged(NotifyCollectionChangedEventArgs e)

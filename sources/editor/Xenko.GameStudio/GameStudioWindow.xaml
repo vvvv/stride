@@ -228,14 +228,13 @@
             </DataTemplate>
           </MenuItem.ItemTemplate>
         </MenuItem>
-        <MenuItem Header="{xk:Localize Add existing project..., Context=Menu}" Command="{Binding Session.AddExistingProjectCommand}" Icon="{xk:Image {StaticResource ImageAddExistingProject}}"/>
         <MenuItem Header="{xk:Localize Add dependency..., Context=Menu}" Command="{Binding Session.AddDependencyCommand}" Icon="{xk:Image {StaticResource ImageAddDependency}}"/>
-        <MenuItem Header="{xk:Localize Set as current package, Context=Menu}" Command="{Binding Session.SetCurrentPackageCommand}" CommandParameter="{Binding}" Icon="{xk:Image {StaticResource ImageStartupProject}}"/>
+        <MenuItem Header="{xk:Localize Set as current project, Context=Menu}" Command="{Binding Session.SetCurrentProjectCommand}" CommandParameter="{Binding}" Icon="{xk:Image {StaticResource ImageStartupProject}}"/>
         <MenuItem Header="{xk:Localize Package properties, Context=Menu}" Command="{Binding Session.ActivatePackagePropertiesCommand}" Icon="{xk:Image {StaticResource ImagePackageProperties}}"/>
 
         <MenuItem Header="{xk:Localize Solution, Context=Menu}" Style="{StaticResource MenuGroupSeparatorStyle}"/>
-        <MenuItem Header="{xk:Localize New package..., Context=Menu}" Command="{Binding Session.NewPackageCommand}" Icon="{xk:Image {StaticResource ImageAddNewPackage}}"/>
-        <MenuItem Header="{xk:Localize Add existing package..., Context=Menu}" Command="{Binding Session.AddExistingPackageCommand}" Icon="{xk:Image {StaticResource ImageAddExistingPackage}}"/>
+        <MenuItem Header="{xk:Localize New project..., Context=Menu}" Command="{Binding Session.NewProjectCommand}" Icon="{xk:Image {StaticResource ImageAddNewPackage}}"/>
+        <MenuItem Header="{xk:Localize Add existing project..., Context=Menu}" Command="{Binding Session.AddExistingProjectCommand}" Icon="{xk:Image {StaticResource ImageAddExistingProject}}"/>
         <MenuItem Header="{xk:Localize Open in IDE, Context=Menu}" Command="{Binding Session.OpenInIDECommand}" Icon="{xk:Image {StaticResource ImageVisualStudio}}"/>
         <MenuItem Header="{xk:Localize Reload game assemblies, Context=Menu}" Command="{Binding Debugging.ReloadAssembliesCommand}" Icon="{xk:Image {StaticResource ImageReloadAssemblies}}"/>
 
@@ -411,17 +410,6 @@
                   ToolTip="{xk:ToolTip {xk:Localize Cancel the current build, Context=ToolTip}, {x:Static strings:KeyGestures.CancelBuild}}" xk:ToolTipHelper.Status="{Binding Status}" ToolTipService.ShowOnDisabled="True">
             <Image Source="{StaticResource ImageStopBuild}"/>
           </Button>
-
-          <ComboBox ItemsSource="{Binding Session.CurrentPackage.ExecutableProfiles}" SelectedItem="{Binding Session.CurrentPackage.SelectedProfile}" Width="150">
-            <ComboBox.ItemTemplate>
-              <DataTemplate>
-                <StackPanel Orientation="Horizontal">
-                  <Image Width="16" Height="16" Source="{Binding Platform, Converter={xk:StaticResourceConverter}}" Margin="0,0,4,0"/>
-                  <TextBlock Text="{Binding Name}"/>
-                </StackPanel>
-              </DataTemplate>
-            </ComboBox.ItemTemplate>
-          </ComboBox>
         </ToolBar>
       </ToolBarTray>
 
@@ -433,16 +421,16 @@
           <xcad:LayoutPanel Orientation="Horizontal">
             <xcad:LayoutPanel Orientation="Vertical">
               <xcad:LayoutPanel Orientation="Horizontal">
-                <xcad:LayoutAnchorablePane DockWidth="240">
+                <xcad:LayoutAnchorablePane DockWidth="300">
                   <!-- SOLUTION EXPLORER -->
-                  <xcad:LayoutAnchorable ContentId="SolutionExplorer" Title="{Binding Source={xk:Localize Solution explorer, Context=View}}"
+                  <xcad:LayoutAnchorable AutoHideMinWidth="300" ContentId="SolutionExplorer" Title="{Binding Source={xk:Localize Solution explorer, Context=View}}"
                                          gs:AvalonDockHelper.IsVisible="{Binding Panels.SessionExplorerPanelVisible, Mode=TwoWay,
                                          Source={x:Static gs:GameStudioViewModel.GameStudio}, FallbackValue={xk:True}}">
                     <DockPanel>
                       <ToolBarTray DockPanel.Dock="Top">
                         <ToolBar>
-                          <Button Command="{Binding Session.NewPackageCommand}"
-                            ToolTip="{xk:Localize Create a package..., Context=ToolTip}" xk:ToolTipHelper.Status="{Binding Status}" ToolTipService.ShowOnDisabled="True">
+                          <Button Command="{Binding Session.NewProjectCommand}"
+                            ToolTip="{xk:Localize Create a project..., Context=ToolTip}" xk:ToolTipHelper.Status="{Binding Status}" ToolTipService.ShowOnDisabled="True">
                             <Image Source="{StaticResource ImageAddNewPackage}" />
                           </Button>
                           <Button Command="{Binding Session.NewDirectoryCommand}" CommandParameter="{Binding SelectedItems, ElementName=DirectoryTreeView}"
@@ -489,7 +477,7 @@
                             <MenuItem Header="{xk:Localize Folder, Context=Menu}" Style="{StaticResource MenuGroupSeparatorStyle}" Visibility="{Binding Session.NewDirectoryCommand.IsEnabled, Converter={xk:VisibleOrCollapsed}}"/>
                             <MenuItem Header="{xk:Localize Create folder, Context=Menu}" Command="{Binding Session.NewDirectoryCommand}" CommandParameter="{Binding Session.ActiveAssetView.SelectedLocations}" Icon="{xk:Image {StaticResource ImageNewFolder}}" Visibility="{Binding Session.NewDirectoryCommand.IsEnabled, Converter={xk:VisibleOrCollapsed}}"/>
 
-                            <MenuItem Header="{xk:Localize Package, Context=Menu}" Style="{StaticResource MenuGroupSeparatorStyle}" Visibility="{xk:MultiBinding {Binding Session.IsUpdatePackageEnabled}, {Binding Session.AddExistingProjectCommand.IsEnabled}, {Binding Session.AddDependencyCommand.IsEnabled}, {Binding Session.SetCurrentPackageCommand.IsEnabled}, Converter={xk:MultiChained {xk:OrMultiConverter}, {xk:VisibleOrCollapsed}}}"/>
+                            <MenuItem Header="{xk:Localize Package, Context=Menu}" Style="{StaticResource MenuGroupSeparatorStyle}" Visibility="{xk:MultiBinding {Binding Session.IsUpdatePackageEnabled}, {Binding Session.AddExistingProjectCommand.IsEnabled}, {Binding Session.AddDependencyCommand.IsEnabled}, {Binding Session.SetCurrentProjectCommand.IsEnabled}, Converter={xk:MultiChained {xk:OrMultiConverter}, {xk:VisibleOrCollapsed}}}"/>
                             <MenuItem Header="{xk:Localize Update package, Context=Menu}" ItemsSource="{Binding Session.UpdatePackageViewModel.Templates}" Icon="{xk:Image {StaticResource ImageAddNewProject}}" Visibility="{Binding Session.IsUpdatePackageEnabled, Converter={xk:VisibleOrCollapsed}}">
                               <MenuItem.ItemContainerStyle>
                                 <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource {x:Type MenuItem}}" d:DataContext="{d:DesignInstance viewModels1:TemplateDescriptionViewModel}">
@@ -508,14 +496,13 @@
                                 </DataTemplate>
                               </MenuItem.ItemTemplate>
                             </MenuItem>
-                            <MenuItem Header="{xk:Localize Add existing project..., Context=Menu}" Command="{Binding Session.AddExistingProjectCommand}" Icon="{xk:Image {StaticResource ImageAddExistingProject}}" Visibility="{Binding Session.AddExistingProjectCommand.IsEnabled, Converter={xk:VisibleOrCollapsed}}"/>
                             <MenuItem Header="{xk:Localize Add dependency..., Context=Menu}" Command="{Binding Session.AddDependencyCommand}" Icon="{xk:Image {StaticResource ImageAddDependency}}" Visibility="{Binding Session.AddDependencyCommand.IsEnabled, Converter={xk:VisibleOrCollapsed}}"/>
-                            <MenuItem Header="{xk:Localize Set as current package, Context=Menu}" Command="{Binding Session.SetCurrentPackageCommand}" CommandParameter="{Binding}" Icon="{xk:Image {StaticResource ImageStartupProject}}" Visibility="{Binding Session.SetCurrentPackageCommand.IsEnabled, Converter={xk:VisibleOrCollapsed}}"/>
+                            <MenuItem Header="{xk:Localize Set as current project, Context=Menu}" Command="{Binding Session.SetCurrentProjectCommand}" CommandParameter="{Binding}" Icon="{xk:Image {StaticResource ImageStartupProject}}" Visibility="{Binding Session.SetCurrentProjectCommand.IsEnabled, Converter={xk:VisibleOrCollapsed}}"/>
                             <MenuItem Header="{xk:Localize Package properties, Context=Menu}" Command="{Binding Session.ActivatePackagePropertiesCommand}" Icon="{xk:Image {StaticResource ImagePackageProperties}}" Visibility="{Binding Session.ActivatePackagePropertiesCommand.IsEnabled, Converter={xk:VisibleOrCollapsed}}"/>
 
                             <MenuItem Header="{xk:Localize Solution, Context=Menu}" Style="{StaticResource MenuGroupSeparatorStyle}" Visibility="{xk:MultiBinding {Binding Session.NewPackageCommand.IsEnabled}, {Binding Session.AddExistingPackageCommand.IsEnabled}, {Binding Session.OpenInIDECommand.IsEnabled}, Converter={xk:MultiChained {xk:OrMultiConverter}, {xk:VisibleOrCollapsed}}}"/>
-                            <MenuItem Header="{xk:Localize New package..., Context=Menu}" Command="{Binding Session.NewPackageCommand}" Icon="{xk:Image {StaticResource ImageAddNewPackage}}" Visibility="{Binding Session.NewPackageCommand.IsEnabled, Converter={xk:VisibleOrCollapsed}}"/>
-                            <MenuItem Header="{xk:Localize Add existing package..., Context=Menu}" Command="{Binding Session.AddExistingPackageCommand}" Icon="{xk:Image {StaticResource ImageAddExistingPackage}}" Visibility="{Binding Session.AddExistingPackageCommand.IsEnabled, Converter={xk:VisibleOrCollapsed}}"/>
+                            <MenuItem Header="{xk:Localize New project..., Context=Menu}" Command="{Binding Session.NewProjectCommand}" Icon="{xk:Image {StaticResource ImageAddNewPackage}}" Visibility="{Binding Session.NewProjectCommand.IsEnabled, Converter={xk:VisibleOrCollapsed}}"/>
+                            <MenuItem Header="{xk:Localize Add existing project..., Context=Menu}" Command="{Binding Session.AddExistingProjectCommand}" Icon="{xk:Image {StaticResource ImageAddExistingProject}}" Visibility="{Binding Session.AddExistingProjectCommand.IsEnabled, Converter={xk:VisibleOrCollapsed}}"/>
                             <MenuItem Header="{xk:Localize Open in IDE, Context=Menu}" Command="{Binding Session.OpenInIDECommand}" Icon="{xk:Image {StaticResource ImageVisualStudio}}" Visibility="{Binding Session.OpenInIDECommand.IsEnabled, Converter={xk:VisibleOrCollapsed}}"/>
 
                             <MenuItem Header="{xk:Localize Actions, Context=Menu}" Style="{StaticResource MenuGroupSeparatorStyle}"/>
@@ -570,7 +557,7 @@
                 </xcad:LayoutAnchorablePane>
                 <xcad:LayoutDocumentPane>
                   <!-- ASSET VIEW -->
-                  <xcad:LayoutAnchorable ContentId="AssetView" Title="{Binding Source={xk:Localize Asset view, Context=View}}"
+                  <xcad:LayoutAnchorable AutoHideMinWidth="300" ContentId="AssetView" Title="{Binding Source={xk:Localize Asset view, Context=View}}"
                                            gs:AvalonDockHelper.IsVisible="{Binding Panels.AssetViewPanelVisible, Mode=TwoWay,
                                            Source={x:Static gs:GameStudioViewModel.GameStudio}, FallbackValue={xk:True}}">
                     <xk:AssetViewUserControl AssetCollection="{Binding Session.ActiveAssetView}" AssetContextMenu="{StaticResource AssetContextMenu}"
@@ -589,9 +576,9 @@
                   </xcad:LayoutAnchorable>
                 </xcad:LayoutDocumentPane>
               </xcad:LayoutPanel>
-              <xcad:LayoutAnchorablePane DockHeight="195">
+              <xcad:LayoutAnchorablePane DockHeight="200">
                 <!-- REFERENCES -->
-                <xcad:LayoutAnchorable ContentId="References" Title="{Binding Source={xk:Localize References, Context=View}}"
+                <xcad:LayoutAnchorable AutoHideMinHeight="200" ContentId="References" Title="{Binding Source={xk:Localize References, Context=View}}"
                                        gs:AvalonDockHelper.IsVisible="{Binding Panels.ReferencesPanelVisible, Mode=TwoWay,
                                        Source={x:Static gs:GameStudioViewModel.GameStudio}, FallbackValue={xk:True}}">
                   <DockPanel LastChildFill="True" x:Name="RefViewDockPanel">
@@ -619,14 +606,14 @@
                   </DockPanel>
                 </xcad:LayoutAnchorable>
                 <!-- ASSET LOG -->
-                <xcad:LayoutAnchorable ContentId="AssetLog"
+                <xcad:LayoutAnchorable AutoHideMinHeight="200" ContentId="AssetLog"
                                        Title="{xk:Localize Asset error ({0}), Plural=Asset errors ({0}), Count={Binding Session.AssetLog.ErrorCount, Source={x:Static gs:GameStudioViewModel.GameStudio}}, IsStringFormat=True, Context=View}"
                                        gs:AvalonDockHelper.IsVisible="{Binding Panels.AssetLogPanelVisible, Mode=TwoWay,
                                        Source={x:Static gs:GameStudioViewModel.GameStudio}, FallbackValue={xk:True}}">
                   <xk:GridLogViewer LogMessages="{Binding Session.AssetLog.FilteredMessages}" Session="{Binding Session}" ShowDebugMessages="False" ShowVerboseMessages="False" ShowInfoMessages="False"/>
                 </xcad:LayoutAnchorable>
                 <!-- BUILD LOG -->
-                <xcad:LayoutAnchorable ContentId="BuildLog" Title="{Binding Debugging.OutputTitle, Source={x:Static gs:GameStudioViewModel.GameStudio}}"
+                <xcad:LayoutAnchorable AutoHideMinHeight="200" ContentId="BuildLog" Title="{Binding Debugging.OutputTitle, Source={x:Static gs:GameStudioViewModel.GameStudio}}"
                                        gs:AvalonDockHelper.IsVisible="{Binding Panels.BuildLogPanelVisible, Mode=TwoWay,
                                        Source={x:Static gs:GameStudioViewModel.GameStudio}, FallbackValue={xk:True}}">
                   <TabControl x:Name="LogTabControl">
@@ -669,10 +656,10 @@
                 </xcad:LayoutAnchorable>
               </xcad:LayoutAnchorablePane>
             </xcad:LayoutPanel>
-            <xcad:LayoutPanel Orientation="Vertical" DockWidth="400">
+            <xcad:LayoutAnchorablePaneGroup Orientation="Vertical" DockWidth="400">
               <xcad:LayoutAnchorablePane DockHeight="2*">
                 <!-- PROPERTY GRID -->
-                <xcad:LayoutAnchorable ContentId="PropertyGrid" Title="{Binding Source={xk:Localize Property grid, Context=View}}"
+                <xcad:LayoutAnchorable AutoHideMinWidth="400" ContentId="PropertyGrid" Title="{Binding Source={xk:Localize Property grid, Context=View}}"
                                        gs:AvalonDockHelper.IsVisible="{Binding Panels.PropertyGridPanelVisible, Mode=TwoWay,
                                        Source={x:Static gs:GameStudioViewModel.GameStudio}, FallbackValue={xk:True}}">
                   <Grid Background="{StaticResource ToolBarBackgroundBrush}">
@@ -889,7 +876,7 @@
               <xcad:LayoutAnchorablePaneGroup DockHeight="1*">
                 <xcad:LayoutAnchorablePane>
                   <!-- ASSET PREVIEW -->
-                  <xcad:LayoutAnchorable ContentId="AssetPreview" Title="{Binding Source={xk:Localize Asset preview, Context=View}}"
+                  <xcad:LayoutAnchorable AutoHideMinWidth="400" ContentId="AssetPreview" Title="{Binding Source={xk:Localize Asset preview, Context=View}}"
                                          gs:AvalonDockHelper.IsVisible="{Binding Panels.AssetPreviewPanelVisible, Mode=TwoWay,
                                          Source={x:Static gs:GameStudioViewModel.GameStudio}, FallbackValue={xk:True}}">
                     <DockPanel LastChildFill="True">
@@ -897,7 +884,7 @@
                     </DockPanel>
                   </xcad:LayoutAnchorable>
                   <!-- ACTION HISTORY -->
-                  <xcad:LayoutAnchorable ContentId="ActionHistory" Title="{Binding Source={xk:Localize Edit history, Context=View}}"
+                  <xcad:LayoutAnchorable AutoHideMinWidth="400" ContentId="ActionHistory" Title="{Binding Source={xk:Localize Edit history, Context=View}}"
                                          gs:AvalonDockHelper.IsVisible="{Binding Panels.ActionHistoryPanelVisible, Mode=TwoWay,
                                          Source={x:Static gs:GameStudioViewModel.GameStudio}, FallbackValue={xk:True}}">
                     <ListBox ItemsSource="{Binding Session.ActionHistory.Transactions}" HorizontalContentAlignment="Stretch">
@@ -926,7 +913,7 @@
                   </xcad:LayoutAnchorable>
                 </xcad:LayoutAnchorablePane>
               </xcad:LayoutAnchorablePaneGroup>
-            </xcad:LayoutPanel>
+            </xcad:LayoutAnchorablePaneGroup>
           </xcad:LayoutPanel>
         </xcad:LayoutRoot>
       </xcad:DockingManager>

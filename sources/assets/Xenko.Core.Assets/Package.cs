@@ -21,6 +21,7 @@ using Xenko.Core.IO;
 using Xenko.Core.Reflection;
 using Xenko.Core.Serialization;
 using Xenko.Core.Yaml;
+using NuGet.ProjectModel;
 
 namespace Xenko.Core.Assets
 {
@@ -55,26 +56,19 @@ namespace Xenko.Core.Assets
     [DataContract("Package")]
     [NonIdentifiableCollectionItems]
     [AssetDescription(PackageFileExtension)]
-    [DebuggerDisplay("Id: {Id}, Name: {Meta.Name}, Version: {Meta.Version}, Assets [{Assets.Count}]")]
-    [AssetFormatVersion("Assets", PackageFileVersion)]
-    public sealed partial class Package : IIdentifiable, IFileSynchronizable, IAssetFinder
+    [DebuggerDisplay("Name: {Meta.Name}, Version: {Meta.Version}, Assets [{Assets.Count}]")]
+    [AssetFormatVersion("Assets", PackageFileVersion, "0.0.0.4")]
+    [AssetUpgrader("Assets", "0.0.0.4", "3.1.0.0", typeof(MovePackageInsideProject))]
+    public sealed partial class Package : IFileSynchronizable, IAssetFinder
     {
-        private const int PackageFileVersion = 4;
+        private const string PackageFileVersion = "3.1.0.0";
 
-        private Guid id;
-
-        // Note: Please keep this code in sync with Asset class
-        /// <summary>
-        /// Locks the unique identifier for further changes.
-        /// </summary>
-        internal bool IsIdLocked;
-
-        private readonly List<UFile> filesToDelete = new List<UFile>();
+        internal readonly List<UFile> FilesToDelete = new List<UFile>();
 
         private PackageSession session;
 
         private UFile packagePath;
-        private UFile previousPackagePath;
+        internal UFile PreviousPackagePath;
         private bool isDirty;
         private readonly Lazy<PackageUserSettings> settings;
 
@@ -93,7 +87,6 @@ namespace Xenko.Core.Assets
         /// </summary>
         public Package()
         {
-            Id = Guid.NewGuid();
             // Initializse package with default versions (same code as in Asset..ctor())
             var defaultPackageVersion = AssetRegistry.GetCurrentFormatVersions(GetType());
             if (defaultPackageVersion != null)
@@ -105,29 +98,6 @@ namespace Xenko.Core.Assets
             Bundles = new BundleCollection(this);
             IsDirty = true;
             settings = new Lazy<PackageUserSettings>(() => new PackageUserSettings(this));
-        }
-
-        // Note: Please keep this code in sync with Asset class
-        /// <summary>
-        /// Gets or sets the unique identifier of this package.
-        /// </summary>
-        /// <value>The identifier.</value>
-        [DataMember(-10000)]
-        [NonOverridable]
-        [Display(Browsable = false)]
-        public Guid Id
-        {
-            get
-            {
-                return id;
-            }
-            set
-            {
-                if (value != id && IsIdLocked)
-                    throw new InvalidOperationException("Cannot change an Asset Object Id once it is locked by a package");
-
-                id = value;
-            }
         }
 
         // Note: Please keep this code in sync with Asset class
@@ -158,19 +128,25 @@ namespace Xenko.Core.Assets
         public PackageMeta Meta { get; set; } = new PackageMeta();
 
         /// <summary>
-        /// Gets the local package dependencies used by this package (only valid for local references). Global dependencies
-        /// are defined through the <see cref="Meta"/> property in <see cref="PackageMeta.Dependencies"/> 
+        /// Gets the asset directories to lookup.
         /// </summary>
-        /// <value>The package local dependencies.</value>
-        [DataMember(30)]
-        public List<PackageReference> LocalDependencies { get; } = new List<PackageReference>();
+        /// <value>The asset directories.</value>
+        [DataMember(40, DataMemberMode.Assign)]
+        public AssetFolderCollection AssetFolders { get; set; } = new AssetFolderCollection();
 
         /// <summary>
-        /// Gets the profiles.
+        /// Gets the resource directories to lookup.
         /// </summary>
-        /// <value>The profiles.</value>
-        [DataMember(50)]
-        public PackageProfileCollection Profiles { get; } = new PackageProfileCollection();
+        /// <value>The resource directories.</value>
+        [DataMember(45, DataMemberMode.Assign)]
+        public List<UDirectory> ResourceFolders { get; set; } = new List<UDirectory>();
+
+        /// <summary>
+        /// Gets the output group directories.
+        /// </summary>
+        /// <value>The output group directories.</value>
+        [DataMember(50, DataMemberMode.Assign)]
+        public Dictionary<string, UDirectory> OutputGroupDirectories { get; set; } = new Dictionary<string, UDirectory>();
 
         /// <summary>
         /// Gets or sets the list of folders that are explicitly created but contains no assets.
@@ -266,28 +242,16 @@ namespace Xenko.Core.Assets
         [DataMemberIgnore]
         public UDirectory RootDirectory => FullPath?.GetParent();
 
+        [DataMemberIgnore]
+        public PackageContainer Container { get; internal set; }
+
         /// <summary>
         /// Gets the session.
         /// </summary>
         /// <value>The session.</value>
         /// <exception cref="System.InvalidOperationException">Cannot attach a package to more than one session</exception>
         [DataMemberIgnore]
-        public PackageSession Session
-        {
-            get
-            {
-                return session;
-            }
-            internal set
-            {
-                if (value != null && session != null && !ReferenceEquals(session, value))
-                {
-                    throw new InvalidOperationException("Cannot attach a package to more than one session");
-                }
-                session = value;
-                IsIdLocked = (session != null);
-            }
-        }
+        public PackageSession Session => Container?.Session;
 
         /// <summary>
         /// Gets the package user settings. Usually stored in a .user file alongside the package. Lazily loaded on first time.
@@ -306,6 +270,9 @@ namespace Xenko.Core.Assets
         /// </value>
         [DataMemberIgnore]
         public List<PackageLoadedAssembly> LoadedAssemblies { get; } = new List<PackageLoadedAssembly>();
+
+        [DataMemberIgnore]
+        public string RootNamespace { get; private set; }
 
         /// <summary>
         /// Adds an existing project to this package.
@@ -347,11 +314,13 @@ namespace Xenko.Core.Assets
                         var platformType = VSProjectHelper.GetPlatformTypeFromProject(msProject) ?? PlatformType.Shared;
                         var projectReference = new ProjectReference(VSProjectHelper.GetProjectGuid(msProject), pathToMsproj.MakeRelative(RootDirectory), projectType.Value);
 
+                        // TODO CSPROJ=XKPKG
+                        throw new NotImplementedException();
                         // Add the ProjectReference only for the compatible profiles (same platform or no platform)
-                        foreach (var profile in Profiles.Where(profile => platformType == profile.Platform))
-                        {
-                            profile.ProjectReferences.Add(projectReference);
-                        }
+                        //foreach (var profile in Profiles.Where(profile => platformType == profile.Platform))
+                        //{
+                        //    profile.ProjectReferences.Add(projectReference);
+                        //}
                     }
                 }
                 finally
@@ -390,9 +359,8 @@ namespace Xenko.Core.Assets
 
         public UDirectory GetDefaultAssetFolder()
         {
-            var sharedProfile = Profiles.FindSharedProfile();
-            var folder = sharedProfile?.AssetFolders.FirstOrDefault();
-            return folder?.Path ?? ("Assets/" + PackageProfile.SharedName);
+            var folder = AssetFolders.FirstOrDefault();
+            return folder?.Path ?? ("Assets");
         }
 
         /// <summary>
@@ -411,7 +379,6 @@ namespace Xenko.Core.Assets
                 var assetItem = new AssetItem(asset.Location, newAsset)
                 {
                     SourceFolder = asset.SourceFolder,
-                    SourceProject = asset.SourceProject
                 };
                 package.Assets.Add(assetItem);
             }
@@ -439,15 +406,12 @@ namespace Xenko.Core.Assets
                 var currentRootDirectory = RootDirectory;
                 if (previousRootDirectory != null && currentRootDirectory != null)
                 {
-                    foreach (var profile in Profiles)
+                    foreach (var sourceFolder in AssetFolders)
                     {
-                        foreach (var sourceFolder in profile.AssetFolders)
+                        if (sourceFolder.Path.IsAbsolute)
                         {
-                            if (sourceFolder.Path.IsAbsolute)
-                            {
-                                var relativePath = sourceFolder.Path.MakeRelative(previousRootDirectory);
-                                sourceFolder.Path = UPath.Combine(currentRootDirectory, relativePath);
-                            }
+                            var relativePath = sourceFolder.Path.MakeRelative(previousRootDirectory);
+                            sourceFolder.Path = UPath.Combine(currentRootDirectory, relativePath);
                         }
                     }
                 }
@@ -472,176 +436,14 @@ namespace Xenko.Core.Assets
             AssetDirtyChanged?.Invoke(asset, oldValue, newValue);
         }
         
-        /// <summary>
-        /// Saves this package and all dirty assets. See remarks.
-        /// </summary>
-        /// <param name="log">The log.</param>
-        /// <exception cref="System.ArgumentNullException">log</exception>
-        /// <remarks>When calling this method directly, it does not handle moving assets between packages.
-        /// Call <see cref="PackageSession.Save" /> instead.</remarks>
-        public void Save(ILogger log, PackageSaveParameters saveParameters = null)
-        {
-            if (log == null) throw new ArgumentNullException(nameof(log));
-
-            if (FullPath == null)
-            {
-                log.Error(this, null, AssetMessageCode.PackageCannotSave, "null");
-                return;
-            }
-
-            saveParameters = saveParameters ?? PackageSaveParameters.Default();
-
-            // Use relative paths when saving
-            var analysis = new PackageAnalysis(this, new PackageAnalysisParameters()
-            {
-                SetDirtyFlagOnAssetWhenFixingUFile = false,
-                ConvertUPathTo = UPathType.Relative,
-                IsProcessingUPaths = true,
-            });
-            analysis.Run(log);
-
-            var assetsFiltered = false;
-            try
-            {
-                // Update source folders
-                UpdateSourceFolders(Assets);
-
-                if (IsDirty)
-                {
-                    List<UFile> filesToDeleteLocal;
-                    lock (filesToDelete)
-                    {
-                        filesToDeleteLocal = filesToDelete.ToList();
-                        filesToDelete.Clear();
-                    }
-
-                    try
-                    {
-                        AssetFileSerializer.Save(FullPath, this, null);
-
-                        // Move the package if the path has changed
-                        if (previousPackagePath != null && previousPackagePath != packagePath)
-                        {
-                            filesToDeleteLocal.Add(previousPackagePath);
-                        }
-                        previousPackagePath = packagePath;
-
-                        IsDirty = false;
-                    }
-                    catch (Exception ex)
-                    {
-                        log.Error(this, null, AssetMessageCode.PackageCannotSave, ex, FullPath);
-                        return;
-                    }
-                    
-                    // Delete obsolete files
-                    foreach (var file in filesToDeleteLocal)
-                    {
-                        if (File.Exists(file.FullPath))
-                        {
-                            try
-                            {
-                                File.Delete(file.FullPath);
-                            }
-                            catch (Exception ex)
-                            {
-                                log.Error(this, null, AssetMessageCode.AssetCannotDelete, ex, file.FullPath);
-                            }
-                        }
-                    }
-                }
-
-                //batch projects
-                var vsProjs = new Dictionary<string, Project>();
-
-                foreach (var asset in Assets)
-                {
-                    if (asset.IsDirty)
-                    {
-                        if (saveParameters.AssetFilter?.Invoke(asset) ?? true)
-                        {
-                            SaveSingleAsset_NoUpdateSourceFolder(asset, log);
-                        }
-                        else
-                        {
-                            assetsFiltered = true;
-                        }
-                    }
-
-                    // Add new files to .csproj
-                    var projectAsset = asset.Asset as IProjectAsset;
-                    if (projectAsset != null)
-                    {
-                        var projectFullPath = asset.SourceProject;
-                        var projectInclude = asset.GetProjectInclude();
-
-                        Project project;
-                        if (!vsProjs.TryGetValue(projectFullPath, out project))
-                        {
-                            project = VSProjectHelper.LoadProject(projectFullPath);
-                            vsProjs.Add(projectFullPath, project);
-                        }
-
-                        //check if the item is already there, this is possible when saving the first time when creating from a template
-                        if (project.Items.All(x => x.EvaluatedInclude != projectInclude))
-                        {
-                            var generatorAsset = projectAsset as IProjectFileGeneratorAsset;
-                            if (generatorAsset != null)
-                            {
-                                var generatedInclude = asset.GetGeneratedInclude();
-
-                                project.AddItem("None", projectInclude,
-                                    new List<KeyValuePair<string, string>>
-                                    {
-                                    new KeyValuePair<string, string>("Generator", generatorAsset.Generator),
-                                    new KeyValuePair<string, string>("LastGenOutput", new UFile(generatedInclude).GetFileName())
-                                    });
-
-                                project.AddItem("Compile", generatedInclude,
-                                    new List<KeyValuePair<string, string>>
-                                    {
-                                    new KeyValuePair<string, string>("AutoGen", "True"),
-                                    new KeyValuePair<string, string>("DesignTime", "True"),
-                                    new KeyValuePair<string, string>("DesignTimeSharedInput", "True"),
-                                    new KeyValuePair<string, string>("DependentUpon", new UFile(projectInclude).GetFileName())
-                                    });
-                            }
-                            else
-                            {
-                                // Note: if project has auto items, no need to add it
-                                if (string.Compare(project.GetPropertyValue("EnableDefaultCompileItems"), "true", true, CultureInfo.InvariantCulture) != 0)
-                                    project.AddItem("Compile", projectInclude);
-                            }
-                        }
-                    }
-                }
-
-                foreach (var project in vsProjs.Values)
-                {
-                    project.Save();
-                    project.ProjectCollection.UnloadAllProjects();
-                    project.ProjectCollection.Dispose();
-                }
-
-                // If some assets were filtered out, Assets is still dirty
-                Assets.IsDirty = assetsFiltered;
-            }
-            finally
-            {
-                // Rollback all relative UFile to absolute paths
-                analysis.Parameters.ConvertUPathTo = UPathType.Absolute;
-                analysis.Run();
-            }
-        }
-
-        public bool SaveSingleAsset(AssetItem asset, ILogger log)
+        public static bool SaveSingleAsset(AssetItem asset, ILogger log)
         {
             // Make sure AssetItem.SourceFolder/Project are generated if they were null
             asset.UpdateSourceFolders();
             return SaveSingleAsset_NoUpdateSourceFolder(asset, log);
         }
 
-        private bool SaveSingleAsset_NoUpdateSourceFolder(AssetItem asset, ILogger log)
+        internal static bool SaveSingleAsset_NoUpdateSourceFolder(AssetItem asset, ILogger log)
         {
             var assetPath = asset.FullPath;
 
@@ -668,7 +470,7 @@ namespace Xenko.Core.Assets
             }
             catch (Exception ex)
             {
-                log.Error(this, asset.ToReference(), AssetMessageCode.AssetCannotSave, ex, assetPath);
+                log.Error(asset.Package, asset.ToReference(), AssetMessageCode.AssetCannotSave, ex, assetPath);
                 return false;
             }
             return true;
@@ -722,7 +524,8 @@ namespace Xenko.Core.Assets
         /// filePath</exception>
         public static Package Load(ILogger log, string filePath, PackageLoadParameters loadParametersArg = null)
         {
-            var package = LoadRaw(log, filePath);
+            var package = LoadProject(log, filePath)?.Package;
+
             if (package != null)
             {
                 if (!package.LoadAssembliesAndAssets(log, loadParametersArg))
@@ -752,8 +555,7 @@ namespace Xenko.Core.Assets
 
             if (!File.Exists(filePath))
             {
-                log.Error($"Package file [{filePath}] was not found");
-                return null;
+                throw new FileNotFoundException($"Package file [{filePath}] was not found");
             }
 
             try
@@ -766,18 +568,77 @@ namespace Xenko.Core.Assets
                     ? AssetFileSerializer.Load<Package>(new MemoryStream(packageFile.AssetContent), filePath, log)
                     : AssetFileSerializer.Load<Package>(filePath, log);
                 var package = loadResult.Asset;
-                package.FullPath = filePath;
-                package.previousPackagePath = package.FullPath;
+                package.FullPath = packageFile.FilePath;
+                package.PreviousPackagePath = packageFile.OriginalFilePath;
                 package.IsDirty = packageFile.AssetContent != null || loadResult.AliasOccurred;
 
                 return package;
             }
             catch (Exception ex)
             {
-                log.Error($"Error while pre-loading package [{filePath}]", ex);
+                throw new InvalidOperationException($"Error while pre-loading package [{filePath}]", ex);
             }
+        }
 
-            return null;
+        public static PackageContainer LoadProject(ILogger log, string filePath)
+        {
+            if (Path.GetExtension(filePath).ToLowerInvariant() == ".csproj")
+            {
+                var projectPath = filePath;
+                var packagePath = Path.ChangeExtension(filePath, Package.PackageFileExtension);
+                var packageExists = File.Exists(packagePath);
+                var package = packageExists
+                    ? LoadRaw(log, packagePath)
+                    : new Package
+                    {
+                        Meta = { Name = Path.GetFileNameWithoutExtension(packagePath) },
+                        AssetFolders = { new AssetFolder("Assets") },
+                        ResourceFolders = { "Resources" },
+                        FullPath = packagePath,
+                        IsDirty = false,
+                    };
+                return new SolutionProject(package, Guid.NewGuid(), projectPath) { IsImplicitProject = !packageExists };
+            }
+            else
+            {
+                var package = LoadRaw(log, filePath);
+
+                // Find the .csproj next to .xkpkg (if any)
+                // Note that we use package.FullPath since we must first perform package upgrade from 3.0 to 3.1+ (might move package in .csproj folder)
+                var projectPath = Path.ChangeExtension(package.FullPath.ToWindowsPath(), ".csproj");
+                if (File.Exists(projectPath))
+                {
+                    return new SolutionProject(package, Guid.NewGuid(), projectPath);
+                }
+                else
+                {
+                    return new StandalonePackage(package);
+                }
+            }
+        }
+
+        private static PackageVersion TryGetPackageVersion(string projectPath)
+        {
+            try
+            {
+                // Load a project without specifying a platform to make sure we get the correct platform type
+                var msProject = VSProjectHelper.LoadProject(projectPath, platform: "NoPlatform");
+                try
+                {
+
+                    var packageVersion = msProject.GetPropertyValue("PackageVersion");
+                    return !string.IsNullOrEmpty(packageVersion) ? new PackageVersion(packageVersion) : null;
+                }
+                finally
+                {
+                    msProject.ProjectCollection.UnloadAllProjects();
+                    msProject.ProjectCollection.Dispose();
+                }
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -912,9 +773,9 @@ namespace Xenko.Core.Assets
                 {
                     IsDirty = true;
 
-                    lock (filesToDelete)
+                    lock (FilesToDelete)
                     {
-                        filesToDelete.AddRange(dirtyAssets.Select(a => a.FullPath));
+                        FilesToDelete.AddRange(dirtyAssets.Select(a => a.FullPath));
                     }
                 }
 
@@ -956,7 +817,7 @@ namespace Xenko.Core.Assets
             // List all package files on disk
             if (assetFiles == null)
             {
-                assetFiles = ListAssetFiles(log, this, listAssetsInMsbuild, cancelToken);
+                assetFiles = ListAssetFiles(log, this, listAssetsInMsbuild, false, cancelToken);
                 // Sort them by size (to improve concurrency during load)
                 assetFiles.Sort(PackageLoadingAssetFile.FileSizeComparer.Default);
             }
@@ -1020,9 +881,9 @@ namespace Xenko.Core.Assets
             {
                 IsDirty = true;
 
-                lock (filesToDelete)
+                lock (FilesToDelete)
                 {
-                    filesToDelete.Add(assetFile.FilePath);
+                    FilesToDelete.Add(assetFile.FilePath);
                 }
 
                 // Don't create temporary assets for files deleted during package upgrading
@@ -1033,7 +894,7 @@ namespace Xenko.Core.Assets
             // the loop
             try
             {
-                AssetMigration.MigrateAssetIfNeeded(context, assetFile, PackageStore.Instance.DefaultPackageName);
+                AssetMigration.MigrateAssetIfNeeded(context, assetFile, "Xenko");
 
                 // Try to load only if asset is not already in the package or assetRef.Asset is null
                 var assetPath = assetFile.AssetLocation;
@@ -1043,14 +904,13 @@ namespace Xenko.Core.Assets
 
                 bool aliasOccurred;
                 AttachedYamlAssetMetadata yamlMetadata;
-                var asset = LoadAsset(context.Log, assetFullPath, assetPath.ToWindowsPath(), assetContent, out aliasOccurred, out yamlMetadata);
+                var asset = LoadAsset(context.Log, Meta.Name, assetFullPath, assetPath.ToWindowsPath(), assetContent, out aliasOccurred, out yamlMetadata);
 
                 // Create asset item
                 var assetItem = new AssetItem(assetPath, asset, this)
                 {
                     IsDirty = assetContent != null || aliasOccurred,
                     SourceFolder = sourceFolder.MakeRelative(RootDirectory),
-                    SourceProject = asset is IProjectAsset && assetFile.ProjectFile != null ? assetFile.ProjectFile : null,
                 };
                 yamlMetadata.CopyInto(assetItem.YamlMetadata);
 
@@ -1100,19 +960,7 @@ namespace Xenko.Core.Assets
             LoadAssemblyReferencesForPackage(log, loadParameters);
         }
 
-        /// <summary>
-        /// Restore NuGet packages of all projects in this package.
-        /// </summary>
-        /// <param name="log">The log.</param>
-        public void RestoreNugetPackages(ILogger log)
-        {
-            foreach (var profile in Profiles)
-            {
-                VSProjectHelper.RestoreNugetPackagesNonRecursive(log, profile.ProjectReferences.Select(projectReference => UPath.Combine(RootDirectory, projectReference.Location).ToWindowsPath())).Wait();
-            }
-        }
-
-        private static Asset LoadAsset(ILogger log, string assetFullPath, string assetPath, byte[] assetContent, out bool assetDirty, out AttachedYamlAssetMetadata yamlMetadata)
+        private static Asset LoadAsset(ILogger log, string packageName, string assetFullPath, string assetPath, byte[] assetContent, out bool assetDirty, out AttachedYamlAssetMetadata yamlMetadata)
         {
             var loadResult = assetContent != null
                 ? AssetFileSerializer.Load<Asset>(new MemoryStream(assetContent), assetFullPath, log)
@@ -1126,7 +974,7 @@ namespace Xenko.Core.Assets
             if (sourceCodeAsset != null)
             {
                 // Use an id generated from the location instead of the default id
-                sourceCodeAsset.Id = SourceCodeAsset.GenerateIdFromLocation(assetPath);
+                sourceCodeAsset.Id = SourceCodeAsset.GenerateIdFromLocation(packageName, assetPath);
             }
 
             return loadResult.Asset;
@@ -1137,61 +985,75 @@ namespace Xenko.Core.Assets
             if (log == null) throw new ArgumentNullException(nameof(log));
             if (loadParameters == null) throw new ArgumentNullException(nameof(loadParameters));
             var assemblyContainer = loadParameters.AssemblyContainer ?? AssemblyContainer.Default;
-            foreach (var profile in Profiles)
+
+            // TODO: Add support for loading from packages
+            var project = Container as SolutionProject;
+            if (project == null || project.FullPath == null || project.Type != ProjectType.Library)
+                return;
+
+            // Check if already loaded
+            // TODO: More advanced cases: unload removed references, etc...
+            var projectReference = new ProjectReference(project.Id, project.FullPath, Core.Assets.ProjectType.Library);
+            if (LoadedAssemblies.Any(x => x.ProjectReference == projectReference))
+                return;
+
+            string assemblyPath = project.TargetPath;
+            var fullProjectLocation = project.FullPath.ToWindowsPath();
+
+            try
             {
-                foreach (var projectReference in profile.ProjectReferences.Where(projectRef => projectRef.Type == ProjectType.Plugin || projectRef.Type == ProjectType.Library))
+                var forwardingLogger = new ForwardingLoggerResult(log);
+
+                if (loadParameters.AutoCompileProjects || string.IsNullOrWhiteSpace(assemblyPath))
                 {
-                    // Check if already loaded
-                    // TODO: More advanced cases: unload removed references, etc...
-                    if (LoadedAssemblies.Any(x => x.ProjectReference == projectReference))
-                        continue;
-
-                    string assemblyPath = null;
-                    var fullProjectLocation = UPath.Combine(RootDirectory, projectReference.Location).ToWindowsPath();
-
-                    try
+                    assemblyPath = VSProjectHelper.GetOrCompileProjectAssembly(Session?.SolutionPath, fullProjectLocation, forwardingLogger, "Build", loadParameters.AutoCompileProjects, loadParameters.BuildConfiguration, extraProperties: loadParameters.ExtraCompileProperties, onlyErrors: true);
+                    if (string.IsNullOrWhiteSpace(assemblyPath))
                     {
-                        var forwardingLogger = new ForwardingLoggerResult(log);
-                        assemblyPath = VSProjectHelper.GetOrCompileProjectAssembly(Session?.SolutionPath, fullProjectLocation, forwardingLogger, "Build", loadParameters.AutoCompileProjects, loadParameters.BuildConfiguration, extraProperties: loadParameters.ExtraCompileProperties, onlyErrors: true);
-                        if (String.IsNullOrWhiteSpace(assemblyPath))
-                        {
-                            log.Error($"Unable to locate assembly reference for project [{fullProjectLocation}]");
-                            continue;
-                        }
-
-                        var loadedAssembly = new PackageLoadedAssembly(projectReference, assemblyPath);
-                        LoadedAssemblies.Add(loadedAssembly);
-
-                        if (!File.Exists(assemblyPath) || forwardingLogger.HasErrors)
-                        {
-                            log.Error($"Unable to build assembly reference [{assemblyPath}]");
-                            continue;
-                        }
-
-                        var assembly = assemblyContainer.LoadAssemblyFromPath(assemblyPath, log);
-                        if (assembly == null)
-                        {
-                            log.Error($"Unable to load assembly reference [{assemblyPath}]");
-                        }
-
-                        loadedAssembly.Assembly = assembly;
-
-                        if (assembly != null)
-                        {
-                            // Register assembly in the registry
-                            AssemblyRegistry.Register(assembly, AssemblyCommonCategories.Assets);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        log.Error($"Unexpected error while loading project [{fullProjectLocation}] or assembly reference [{assemblyPath}]", ex);
+                        log.Error($"Unable to locate assembly reference for project [{fullProjectLocation}]");
+                        return;
                     }
                 }
+
+                var loadedAssembly = new PackageLoadedAssembly(projectReference, assemblyPath);
+                LoadedAssemblies.Add(loadedAssembly);
+
+                if (!File.Exists(assemblyPath) || forwardingLogger.HasErrors)
+                {
+                    log.Error($"Unable to build assembly reference [{assemblyPath}]");
+                    return;
+                }
+
+                // Check if assembly is already loaded in appdomain (for Xenko core assemblies that are not plugins)
+                var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(x => string.Compare(x.GetName().Name, Path.GetFileNameWithoutExtension(assemblyPath), StringComparison.InvariantCultureIgnoreCase) == 0);
+
+                // Otherwise, load assembly from its file
+                if (assembly == null)
+                {
+                    assembly = assemblyContainer.LoadAssemblyFromPath(assemblyPath, log);
+
+                    if (assembly == null)
+                    {
+                        log.Error($"Unable to load assembly reference [{assemblyPath}]");
+                    }
+
+                    // Note: we should investigate so that this can also be done for Xenko core assemblies (right now they use module initializers)
+                    if (assembly != null)
+                    {
+                        // Register assembly in the registry
+                        AssemblyRegistry.Register(assembly, AssemblyCommonCategories.Assets);
+                    }
+                }
+
+                loadedAssembly.Assembly = assembly;
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Unexpected error while loading project [{fullProjectLocation}] or assembly reference [{assemblyPath}]", ex);
             }
         }
 
         /// <summary>
-        /// In case <see cref="AssetItem.SourceFolder"/> or <see cref="AssetItem.SourceProject"/> were null, generates them.
+        /// In case <see cref="AssetItem.SourceFolder"/> was null, generates it.
         /// </summary>
         internal void UpdateSourceFolders(IReadOnlyCollection<AssetItem> assets)
         {
@@ -1201,16 +1063,8 @@ namespace Xenko.Core.Assets
                 return;
             }
 
-            // Make sure there is a shared profile at least
-            var sharedProfile = Profiles.FindSharedProfile();
-            if (sharedProfile == null)
-            {
-                sharedProfile = PackageProfile.NewShared();
-                Profiles.Add(sharedProfile);
-            }
-
             // Use by default the first asset folders if not defined on the asset item
-            var defaultFolder = sharedProfile.AssetFolders.Count > 0 ? sharedProfile.AssetFolders.First().Path : UDirectory.This;
+            var defaultFolder = AssetFolders.Count > 0 ? AssetFolders.First().Path : UDirectory.This;
             var assetFolders = new HashSet<UDirectory>(GetDistinctAssetFolderPaths());
             foreach (var asset in assets)
             {
@@ -1218,14 +1072,8 @@ namespace Xenko.Core.Assets
                 {
                     if (asset.SourceFolder == null)
                     {
-                        //var assetProjectFolder = asset.Location.FullPath;
-                        var lib = sharedProfile.ProjectReferences.FirstOrDefault(x => x.Type == ProjectType.Library && asset.Location.FullPath.StartsWith(x.Location.GetFileNameWithoutExtension()));
-                        if (lib != null)
-                        {
-                            asset.SourceProject = UPath.Combine(asset.Package.RootDirectory, lib.Location);
-                            asset.SourceFolder = asset.SourceProject.GetFullDirectory().GetParent().MakeRelative(RootDirectory);
-                            asset.IsDirty = true;
-                        }
+                        asset.SourceFolder = string.Empty;
+                        asset.IsDirty = true;
                     }
                 }
                 else
@@ -1240,7 +1088,7 @@ namespace Xenko.Core.Assets
                     if (!assetFolders.Contains(assetFolderAbsolute))
                     {
                         assetFolders.Add(assetFolderAbsolute);
-                        sharedProfile.AssetFolders.Add(new AssetFolder(assetFolderAbsolute));
+                        AssetFolders.Add(new AssetFolder(assetFolderAbsolute));
                         IsDirty = true;
                     }
                 }
@@ -1281,21 +1129,18 @@ namespace Xenko.Core.Assets
         private List<UDirectory> GetDistinctAssetFolderPaths()
         {
             var existingAssetFolders = new List<UDirectory>();
-            foreach (var profile in Profiles)
+            foreach (var folder in AssetFolders)
             {
-                foreach (var folder in profile.AssetFolders)
+                var folderPath = RootDirectory != null ? UPath.Combine(RootDirectory, folder.Path) : folder.Path;
+                if (!existingAssetFolders.Contains(folderPath))
                 {
-                    var folderPath = RootDirectory != null ? UPath.Combine(RootDirectory, folder.Path) : folder.Path;
-                    if (!existingAssetFolders.Contains(folderPath))
-                    {
-                        existingAssetFolders.Add(folderPath);
-                    }
+                    existingAssetFolders.Add(folderPath);
                 }
             }
             return existingAssetFolders;
         }
 
-        public static List<PackageLoadingAssetFile> ListAssetFiles(ILogger log, Package package, bool listAssetsInMsbuild, CancellationToken? cancelToken)
+        public static List<PackageLoadingAssetFile> ListAssetFiles(ILogger log, Package package, bool listAssetsInMsbuild, bool listUnregisteredAssets, CancellationToken? cancelToken)
         {
             var listFiles = new List<PackageLoadingAssetFile>();
 
@@ -1309,9 +1154,6 @@ namespace Xenko.Core.Assets
             {
                 return listFiles;
             }
-
-            var sharedProfile = package.Profiles.FindSharedProfile();
-            var hasProject = sharedProfile != null && sharedProfile.ProjectReferences.Count > 0;
 
             // Iterate on each source folders
             foreach (var sourceFolder in package.GetDistinctAssetFolderPaths())
@@ -1340,14 +1182,17 @@ namespace Xenko.Core.Assets
                         var ext = fileUPath.GetFileExtension();
 
                         //make sure to add default shaders in this case, since we don't have a csproj for them
-                        if (AssetRegistry.IsProjectCodeGeneratorAssetFileExtension(ext) && !hasProject)
+                        if (AssetRegistry.IsProjectCodeGeneratorAssetFileExtension(ext) && (!(package.Container is SolutionProject) || package.IsSystem))
                         {
                             listFiles.Add(new PackageLoadingAssetFile(fileUPath, sourceFolder) { CachedFileSize = filePath.Length });
                             continue;
                         }
 
                         //project source code assets follow the csproj pipeline
-                        if (!AssetRegistry.IsAssetFileExtension(ext) || AssetRegistry.IsProjectAssetFileExtension(ext))
+                        var isAsset = listUnregisteredAssets
+                            ? ext.StartsWith(".xk", StringComparison.InvariantCultureIgnoreCase)
+                            : AssetRegistry.IsAssetFileExtension(ext);
+                        if (!isAsset || AssetRegistry.IsProjectAssetFileExtension(ext))
                         {
                             continue;
                         }
@@ -1394,21 +1239,61 @@ namespace Xenko.Core.Assets
         {
             if (package.IsSystem) return;
 
-            var profile = package.Profiles.FindSharedProfile();
-            if (profile == null) return;
+            var project = package.Container as SolutionProject;
+            if (project == null || project.FullPath == null || project.Type != ProjectType.Library)
+                return;
 
-            foreach (var libs in profile.ProjectReferences.Where(x => x.Type == ProjectType.Library))
+            string defaultNamespace;
+            var codePaths = FindAssetsInProject(project.FullPath, out defaultNamespace);
+            package.RootNamespace = defaultNamespace;
+            var dir = new UDirectory(project.FullPath.GetFullDirectory());
+
+            foreach (var codePath in codePaths)
             {
-                var realFullPath = UPath.Combine(package.RootDirectory, libs.Location);
-                string defaultNamespace;
-                var codePaths = FindAssetsInProject(realFullPath, out defaultNamespace);
-                libs.RootNamespace = defaultNamespace;
-                var dir = new UDirectory(realFullPath.GetFullDirectory());
-                var parentDir = dir.GetParent();
+                list.Add(new PackageLoadingAssetFile(codePath, dir));
+            }
+        }
 
-                foreach (var codePath in codePaths)
+        private class MovePackageInsideProject : AssetUpgraderBase
+        {
+            protected override void UpgradeAsset(AssetMigrationContext context, PackageVersion currentVersion, PackageVersion targetVersion, dynamic asset, PackageLoadingAssetFile assetFile, OverrideUpgraderHint overrideHint)
+            {
+                if (asset.Profiles != null)
                 {
-                    list.Add(new PackageLoadingAssetFile(codePath, parentDir, realFullPath));
+                    var profiles = asset.Profiles;
+
+                    foreach (var profile in profiles)
+                    {
+                        if (profile.Platform == "Shared")
+                        {
+                            if (profile.ProjectReferences.Count == 1)
+                            {
+                                var projectLocation = (UFile)(string)profile.ProjectReferences[0].Location;
+                                assetFile.FilePath = UPath.Combine(assetFile.OriginalFilePath.GetFullDirectory(), (UFile)(projectLocation.GetFullPathWithoutExtension() + PackageFileExtension));
+                                asset.Meta.Name = projectLocation.GetFileNameWithoutExtension();
+                            }
+
+                            for (int i = 0; i < profile.AssetFolders.Count; ++i)
+                            {
+                                var assetPath = UPath.Combine(assetFile.OriginalFilePath.GetFullDirectory(), (UDirectory)(string)profile.AssetFolders[i].Path);
+                                assetPath = assetPath.MakeRelative(assetFile.FilePath.GetFullDirectory());
+                                profile.AssetFolders[i].Path = (string)assetPath;
+                            }
+
+                            for (int i = 0; i < profile.ResourceFolders.Count; ++i)
+                            {
+                                var resourcePath = UPath.Combine(assetFile.OriginalFilePath.GetFullDirectory(), (UDirectory)(string)profile.ResourceFolders[i]);
+                                resourcePath = resourcePath.MakeRelative(assetFile.FilePath.GetFullDirectory());
+                                profile.ResourceFolders[i] = (string)resourcePath;
+                            }
+
+                            asset.AssetFolders = profile.AssetFolders;
+                            asset.ResourceFolders = profile.ResourceFolders;
+                            asset.OutputGroupDirectories = profile.OutputGroupDirectories;
+                        }
+                    }
+
+                    asset.Profiles = DynamicYamlEmpty.Default;
                 }
             }
         }

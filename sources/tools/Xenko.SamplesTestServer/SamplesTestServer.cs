@@ -37,14 +37,14 @@ namespace Xenko.SamplesTestServer
         private SocketMessageLayer currentTester;
         private readonly object loggerLock = new object();
 
-        public SamplesTestServer() : base($"/service/{XenkoVersion.NuGetVersion}/Xenko.SamplesTestServer.exe")
+        public SamplesTestServer() : base($"/service/Xenko.SamplesTestServer/{XenkoVersion.NuGetVersion}/Xenko.SamplesTestServer.exe")
         {
             GameTestingSystem.Initialized = true;
 
             //start logging the iOS device if we have the proper tools avail
             if (IosTracker.CanProxy())
             {
-                var loggerProcess = Process.Start(new ProcessStartInfo($"{ Environment.GetEnvironmentVariable("XenkoDir") }\\Bin\\Windows\\idevicesyslog.exe", "-d")
+                var loggerProcess = Process.Start(new ProcessStartInfo($"idevicesyslog.exe", "-d")
                 {
                     UseShellExecute = false,
                     CreateNoWindow = true,
@@ -272,8 +272,7 @@ namespace Xenko.SamplesTestServer
                                     Thread.Sleep(5000); //ios processes might be slow to close, we must make sure that we start clean
                                     var start = new ProcessStartInfo
                                     {
-                                        WorkingDirectory = $"{Environment.GetEnvironmentVariable("XenkoDir")}\\Bin\\Windows\\",
-                                        FileName = $"{Environment.GetEnvironmentVariable("XenkoDir")}\\Bin\\Windows\\idevicedebug.exe",
+                                        FileName = $"idevicedebug.exe",
                                         Arguments = $"run com.your-company.{request.GameAssembly}",
                                         UseShellExecute = false
                                     };

@@ -20,6 +20,7 @@ using Xenko.Shaders.Compiler;
 using Xenko.Core.Presentation.Commands;
 using Xenko.Core.Presentation.Dirtiables;
 using Xenko.Core.Presentation.Services;
+using Xenko.Core.Extensions;
 
 namespace Xenko.Assets.Presentation
 {
@@ -70,9 +71,7 @@ namespace Xenko.Assets.Presentation
 
             routerLaunchedTask = Task.Run(() =>
             {
-                var xenkoDir = Environment.GetEnvironmentVariable("XenkoDir");
-                bool isDevDirectory = DirectoryHelper.IsRootDevDirectory(xenkoDir);
-                RouterHelper.EnsureRouterLaunched(isDevDirectory);
+                RouterHelper.EnsureRouterLaunched();
             });
 
             TrackPackages(session.LocalPackages);
@@ -80,9 +79,9 @@ namespace Xenko.Assets.Presentation
 
             session.ImportEffectLogCommand = new AnonymousCommand(session.ServiceProvider, () =>
             {
-                if (session.CurrentPackage != null)
-                    ImportEffectLog(session.CurrentPackage);
-            }, () => session.CurrentPackage != null);
+                if (session.CurrentProject != null)
+                    ImportEffectLog(session.CurrentProject);
+            }, () => session.CurrentProject?.Package != null);
         }
 
         private async void Start(PackageViewModel package, CancellationToken cancellationToken)
@@ -92,7 +91,7 @@ namespace Xenko.Assets.Presentation
             {
                 // Connect to effect compiler server
                 await routerLaunchedTask;
-                var effectCompilerServerSocket = await RouterClient.RequestServer($"/service/{XenkoVersion.NuGetVersion}/Xenko.EffectCompilerServer.exe?mode=gamestudio&packageid={package.Id}");
+                var effectCompilerServerSocket = await RouterClient.RequestServer($"/service/Xenko.EffectCompilerServer/{XenkoVersion.NuGetVersion}/Xenko.EffectCompilerServer.exe?mode=gamestudio&packagename={package.Package.Meta.Name}");
 
                 // Cancellation by closing the socket handle
                 cancellationToken.Register(effectCompilerServerSocket.Dispose);

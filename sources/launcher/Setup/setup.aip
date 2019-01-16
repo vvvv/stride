@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<DOCUMENT Type="Advanced Installer" CreateVersion="11.4" version="14.4.2" Modules="professional" RootPath="." Language="en" Id="{31B836A5-580B-4BE9-AF21-23C8E4375253}">
+<DOCUMENT Type="Advanced Installer" CreateVersion="11.4" version="15.5.1" Modules="professional" RootPath="." Language="en" Id="{31B836A5-580B-4BE9-AF21-23C8E4375253}">
   <COMPONENT cid="caphyon.advinst.msicomp.ProjectOptionsComponent">
-    <ROW Name="HiddenItems" Value="AppXAppDetailsComponent;AppXCapabilitiesComponent;AppXDependenciesComponent;AppXProductDetailsComponent;AppXVisualAssetsComponent;AppXAppDeclarationsComponent;AppXUriRulesComponent"/>
+    <ROW Name="HiddenItems" Value="AppXAppDetailsComponent;AppXCapabilitiesComponent;AppXDependenciesComponent;AppXProductDetailsComponent;AppXVisualAssetsComponent;AppXAppDeclarationsComponent;AppXUriRulesComponent;FixupComponent"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiPropsComponent">
     <ROW Property="AI_BITMAP_DISPLAY_MODE" Value="0"/>
@@ -80,9 +80,9 @@
     <ATTRIBUTE name="CurrentFeature" value="Xenko"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
-    <ROW File="Xenko.exe" Component_="Xenko.exe" FileName="Xenko.exe" Attributes="0" SourcePath="..\Xenko.LauncherApp\bin\Release\Xenko.exe" SelfReg="false" NextFile="store.config" DigSign="true"/>
+    <ROW File="Xenko.exe" Component_="Xenko.exe" FileName="Xenko.exe" Attributes="0" SourcePath="..\Xenko.LauncherApp\bin\Release\Xenko.exe" SelfReg="false" NextFile="store.config"/>
     <ROW File="Xenko.exe.config" Component_="store.config" FileName="XENKOE~1.CON|Xenko.exe.config" Attributes="0" SourcePath="..\Xenko.LauncherApp\bin\Release\Xenko.exe.config" SelfReg="false" NextFile="launcherprerequisites.exe"/>
-    <ROW File="launcherprerequisites.exe" Component_="launcherprerequisites.exe" FileName="LAUNCH~1.EXE|launcher-prerequisites.exe" Attributes="0" SourcePath="..\Prerequisites\launcher-prerequisites.exe" SelfReg="false" DigSign="true"/>
+    <ROW File="launcherprerequisites.exe" Component_="launcherprerequisites.exe" FileName="LAUNCH~1.EXE|launcher-prerequisites.exe" Attributes="0" SourcePath="..\Prerequisites\launcher-prerequisites.exe" SelfReg="false"/>
     <ROW File="store.config" Component_="store.config" FileName="STORE~1.CON|store.config" Attributes="0" SourcePath="..\Xenko.LauncherApp\bin\Release\store.config" SelfReg="false" NextFile="Xenko.exe.config"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.AiRemoveFileComponent">
@@ -278,10 +278,6 @@
     <ROW Action="SET_TARGETDIR_TO_APPDIR" Type="51" Source="TARGETDIR" Target="[APPDIR]"/>
     <ROW Action="Xenko.exe" Type="82" Source="Xenko.exe" Target="/uninstall"/>
   </COMPONENT>
-  <COMPONENT cid="caphyon.advinst.msicomp.MsiEnvComponent">
-    <ROW Environment="XenkoDir" Name="=-*XenkoDir" Value="[APPDIR]" Component_="AdminInstall"/>
-    <ROW Environment="XenkoDir_1" Name="=-XenkoDir" Value="[APPDIR]" Component_="UserInstall"/>
-  </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiIconsComponent">
     <ROW Name="Logo.exe" SourcePath="Logo.ico" Index="0"/>
   </COMPONENT>
@@ -398,10 +394,10 @@
     <ROW UpgradeCode="[|UpgradeCode]" VersionMin="[|ProductVersion]" Attributes="2" ActionProperty="AI_NEWERPRODUCTFOUND"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.PreReqComponent">
-    <ROW PrereqKey="E6EF03A03ACB41E28F8D6A76831D390C" DisplayName=".NET Framework 4.6.2" SetupFileUrl="https://download.microsoft.com/download/F/9/4/F942F07D-F26F-4F30-B4E3-EBD54FABA377/NDP462-KB3151800-x86-x64-AllOS-ENU.exe" Location="1" ExactSize="62008080" WinNTVersions="Windows XP SP3 x86, Windows Server 2003 SP2 x86, Windows Vista x86, Windows Server 2008 x86, Windows 7 RTM x86" WinNT64Versions="Windows XP SP2 x64, Windows Server 2003 SP2 x64, Windows Vista x64, Windows Server 2008 x64, Windows 7 RTM x64, Windows Server 2008 R2 RTM x64, Windows Server 2016 x64" Operator="1" NoUiComLine="/norestart" Options="xy" MD5="9a5d647ee710af2b1aede329c40bbe1a" TargetName=".NET Framework 4.6.2"/>
-    <ATTRIBUTE name="PrereqsOrder" value="E6EF03A03ACB41E28F8D6A76831D390C"/>
+    <ROW PrereqKey="A6D7F21EAEB4C4A901F0979CF110936" DisplayName=".NET Framework 4.7.2" SetupFileUrl="https://download.microsoft.com/download/6/E/4/6E48E8AB-DC00-419E-9704-06DD46E5F81D/NDP472-KB4054530-x86-x64-AllOS-ENU.exe" Location="1" ExactSize="83943272" WinNTVersions="Windows XP SP3 x86, Windows Server 2003 SP2 x86, Windows Vista x86, Windows Server 2008 x86, Windows 7 RTM x86, Windows 10 version 1507 x86, Windows 10 version 1511 x86, Windows 10 version 1803 x86, Windows 10 version 1809 x86" WinNT64Versions="Windows XP SP2 x64, Windows Server 2003 SP2 x64, Windows Vista x64, Windows Server 2008 x64, Windows 7 RTM x64, Windows Server 2008 R2 RTM x64, Windows 10 version 1507 x64, Windows 10 version 1511 x64, Windows 10 version 1803 x64, Windows 10 version 1809 x64" Operator="1" NoUiComLine="/q /norestart" Options="xy" MD5="87450cfa175585b23a76bbd7052ee66b" TargetName=".NET Framework 4.7.2"/>
+    <ATTRIBUTE name="PrereqsOrder" value="A6D7F21EAEB4C4A901F0979CF110936"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.PreReqSearchComponent">
-    <ROW SearchKey="E6EF03A03ACB41E28F8D6A76831D390CRelease" Prereq="E6EF03A03ACB41E28F8D6A76831D390C" SearchType="9" SearchString="HKLM\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\Release" RefContent="G394801" Order="1" Property="PreReqSearch_E6EF03A03ACB41E28F8D6A"/>
+    <ROW SearchKey="A6D7F21EAEB4C4A901F0979CF110936Rele" Prereq="A6D7F21EAEB4C4A901F0979CF110936" SearchType="9" SearchString="HKLM\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\Release" RefContent="G461813" Order="1" Property="PreReqSearch_A6D7F21EAEB4C4A901F097"/>
   </COMPONENT>
 </DOCUMENT>

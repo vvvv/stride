@@ -10,6 +10,7 @@ using Xenko.Core.Assets.Editor.Services;
 using Xenko.Core.Assets.Editor.Settings;
 using Xenko.Core.Assets.Editor.ViewModel;
 using Xenko.Core.Diagnostics;
+using Xenko.Core.Extensions;
 using Xenko.Core.IO;
 using Xenko.Core.Packages;
 using Xenko.Editor;
@@ -32,11 +33,11 @@ namespace Xenko.GameStudio
             var buildDirectory = fallbackDirectory;
             try
             {
-                var package = session.LocalPackages.First();
+                var package = session.CurrentProject ?? session.LocalPackages.First();
                 if (package != null)
                 {
                     // In package, we override editor build directory to be per-project and be shared with game build directory
-                    buildDirectory = $"{package.PackagePath.GetFullDirectory().ToWindowsPath()}\\Cache\\data";
+                    buildDirectory = $"{package.PackagePath.GetFullDirectory().ToWindowsPath()}\\obj\\xenko\\assetbuild\\data";
                 }
 
                 // Attempt to create the directory to ensure it is valid.

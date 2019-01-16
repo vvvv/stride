@@ -13,15 +13,14 @@
     <AssemblyName><#= Properties.PackageName #></AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
-    <TargetPlatformVersion>10.0.10240.0</TargetPlatformVersion>
-    <TargetPlatformMinVersion>10.0.10240.0</TargetPlatformMinVersion>
+    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.17134.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.16299.0</TargetPlatformMinVersion>
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <EnableDotNetNativeCompatibleProfile>true</EnableDotNetNativeCompatibleProfile>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PackageCertificateKeyFile><#= ProjectName #>.TemporaryKey.pfx</PackageCertificateKeyFile>
     <BaseIntermediateOutputPath>obj\</BaseIntermediateOutputPath>
-    <XenkoPackageGuid>{<#= Properties.Package.Id  #>}</XenkoPackageGuid>
     <!-- Force msbuild to check to rebuild this assembly instead of letting VS IDE guess -->
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
@@ -33,17 +32,18 @@
     </SDKReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\<#= Properties.PackageName #>.Game\<#= Properties.PackageName #>.Game.csproj">
+    <ProjectReference Include="..\<#= Properties.ProjectGameRelativePath #>">
       <Project>{<#= Properties.ProjectGameGuid #>}</Project>
-      <Name><#= Properties.PackageName #>.Game</Name>
+      <Name><#= Properties.PackageGameAssemblyName #></Name>
     </ProjectReference>
+    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform" Version="6.2.2" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="<#= Properties.PackageNameShort #>MainPage.xaml.cs">
-      <DependentUpon><#= Properties.PackageNameShort #>MainPage.xaml</DependentUpon>
+    <Compile Include="<#= Properties.PackageGameNameShort #>MainPage.xaml.cs">
+      <DependentUpon><#= Properties.PackageGameNameShort #>MainPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -71,7 +71,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="<#= Properties.PackageNameShort #>MainPage.xaml">
+    <Page Include="<#= Properties.PackageGameNameShort #>MainPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

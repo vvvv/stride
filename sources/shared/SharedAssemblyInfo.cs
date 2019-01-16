@@ -18,15 +18,14 @@ namespace Xenko
     /// Internal version used to identify Xenko version.
     /// </summary>
     /// <remarks>
-    /// Note: Xenko.xkpkg and PublicVersion versions should match.
-    /// Also, during package build, PackageUpdateVersionTask is updating that file and expect some specific text regex so be careful if you change any of this.
+    /// During package build, PackageUpdateVersionTask is updating that file and expect some specific text regex so be careful if you change any of this.
     /// </remarks>
     internal class XenkoVersion
     {
         /// <summary>
         /// The version used by editor for display purpose. 4th digit needs to be at least 1 if used (due to NuGet special cases).
         /// </summary>
-        public const string PublicVersion = "3.0.0.7";
+        public const string PublicVersion = "3.1.0.1";
 
         /// <summary>
         /// The current assembly version as text, currently same as <see cref="PublicVersion"/>.
@@ -44,19 +43,23 @@ namespace Xenko
         public const string NuGetVersion = NuGetVersionSimple + NuGetVersionSuffix;
 
         /// <summary>
-        /// The NuGet package suffix (i.e. -beta01). Note: might be replaced during package build.
+        /// The NuGet package suffix (i.e. -beta01). Automatically set by Xenko.GitVersioning.GenerateVersionFile.
+        /// Three possible values:
+        /// - Empty: official release
+        /// - -betaXX: development version (XX should corespond to development asset versioning)
+        /// - -betaXX-YYYY: beta release (YYYY is the git height since current version has been bumped)
         /// </summary>
-        public const string NuGetVersionSuffix = "-dev";
+        public const string NuGetVersionSuffix = "-beta01";
 
         /// <summary>
-        /// The informational assembly version, containing -dev or -g[git_hash] during package.
+        /// The build metadata, usually +g[git_hash] during package. Automatically set by Xenko.GitVersioning.GenerateVersionFile.
         /// </summary>
-        public const string AssemblyInformationalVersion = PublicVersion + AssemblyInformationalSuffix;
+        public const string BuildMetadata = "";
 
         /// <summary>
-        /// The assembly suffix. Note: replaced by git commit during package build.
+        /// The informational assembly version, containing -beta01 or +g[git_hash] during package.
         /// </summary>
-        private const string AssemblyInformationalSuffix = "-dev";
+        public const string AssemblyInformationalVersion = PublicVersion + NuGetVersionSuffix + BuildMetadata;
     }
 
     /// <summary>
