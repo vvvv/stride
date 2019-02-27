@@ -155,7 +155,7 @@ namespace Xenko.Shaders.Compiler
             // Convert the AST to HLSL
             var writer = new Xenko.Core.Shaders.Writer.Hlsl.HlslWriter
             {
-                EnablePreprocessorLine = false, // Allow to output links to original pdxsl via #line pragmas
+                EnablePreprocessorLine = true, // Allow to output links to original xksl via #line pragmas
             };
             writer.Visit(parsingResult.Shader);
             var shaderSourceText = writer.Text;
