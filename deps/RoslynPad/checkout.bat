@@ -8,6 +8,6 @@ IF NOT ERRORLEVEL 0 (
 ) 
 %GIT_CMD% clone --recursive https://github.com/aelij/RoslynPad -b master ../../externals/RoslynPad
 pushd ..\..\externals\RoslynPad
-%GIT_CMD% checkout c2f1c48
+%GIT_CMD% checkout 929069f3a6ee6e1247817adb64cd6314252758f4
 popd
 if ERRORLEVEL 1 echo "Could not checkout RoslynPad" && pause
