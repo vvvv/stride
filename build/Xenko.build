@@ -18,7 +18,7 @@ Example of use:
     <XunitRunnerConsoleVersion>2.4.1</XunitRunnerConsoleVersion>
     <XenkoStoreUrl Condition="'$(XenkoStoreUrl)' == ''">https://api.nuget.org/v3/index.json</XenkoStoreUrl>
     <AdvancedInstallerPath Condition="'$(AdvancedInstallerPath)' == '' And Exists('$(MSBuildProgramFiles32)\Caphyon\Advanced Installer 15.5.1\bin\x86\advinst.exe')">$(MSBuildProgramFiles32)\Caphyon\Advanced Installer 15.5.1\bin\x86\advinst.exe</AdvancedInstallerPath>
-  	<XenkoBuildPrerequisitesInstaller Condition="'$(XenkoBuildPrerequisitesInstaller)' == ''">true</XenkoBuildPrerequisitesInstaller>
+    <XenkoBuildPrerequisitesInstaller Condition="'$(XenkoBuildPrerequisitesInstaller)' == ''">true</XenkoBuildPrerequisitesInstaller>
   </PropertyGroup>
 
   <UsingTask TaskName="Xenko.GitVersioning.GenerateVersionFile" AssemblyFile="$(XenkoRoot)deps\Xenko.GitVersioning\bin\Debug\net472\Xenko.GitVersioning.dll" />
@@ -98,7 +98,7 @@ Example of use:
     <PropertyGroup>
       <BuildProperties>$(BuildProperties);XenkoPublicApi=true;XenkoPackageBuild=true</BuildProperties>
     </PropertyGroup>
-	
+    
     <ItemGroup>
       <FilesToDeletePackages Include="$(XenkoRoot)bin\packages\*.nupkg"/>
     </ItemGroup>
@@ -108,7 +108,7 @@ Example of use:
     <!-- Make sure Xenko.GitVersioning is built to run the task to update package version.
          It might be better to move it to a prebuilt assembly if that becomes a problem.
     -->
-	<MSBuild Targets="Restore" Projects="$(XenkoRoot)deps\Xenko.GitVersioning\Xenko.GitVersioning.csproj"/>
+    <MSBuild Targets="Restore" Projects="$(XenkoRoot)deps\Xenko.GitVersioning\Xenko.GitVersioning.csproj"/>
     <MSBuild Targets="Build" Projects="$(XenkoRoot)deps\Xenko.GitVersioning\Xenko.GitVersioning.csproj"/>
     
     <!-- Create SharedAssemblyInfo.NuGet.cs with Git information (different between official build and internal builds) -->
@@ -119,17 +119,17 @@ Example of use:
       <Output TaskParameter="NuGetVersion" PropertyName="XenkoPackageVersion"/>
     </GenerateVersionFile>
 
-	<Message Text="Done preparing build for version $(XenkoPackageVersion)"/>
-	<TeamCitySetBuildNumber BuildNumber="$(XenkoPackageVersion)" Condition="'$(TEAMCITY_BUILD_PROPERTIES_FILE)' != '' " />
+    <Message Text="Done preparing build for version $(XenkoPackageVersion)"/>
+    <TeamCitySetBuildNumber BuildNumber="$(XenkoPackageVersion)" Condition="'$(TEAMCITY_BUILD_PROPERTIES_FILE)' != '' " />
   </Target>
   <PropertyGroup>
-  	<_XenkoPackageTargetPrerequisitesInstaller Condition="'$(XenkoBuildPrerequisitesInstaller)' == 'true'">PrerequisitesInstaller</_XenkoPackageTargetPrerequisitesInstaller>
+    <_XenkoPackageTargetPrerequisitesInstaller Condition="'$(XenkoBuildPrerequisitesInstaller)' == 'true'">PrerequisitesInstaller</_XenkoPackageTargetPrerequisitesInstaller>
   </PropertyGroup>
   <Target Name="Package" DependsOnTargets="PreparePackageBuild;$(_XenkoPackageTargetPrerequisitesInstaller);Build;VSIXPlugin"/>
   
   <Target Name="Restore">
     <PropertyGroup>
-	  <RestoreExec><![CDATA[
+      <RestoreExec><![CDATA[
         set XenkoGraphicsApiDependentBuildAll=$(XenkoGraphicsApiDependentBuildAll)
         set XenkoGraphicsApi=$(XenkoGraphicsApi)
         set XenkoPlatforms=$(XenkoPlatforms)
@@ -141,7 +141,7 @@ Example of use:
 
   <Target Name="Build">
     <MSBuild Targets="Restore" Projects="$(MSBuildThisFileFullPath)" Properties="XenkoPlatforms=$(XenkoPlatforms);XenkoSolution=$(XenkoSolution);XenkoGraphicsApiDependentBuildAll=$(XenkoGraphicsApiDependentBuildAll)"/>
-	<MSBuild Targets="Build" Projects="$(XenkoSolution).sln" Properties="$(BuildProperties);Platform=Mixed Platforms"/>
+    <MSBuild Targets="Build" Projects="$(XenkoSolution).sln" Properties="$(BuildProperties);Platform=Mixed Platforms"/>
   </Target>
 
   <Target Name="BuildRuntime">
@@ -149,7 +149,7 @@ Example of use:
       <XenkoSolution>$(XenkoSolution).Runtime</XenkoSolution>
     </PropertyGroup>
     <MSBuild Targets="Restore" Projects="$(MSBuildThisFileFullPath)" Properties="XenkoPlatforms=$(XenkoPlatforms);XenkoSolution=$(XenkoSolution)"/>
-	<MSBuild Targets="Build" Projects="$(XenkoSolution).sln" Properties="$(BuildProperties)"/>
+    <MSBuild Targets="Build" Projects="$(XenkoSolution).sln" Properties="$(BuildProperties)"/>
   </Target>
   
   <Target Name="BuildWindows">
@@ -252,7 +252,7 @@ Example of use:
       <XenkoTestCategories Condition="'$(XenkoTestCategories)' == ''">Simple;Game;VSPackage</XenkoTestCategories>
       <!-- We enclose everything with ;, so that we could do full word matches more easily with string.Contains() -->
       <XenkoTestCategories>;$(XenkoTestCategories);</XenkoTestCategories>
-	  <XenkoTestExtraTargets></XenkoTestExtraTargets>
+      <XenkoTestExtraTargets></XenkoTestExtraTargets>
       <XenkoTestExtraTargets Condition="$(XenkoTestCategories.Contains(';GameAndroid;'))">$(XenkoTestExtraTargets);SignAndroidPackage</XenkoTestExtraTargets>
     </PropertyGroup>
     
@@ -331,14 +331,14 @@ Example of use:
       <UnitTestPrerequisites Include="@(UnitTestGame)"/>
       <UnitTest Include="@(UnitTestGame)"><Solution>$(XenkoSolution).Vulkan.sln</Solution></UnitTest>
     </ItemGroup>
-	
-	<!-- Android unit tests -->
+    
+    <!-- Android unit tests -->
     <ItemGroup Condition="$(XenkoTestCategories.Contains(';GameAndroid;'))">
       <UnitTestPrerequisites Include="@(UnitTestGame)"/>
       <UnitTest Include="@(UnitTestGameAndroid)"><Solution>$(XenkoSolution).Android.sln</Solution></UnitTest> 
     </ItemGroup>
-	
-	<!-- Samples unit tests -->
+    
+    <!-- Samples unit tests -->
     <ItemGroup Condition="$(XenkoTestCategories.Contains(';Samples;'))">
       <UnitTest Include="72-XenkoSamples\Xenko.Samples.Tests"/>
     </ItemGroup>
@@ -358,7 +358,7 @@ Example of use:
         <Solution Condition="'%(UnitTest.Solution)' == ''">$(XenkoSolution).sln</Solution>
       </UnitTest>
     </ItemGroup>
-	
+    
     <!-- Restore NuGet packages -->
     <Message Importance="High" Text="Restoring NuGet packages"/>
     <Exec Condition="'%(UnitTestPrerequisites.Solution)' != ''" Command='"$(NuGetPath)" restore "%(UnitTestPrerequisites.Solution)"' />
@@ -473,12 +473,12 @@ Example of use:
     
     <!-- Update store.config with additional parameters -->
     <Exec Command='"$(NuGetPath)" sources Add -Name "Xenko $(CustomInstaller)" -Source "$(CustomInstallerStoreUrl)" -ConfigFile "$(XenkoRoot)sources\launcher\Xenko.LauncherApp\bin\Release\store.config"'/>
-	
+    
     <!-- Run advanced installer -->
     <Exec Command='"$(AdvancedInstallerPath)" /rebuild "$(XenkoRoot)sources\launcher\Setup\setup-$(CustomInstallerNoSpace).aip"'/>
     <Copy SourceFiles="$(XenkoRoot)sources\launcher\Setup\setup-$(CustomInstallerNoSpace)-SetupFiles\XenkoSetup$(CustomInstallerNoSpace).exe" DestinationFolder="$(MSBuildThisFileDirectory)"/>
     <Delete Files="$(XenkoRoot)sources\launcher\Setup\setup-$(CustomInstallerNoSpace).aip"/>
-	
+    
     <!-- Restore store.config -->
     <Copy SourceFiles="$(XenkoRoot)sources\launcher\Xenko.LauncherApp\bin\Release\store.config.backup" DestinationFiles="$(XenkoRoot)Xenko.LauncherApp\bin\Release\store.config"/>
     <Delete Files="$(XenkoRoot)sources\launcher\Xenko.LauncherApp\bin\Release\store.config.backup"/>	
@@ -515,7 +515,7 @@ Example of use:
   
   <Target Name="BuildLauncher">
     <Exec Command='"$(NuGetPath)" restore "$(XenkoSolutionLauncher).sln"' />
-	<MSBuild Targets="Build" Projects="$(XenkoSolutionLauncher).sln" Properties="$(BuildProperties);Platform=Any CPU"/>
+    <MSBuild Targets="Build" Projects="$(XenkoSolutionLauncher).sln" Properties="$(BuildProperties);Platform=Any CPU"/>
   </Target>
 
 </Project>
