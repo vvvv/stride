@@ -17,6 +17,7 @@ Example of use:
     <XunitRunnerConsoleVersion>2.4.1</XunitRunnerConsoleVersion>
     <XenkoStoreUrl Condition="'$(XenkoStoreUrl)' == ''">https://api.nuget.org/v3/index.json</XenkoStoreUrl>
     <AdvancedInstallerPath Condition="'$(AdvancedInstallerPath)' == '' And Exists('$(MSBuildProgramFiles32)\Caphyon\Advanced Installer 15.5.1\bin\x86\advinst.exe')">$(MSBuildProgramFiles32)\Caphyon\Advanced Installer 15.5.1\bin\x86\advinst.exe</AdvancedInstallerPath>
+  	<XenkoBuildPrerequisitesInstaller Condition="'$(XenkoBuildPrerequisitesInstaller)' == ''">true</XenkoBuildPrerequisitesInstaller>
   </PropertyGroup>
 
   <UsingTask TaskName="Xenko.GitVersioning.GenerateVersionFile" AssemblyFile="$(XenkoRoot)deps\Xenko.GitVersioning\bin\Debug\net472\Xenko.GitVersioning.dll" />
@@ -120,7 +121,10 @@ Example of use:
 	<Message Text="Done preparing build for version $(XenkoPackageVersion)"/>
 	<TeamCitySetBuildNumber BuildNumber="$(XenkoPackageVersion)" Condition="'$(TEAMCITY_BUILD_PROPERTIES_FILE)' != '' " />
   </Target>
-  <Target Name="Package" DependsOnTargets="PreparePackageBuild;PrerequisitesInstaller;Build;VSIXPlugin"/>
+  <PropertyGroup>
+  	<_XenkoPackageTargetPrerequisitesInstaller Condition="'$(XenkoBuildPrerequisitesInstaller)' == 'true'">PrerequisitesInstaller</_XenkoPackageTargetPrerequisitesInstaller>
+  </PropertyGroup>
+  <Target Name="Package" DependsOnTargets="PreparePackageBuild;$(_XenkoPackageTargetPrerequisitesInstaller);Build;VSIXPlugin"/>
   
   <Target Name="CopyXenkoKey">
     <Copy Condition="'$(XenkoSign)' == 'true' And Exists('$(LOCALAPPDATA)\Xenko\XenkoBuildKey\xenko.snk')" SourceFiles="$(LOCALAPPDATA)\Xenko\XenkoBuildKey\xenko.snk" DestinationFolder="$(MSBuildThisFileDirectory)"/>
