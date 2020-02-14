@@ -81,7 +81,7 @@ namespace Xenko.Audio
 
             if (streamed)
             {
-                soundSource = new CompressedSoundSource(this, staticSound.FileProvider, staticSound.CompressedDataUrl, staticSound.NumberOfPackets, staticSound.SampleRate, staticSound.Channels, staticSound.MaxPacketLength);
+                soundSource = new CompressedSoundSource(this, staticSound.FileProvider, staticSound.CompressedDataUrl, staticSound.NumberOfPackets, staticSound.Samples, staticSound.SampleRate, staticSound.Channels, staticSound.MaxPacketLength);
             }
             else
             {
@@ -379,7 +379,7 @@ namespace Xenko.Audio
             }
             else
             {
-                soundSource.SetPlayRange(range);
+                soundSource.PlayRange = range;
             }
 
             if (state == PlayState.Playing)
@@ -395,9 +395,11 @@ namespace Xenko.Audio
         {
             get
             {
-                if (!AudioLayer.SourceIsPlaying(Source) || PlayState == PlayState.Stopped) return TimeSpan.Zero;
-                var position = AudioLayer.SourceGetPosition(Source);
-                return position > sound.TotalLength.TotalSeconds ? TimeSpan.Zero : TimeSpan.FromSeconds(position);
+                if (engine.State == AudioEngineState.Invalidated || !AudioLayer.SourceIsPlaying(Source) || PlayState == PlayState.Stopped)
+                    return TimeSpan.Zero;
+                var rangeStart = soundSource?.PlayRange.Start ?? TimeSpan.Zero;
+                var position = TimeSpan.FromSeconds(AudioLayer.SourceGetPosition(Source)) + rangeStart;
+                return position > sound.TotalLength ? rangeStart : position;
             }
         }
     }

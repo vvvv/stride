@@ -39,6 +39,7 @@ namespace Xenko.Audio
 
         private readonly int channels;
         private readonly int sampleRate;
+        private readonly int samples;
 
         private readonly int maxCompressedSize;
         private byte[] compressedBuffer;
@@ -50,7 +51,7 @@ namespace Xenko.Audio
         private byte[] byteBuffer = null;
         private int byteBufferCurrentPosition = 0;
 
-        public CompressedSoundSource(SoundInstance instance, byte[] byteBuffer, int numberOfPackets, int sampleRate, int channels, int maxCompressedSize) 
+        public CompressedSoundSource(SoundInstance instance, byte[] byteBuffer, int numberOfPackets, int numberOfSamples, int sampleRate, int channels, int maxCompressedSize) 
             : base(instance, NumberOfBuffers, SamplesPerBuffer * MaxChannels * sizeof(short))
         {
             looped = instance.IsLooping;
@@ -60,6 +61,7 @@ namespace Xenko.Audio
             this.byteBuffer = byteBuffer;
             this.sampleRate = sampleRate;
             this.numberOfPackets = numberOfPackets;
+            this.samples = numberOfSamples;
             playRange = new PlayRange(TimeSpan.Zero, TimeSpan.Zero);
 
             NewSources.Add(this);
@@ -78,7 +80,7 @@ namespace Xenko.Audio
         /// <param name="sampleRate">The sample rate of the compressed data</param>
         /// <param name="channels">The number of channels of the compressed data</param>
         /// <param name="maxCompressedSize">The maximum size of a compressed packet</param>
-        public CompressedSoundSource(SoundInstance instance, IVirtualFileProvider fileProvider, string soundStreamUrl, int numberOfPackets, int sampleRate, int channels, int maxCompressedSize) 
+        public CompressedSoundSource(SoundInstance instance, IVirtualFileProvider fileProvider, string soundStreamUrl, int numberOfPackets, int numberOfSamples, int sampleRate, int channels, int maxCompressedSize) 
             : base(instance, NumberOfBuffers, SamplesPerBuffer * MaxChannels * sizeof(short))
         {
             looped = instance.IsLooping;
@@ -88,6 +90,7 @@ namespace Xenko.Audio
             this.soundStreamUrl = soundStreamUrl;
             this.sampleRate = sampleRate;
             this.numberOfPackets = numberOfPackets;
+            this.samples = numberOfSamples;
             playRange = new PlayRange(TimeSpan.Zero, TimeSpan.Zero);
 
             NewSources.Add(this);
@@ -107,18 +110,25 @@ namespace Xenko.Audio
             looped = loop;
         }
 
-        /// <summary>
-        /// Sets the range of the sound to play.
-        /// </summary>
-        /// <param name="range">a PlayRange structure that describes the starting offset and ending point of the sound to play in seconds.</param>
-        public override void SetPlayRange(PlayRange range)
+        /// <inheritdoc/>
+        public override PlayRange PlayRange
         {
-            lock (rangeLock)
+            get
             {
-                playRange = range;
+                lock (rangeLock)
+                {
+                    return playRange;
+                }
             }
+            set
+            {
+                lock (rangeLock)
+                {
+                    playRange = value;
+                }
 
-            base.SetPlayRange(range);
+                base.PlayRange = value;
+            }
         }
 
         protected override void InitializeInternal()
@@ -153,30 +163,48 @@ namespace Xenko.Audio
                 range = playRange;
             }
 
-            if (range.Start != TimeSpan.Zero || range.Length != TimeSpan.Zero)
+            // Reset decoder state
+            decoder.ResetDecoder();
+
+            // Ignore invalid data at beginning (due to encoder delay) & end of stream (due to packet size)
+            var samplesToSkip = decoder.GetDecoderSampleDelay();
+
+            // Compute boundaries
+            var sampleBegin = (channels * samplesToSkip);
+            var sampleEnd = sampleBegin + (channels * samples);
+
+            var frameSize = SamplesPerFrame * channels;
+            //ok we need to handle this case properly, this means that the user wants to use a different then full audio stream range...
+            var sampleStart = sampleBegin + (int)Math.Floor(sampleRate * (double)channels * range.Start.TotalSeconds);
+            // Make sure start is at least one sample before the end to avoid edge cases where startingPacketIndex == numberOfPackets
+            sampleStart = Math.Min(Math.Max(sampleStart, sampleBegin), sampleEnd - 1 * channels);
+
+            var sampleStop = sampleBegin
+                + (range.Length != TimeSpan.Zero
+                    ? (int)Math.Floor(sampleRate * (double)channels * range.End.TotalSeconds)
+                    : (channels * samples));
+            // Make sure stop is at least one sample after start
+            sampleStop = Math.Min(Math.Max(sampleStop, sampleStart + 1 * channels), sampleEnd);
+
+            // Compute start/end packet
+            startingPacketIndex = sampleStart / frameSize;
+            endPacketIndex = (sampleStop - 1) / frameSize; // -1 to make sure we stay in last packet if using all of it
+
+            // How much data to use in start/end packet
+            startPktSampleIndex = sampleStart % (frameSize);
+            endPktSampleIndex = frameSize - sampleStop % frameSize;
+
+            // skip to the starting packet
+            if (startingPacketIndex < numberOfPackets && endPacketIndex < numberOfPackets && startingPacketIndex <= endPacketIndex) // this shouldn't happen anymore with the min/max clamps
             {
-                var frameSize = SamplesPerFrame * channels;
-                //ok we need to handle this case properly, this means that the user wants to use a different then full audio stream range...
-                var sampleStart = sampleRate * (double)channels * range.Start.TotalSeconds;
-                startPktSampleIndex = (int)Math.Floor(sampleStart) % (frameSize);
-
-                var sampleStop = sampleRate * (double)channels * range.End.TotalSeconds;
-                endPktSampleIndex = frameSize - (int)Math.Floor(sampleStart) % frameSize;
-
-                var skipCounter = startingPacketIndex = (int)Math.Floor(sampleStart / frameSize);
-                endPacketIndex = (int)Math.Floor(sampleStop / frameSize);
-
-                // skip to the starting packet
-                if (startingPacketIndex < numberOfPackets && endPacketIndex < numberOfPackets && startingPacketIndex < endPacketIndex)
+                //valid offsets.. process it
+                var skipCounter = startingPacketIndex;
+                while (skipCounter-- > 0)
                 {
-                    //valid offsets.. process it
-                    while (skipCounter-- > 0)
-                    {
-                        //skip data to reach starting packet
-                        var len = reader.ReadInt16();
-                        compressedSoundStream.Position = compressedSoundStream.Position + len;
-                        currentPacketIndex++;
-                    }
+                    //skip data to reach starting packet
+                    var len = reader.ReadInt16();
+                    compressedSoundStream.Position = compressedSoundStream.Position + len;
+                    currentPacketIndex++;
                 }
             }
         }
@@ -229,7 +257,7 @@ namespace Xenko.Audio
                 for (var i = 0; i < passes; i++)
                 {
                     endingPacket = endPacketIndex == currentPacketIndex;
-                    
+
                     //read one packet, size first, then data
                     var len = reader.ReadInt16();
                     compressedSoundStream.Read(compressedBuffer, 0, len);
@@ -245,19 +273,11 @@ namespace Xenko.Audio
 
                     if (endingPacket || compressedSoundStream.Position == compressedSoundStream.Length)
                     {
-                        if (looped) //prepare again to play from begin
-                        {
-                            PrepareInternal();
-                        }
-                        else // stops the sound
-                        {
-                            StopInternal();
-                        }
-
                         break;
                     }
                 }
 
+                // Send buffer to hardware
                 var finalPtr = new IntPtr(bufferPtr + (startingPacket ? startPktSampleIndex : 0));
                 var finalSize = (offset - (startingPacket ? startPktSampleIndex : 0) - (endingPacket ? endPktSampleIndex : 0)) * sizeof(short);
 
@@ -272,6 +292,19 @@ namespace Xenko.Audio
                     begin = false;
                 }
                 FillBuffer(finalPtr, finalSize, bufferType);
+
+                // Go back to beginning if necessary
+                if (endingPacket || compressedSoundStream.Position == compressedSoundStream.Length)
+                {
+                    if (looped) //prepare again to play from begin
+                    {
+                        PrepareInternal();
+                    }
+                    else // stops the sound
+                    {
+                        StopInternal(false);
+                    }
+                }
             }
         }
     }

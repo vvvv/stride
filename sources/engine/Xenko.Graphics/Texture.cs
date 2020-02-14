@@ -382,6 +382,9 @@ namespace Xenko.Graphics
             }
         }
 
+
+        
+
         /// <summary>
         /// Gets a boolean indicating whether this <see cref="Texture"/> is a using a block compress format (BC1, BC2, BC3, BC4, BC5, BC6H, BC7).
         /// </summary>

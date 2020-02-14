@@ -25,8 +25,9 @@ namespace Xenko.Audio
                 obj.Channels = stream.ReadByte();
                 obj.StreamFromDisk = stream.ReadBoolean();
                 obj.Spatialized = stream.ReadBoolean();
-                obj.NumberOfPackets = stream.ReadInt16();
+                obj.NumberOfPackets = stream.ReadInt32();
                 obj.MaxPacketLength = stream.ReadInt16();
+                obj.Samples = stream.ReadInt32();
 
                 if (!obj.StreamFromDisk && audioEngine != null && audioEngine.State != AudioEngineState.Invalidated && audioEngine.State != AudioEngineState.Disposed) //immediatelly preload all the data and decode
                 {
@@ -45,8 +46,9 @@ namespace Xenko.Audio
                 stream.Write((byte)obj.Channels);
                 stream.Write(obj.StreamFromDisk);
                 stream.Write(obj.Spatialized);
-                stream.Write((short)obj.NumberOfPackets);
+                stream.Write(obj.NumberOfPackets);
                 stream.Write((short)obj.MaxPacketLength);
+                stream.Write(obj.Samples);
             }
         }
     }
