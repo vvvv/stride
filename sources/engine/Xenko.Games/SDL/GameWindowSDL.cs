@@ -276,6 +276,24 @@ namespace Xenko.Games
             }
         }
 
+        public override Int2 ClientSize
+        {
+            get
+            {
+                if (window == null)
+                    return base.ClientSize;
+
+                return new Int2(window.ClientSize.Width, window.ClientSize.Height);
+            }
+            set
+            {
+                if (window != null)
+                    window.ClientSize = new Size2(value.X, value.Y);
+
+                base.ClientSize = value;
+            }
+        }
+
         protected override void SetTitle(string title)
         {
             if (window != null)

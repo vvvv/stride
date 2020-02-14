@@ -134,6 +134,11 @@ namespace Xenko.Games
         public virtual Int2 Position { get; set; }
 
         /// <summary>
+        /// Gets or sets the client area size of the window on the screen.
+        /// </summary>
+        public virtual Int2 ClientSize { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether this window has a border
         /// </summary>
         /// <value><c>true</c> if this window has a border; otherwise, <c>false</c>.</value>
