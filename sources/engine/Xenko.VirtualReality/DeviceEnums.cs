@@ -9,20 +9,53 @@ namespace Xenko.VirtualReality
         Valid,
     }
 
+    /// <summary>
+    /// Describes what kind of object is being tracked at a given ID
+    /// </summary>
     public enum DeviceClass
     {
-        Invalid,            //There is no device at this index
-        HMD,                //The device at this index is an HMD
-        Controller,         //The device is a controller
-        GenericTracker,     //The device is a tracker
-        TrackingReference,  //The device is a camera, Lighthouse base station, or other device that supplies tracking ground truth.
-        DisplayRedirect     //Accessories that aren't necessarily tracked themselves, but may redirect video output from other tracked devices
+        /// <summary>
+        /// There is no device at this index
+        /// </summary>
+        Invalid,
+        /// <summary>
+        /// The device at this index is an HMD
+        /// </summary>
+        HMD,
+        /// <summary>
+        /// The device is a controller
+        /// </summary>
+        Controller,
+        /// <summary>
+        /// The device is a tracker
+        /// </summary>
+        GenericTracker,
+        /// <summary>
+        /// The device is a camera, Lighthouse base station, or other device that supplies tracking ground truth.
+        /// </summary>
+        TrackingReference,
+        /// <summary>
+        /// Accessories that aren't necessarily tracked themselves, but may redirect video output from other tracked devices
+        /// </summary>
+        DisplayRedirect
     }
 
+    /// <summary>
+    /// Identifies which style of tracking origin the application wants to use for the poses it is requesting
+    /// </summary>
     public enum TrackingSpace
     {
+        /// <summary>
+        /// Poses are provided relative to the seated zero pose
+        /// </summary>
         Seated,
+        /// <summary>
+        /// Poses are provided relative to the safe bounds configured by the user
+        /// </summary>
         Standing,
+        /// <summary>
+        /// Poses are provided in the coordinate system defined by the driver.  It has Y up and is unified for devices of the same driver. You usually don't want this one.
+        /// </summary>
         RawAndUncalibrated
     }
 }
