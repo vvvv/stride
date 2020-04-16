@@ -13,29 +13,11 @@ using Xenko.Core.Serialization;
 namespace Xenko.Shaders
 {
     /// <summary>
-    /// A shader class used for mixin.
+    /// A shader class based on .xksl file, used for mixin.
     /// </summary>
     [DataContract("ShaderClassSource")]
-    public sealed class ShaderClassSource : ShaderSource, IEquatable<ShaderClassSource>
+    public sealed class ShaderClassSource : ShaderClassCode, IEquatable<ShaderClassSource>
     {
-        /// <summary>
-        /// Gets the name of the class.
-        /// </summary>
-        /// <value>The name of the class.</value>
-        [DataMember(10)]
-        public string ClassName { get; set; }
-
-        /// <summary>
-        /// Gets the generic parameters.
-        /// </summary>
-        /// <value>The generic parameters.</value>
-        [DefaultValue(null), DataStyle(DataStyle.Compact)]
-        [DataMember(20)]
-        public string[] GenericArguments { get; set; }
-
-        [DefaultValue(null)]
-        [DataMember(30)]
-        public Dictionary<string, string> GenericParametersArguments { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ShaderClassSource"/> class.
@@ -84,27 +66,6 @@ namespace Xenko.Shaders
                         GenericArguments[i] = genArg == null ? "null" : Convert.ToString(genArg, CultureInfo.InvariantCulture);
                 }
             }
-        }
-
-        /// <summary>
-        /// Returns a class name as a <see cref="System.String" /> that represents this instance.
-        /// </summary>
-        /// <returns>A class name as a <see cref="System.String" /> that represents this instance.</returns>
-        public string ToClassName()
-        {
-            if (GenericArguments == null)
-                return ClassName;
-
-            var result = new StringBuilder();
-            result.Append(ClassName);
-            if (GenericArguments != null && GenericArguments.Length > 0)
-            {
-                result.Append('<');
-                result.Append(string.Join(",", GenericArguments));
-                result.Append('>');
-            }
-
-            return result.ToString();
         }
 
         public bool Equals(ShaderClassSource shaderClassSource)
