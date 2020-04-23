@@ -5,11 +5,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace Stride.Core.Presentation.Themes.ExpressionDark
+namespace Stride.Core.Presentation.Themes
 {
-    public partial class ExpressionDarkTheme : ResourceDictionary
+    public partial class ThemeSelector : ResourceDictionary
     {
-        public ExpressionDarkTheme()
+        public ThemeSelector()
         {
             InitializeComponent();
         }
@@ -20,7 +20,7 @@ namespace Stride.Core.Presentation.Themes.ExpressionDark
             {
                 img.Source = new DrawingImage
                 {
-                    Drawing = ImageThemingUtilities.TransformDrawing(drawingImage.Drawing, IconThemeSelector.KnownThemes.Dark.GetIconTheme())
+                    Drawing = ImageThemingUtilities.TransformDrawing(drawingImage.Drawing, ThemeController.CurrentTheme.GetThemeBase().GetIconTheme())
                 };
             }
         }
