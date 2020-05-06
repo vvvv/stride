@@ -72,6 +72,11 @@ namespace Stride.Engine
         public Vector3 Offset;
 
         /// <summary>
+        /// The local transform applied to all entities of the scene relative to the parent scene.
+        /// </summary>
+        public Matrix LocalMatrix = Matrix.Identity;
+
+        /// <summary>
         /// The absolute transform applied to all entities of the scene.
         /// </summary>
         /// <remarks>This field is overwritten by the transform processor each frame.</remarks>
@@ -94,11 +99,11 @@ namespace Stride.Engine
                     parent.UpdateWorldMatrixInternal(true);
                 }
 
-                WorldMatrix = parent.WorldMatrix;
+                Matrix.Multiply(ref LocalMatrix, ref parent.WorldMatrix, out WorldMatrix);
             }
             else
             {
-                WorldMatrix = Matrix.Identity;
+                WorldMatrix = LocalMatrix;
             }
 
             WorldMatrix.TranslationVector += Offset;
