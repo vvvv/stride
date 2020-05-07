@@ -1,4 +1,4 @@
-﻿// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.Collections.Generic;
@@ -21,7 +21,7 @@ namespace Stride.Assets.Entities
     [AssetUpgrader(StrideConfig.PackageName, "2.1.0.1", "3.1.0.1", typeof(CharacterComponentGravityVector3Upgrader))]
     public partial class SceneAsset : EntityHierarchyAssetBase
     {
-        private const string CurrentVersion = "3.1.0.1";
+        private const string CurrentVersion = "4.0.0.1";
 
         public const string FileSceneExtension = ".sdscene";
 
