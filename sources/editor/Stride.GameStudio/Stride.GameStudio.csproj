@@ -20,6 +20,9 @@
     <StrideAssemblyProcessorOptions>--auto-module-initializer</StrideAssemblyProcessorOptions>
     <StrideLocalized>true</StrideLocalized>
     <DefineConstants>STRIDE_NUGET_RESOLVER_UX;$(DefineConstants)</DefineConstants>
+    <UseWPF>true</UseWPF>
+    <EnableDefaultPageItems>false</EnableDefaultPageItems>
+    <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>Stride.GameStudio.Program</StartupObject>
@@ -35,13 +38,10 @@
     <PackageReference Include="Stride.Metrics" Version="1.0.3" />
     <PackageReference Include="Stride.CrashReport" Version="1.0.2" />
     <PackageReference Include="Mono.Cecil" Version="0.10.4" />
-    <Reference Include="Renci.SshNet, Version=2016.0.0.0, Culture=neutral, PublicKeyToken=1cee9f8bde3db106, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\deps\SSH.NET\Renci.SshNet.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Stride.Core.AssemblyProcessor">
-      <HintPath>..\..\..\deps\AssemblyProcessor\Stride.Core.AssemblyProcessor.exe</HintPath>
+    <Reference Include="Stride.Core.AssemblyProcessor" >
+      <HintPath Condition="$(TargetFramework.StartsWith('net4'))">..\..\..\deps\AssemblyProcessor\net472\Stride.Core.AssemblyProcessor.exe</HintPath>
+      <HintPath Condition="$(TargetFramework.StartsWith('netcoreapp'))">..\..\..\deps\AssemblyProcessor\netstandard2.0\Stride.Core.AssemblyProcessor.dll</HintPath>
     </Reference>
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Composition.Convention">
@@ -124,7 +124,7 @@
   <Target Name="IncludeExtraAssemblies">
     <ItemGroup>
       <BuildOutputInPackage Include="$(OutputPath)Mono.Cecil.dll" />
-      <BuildOutputInPackage Include="$(OutputPath)Stride.Core.AssemblyProcessor.exe" />
+      <BuildOutputInPackage Include="$(OutputPath)Stride.Core.AssemblyProcessor.*" />
     </ItemGroup>
   </Target>
 </Project>
