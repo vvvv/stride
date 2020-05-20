@@ -18,6 +18,7 @@ using Stride.Games;
 using Stride.Input;
 using Stride.Rendering;
 using Stride.Rendering.Compositing;
+using System.Text.RegularExpressions;
 
 namespace Stride.Graphics.Regression
 {
@@ -356,7 +357,7 @@ namespace Stride.Graphics.Regression
             //    ImageTester.ImageTestResultConnection.DeviceName += "_" + GraphicsDevice.Adapter.Description.Split('\0')[0].TrimEnd(' '); // Workaround for sharpDX bug: Description ends with an series trailing of '\0' characters
 
 #if STRIDE_PLATFORM_WINDOWS_DESKTOP
-            var platformSpecific = $"Windows_{GraphicsDevice.Platform}_{GraphicsDevice.Adapter.Description.Split('\0')[0].TrimEnd(' ')}";
+            var platformSpecific = $"Windows.{GraphicsDevice.Platform}\\{GraphicsDevice.Adapter.Description.Split('\0')[0].TrimEnd(' ')}";
 #else
             var platformSpecific = string.Empty;
             throw new NotImplementedException();
@@ -365,22 +366,30 @@ namespace Stride.Graphics.Regression
             var rootFolder = FindStrideRootFolder();
 
             var testFilename = GenerateName(Path.Combine(rootFolder, "tests"), frame, platformSpecific);
-            var testFilenamePattern = GenerateName(Path.Combine(rootFolder, "tests"), frame, null);
-            testFilenamePattern = Path.Combine(Path.GetDirectoryName(testFilenamePattern), Path.GetFileNameWithoutExtension(testFilenamePattern) + ".*" + Path.GetExtension(testFilenamePattern));
             var testFilenameUser = GenerateName(Path.Combine(rootFolder, @"tests\local"), frame, platformSpecific);
 
-            var testFilenames = new[] { testFilename };
-            
+            var testFilenames = new List<string> { testFilename };
+
             // First, if exact match doesn't exist, test any other pattern
             // TODO: We might want to sort/filter partially (platform, etc...)?
-            if (!File.Exists(testFilename))
+            var matchingImage = File.Exists(testFilename);
+            if (!matchingImage)
             {
-                testFilenames = Directory.Exists(Path.GetDirectoryName(testFilenamePattern))
-                    ? Directory.GetFiles(Path.GetDirectoryName(testFilenamePattern), Path.GetFileName(testFilenamePattern))
-                    : new string[0];
+                testFilenames.Clear();
+
+                var testFilenamePattern = GenerateName(Path.Combine(rootFolder, "tests"), frame, @"*\*");
+                var testFilenameRoot = testFilenamePattern.Substring(0, testFilenamePattern.IndexOf('*'));
+                var testFilenameRegex = new Regex("^" + Regex.Escape(testFilenamePattern).Replace(@"\*", @"[^\\]*") + "$", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+                foreach (var file in Directory.EnumerateFiles(testFilenameRoot, "*.*", SearchOption.AllDirectories))
+                {
+                    if (testFilenameRegex.IsMatch(file))
+                    {
+                        testFilenames.Add(file);
+                    }
+                }
             }
             
-            if (testFilenames.Length == 0)
+            if (testFilenames.Count == 0)
             {
                 // No source image, save this one so that user can later copy it to validated folder
                 ImageTester.SaveImage(image, testFilenameUser);
@@ -392,7 +401,13 @@ namespace Stride.Graphics.Regression
                 ImageTester.SaveImage(image, testFilenameUser);
                 comparisonFailedMessages.Add($"* {testFilenameUser} (current)");
                 foreach (var file in testFilenames)
-                    comparisonFailedMessages.Add($"  {file} (reference)");
+                    comparisonFailedMessages.Add($"  {file} ({ (matchingImage ? "reference" : "different platform/device") })");
+            }
+            else
+            {
+                // If test is a success, let's delete the local file if it was previously generated
+                if (File.Exists(testFilenameUser))
+                    File.Delete(testFilenameUser);
             }
         }
 
@@ -409,13 +424,11 @@ namespace Stride.Graphics.Regression
                 testFilename += $".{TestName}";
             if (frame != null)
                 testFilename += $".{frame}";
-            if (platformSpecific != null)
-                testFilename += $".{platformSpecific}";
             testFilename += ".png";
-            testFilename = Path.Combine(testFolder, testFilename);
+            testFilename = Path.Combine(testFolder, platformSpecific, testFilename);
 
             // Collapse parent directories
-            return Path.GetFullPath(new Uri(testFilename).LocalPath);
+            return testFilename;
         }
 
         protected void SaveTexture(Texture texture, string filename)
