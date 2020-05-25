@@ -41,10 +41,6 @@ namespace Stride.Core.Assets.CompilerApp
 
         public int Run(string[] args)
         {
-            // This is used by ExecServer to retrieve the logs directly without using the console redirect (which is not working well
-            // in a multi-domain scenario)
-            var redirectLogToAppDomainAction = AppDomain.CurrentDomain.GetData("AppDomainLogToAction") as Action<string, ConsoleColor>;
-
             clock = Stopwatch.StartNew();
 
             // TODO this is hardcoded. Check how to make this dynamic instead.
@@ -190,14 +186,7 @@ namespace Stride.Core.Assets.CompilerApp
                 // Output logs to the console with colored messages
                 if (options.SlavePipe == null && !options.LogPipeNames.Any())
                 {
-                    if (redirectLogToAppDomainAction != null)
-                    {
-                        globalLoggerOnGlobalMessageLogged = new LogListenerRedirectToAction(redirectLogToAppDomainAction);
-                    }
-                    else
-                    {
-                        globalLoggerOnGlobalMessageLogged = new ConsoleLogListener { LogMode = ConsoleLogMode.Always };
-                    }
+                    globalLoggerOnGlobalMessageLogged = new ConsoleLogListener { LogMode = ConsoleLogMode.Always };
                     globalLoggerOnGlobalMessageLogged.TextFormatter = FormatLog;
                     GlobalLogger.GlobalMessageLogged += globalLoggerOnGlobalMessageLogged;
                 }
@@ -316,7 +305,7 @@ namespace Stride.Core.Assets.CompilerApp
                 else
                 {
                     builder = new PackageBuilder(options);
-                    if (!IsSlave && redirectLogToAppDomainAction == null)
+                    if (!IsSlave)
                     {
                         Console.CancelKeyPress += OnConsoleOnCancelKeyPress;
                     }
@@ -353,7 +342,7 @@ namespace Stride.Core.Assets.CompilerApp
                 {
                     GlobalLogger.GlobalMessageLogged -= globalLoggerOnGlobalMessageLogged;
                 }
-                if (builder != null && !IsSlave && redirectLogToAppDomainAction == null)
+                if (builder != null && !IsSlave)
                 {
                     Console.CancelKeyPress -= OnConsoleOnCancelKeyPress;
                 }

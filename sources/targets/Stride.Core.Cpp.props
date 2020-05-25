@@ -1,10 +1,7 @@
 <Project>
   <!-- Somehow we need to define a TargetFramework for ProjectReference to be properly resolved by VisualStudio (otherwise nuget restore within VS won't work) -->
-  <PropertyGroup Condition="'$(TargetFramework)' != ''">
-    <OutDir>$(SolutionDir)bin\$(TargetFramework)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)obj\$(TargetFramework)\$(Configuration)\</IntDir>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net472' Or ('$(TargetFramework)' == '' And $(TargetFrameworks.Contains('net472')))">
+    <TargetFramework>net472</TargetFramework>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <CLRSupport>true</CLRSupport>
   </PropertyGroup>
