@@ -43,7 +43,9 @@ namespace Stride.Engine.Processors
         private static void TransferData(RenderContext context, InstancingComponent instancingComponent, RenderInstancing renderInstancing)
         {
             var instancing = instancingComponent.Type;
-            renderInstancing.InstanceCount = instancingComponent.Enabled ? instancing.InstanceCount : 0;
+            // Get final instance count
+            var instanceCount = instancingComponent.Enabled ? instancing.InstanceCount : 0;
+            renderInstancing.InstanceCount = instanceCount;
             renderInstancing.ModelTransformUsage = (int)instancing.ModelTransformUsage;
 
             if (renderInstancing.InstanceCount > 0)
@@ -54,13 +56,13 @@ namespace Stride.Engine.Processors
                     renderInstancing.WorldMatrices = instancingUserArray.WorldMatrices;
                     renderInstancing.WorldInverseMatrices = instancingUserArray.WorldInverseMatrices;
 
-                    if ((renderInstancing.InstanceWorldBuffer == null || renderInstancing.InstanceWorldBuffer.ElementCount < instancing.InstanceCount))
+                    if (renderInstancing.InstanceWorldBuffer == null || renderInstancing.InstanceWorldBuffer.ElementCount < instanceCount)
                     {
                         renderInstancing.InstanceWorldBuffer?.Dispose();
                         renderInstancing.InstanceWorldInverseBuffer?.Dispose();
 
-                        renderInstancing.InstanceWorldBuffer = CreateMatrixBuffer(context.GraphicsDevice, instancing.InstanceCount);
-                        renderInstancing.InstanceWorldInverseBuffer = CreateMatrixBuffer(context.GraphicsDevice, instancing.InstanceCount);
+                        renderInstancing.InstanceWorldBuffer = CreateMatrixBuffer(context.GraphicsDevice, instanceCount);
+                        renderInstancing.InstanceWorldInverseBuffer = CreateMatrixBuffer(context.GraphicsDevice, instanceCount);
                     }
 
                 }
@@ -87,7 +89,7 @@ namespace Stride.Engine.Processors
                 // Calculate inverse world and bounding box
                 instancing.Update();
 
-                if (instancingData.TransformComponent != null && instancingData.ModelComponent != null)
+                if (instancingData.ModelComponent != null && instancing.InstanceCount > 0)
                 {
                     // Bounding box
                     var meshCount = instancingData.ModelComponent.MeshInfos.Count;
@@ -163,7 +165,7 @@ namespace Stride.Engine.Processors
 
         protected override void OnEntityComponentAdding(Entity entity, [NotNull] InstancingComponent component, [NotNull] InstancingData data)
         {
-            data.TransformComponent = component.Entity.Get<TransformComponent>();
+            data.TransformComponent = component.Entity.Transform;
             data.ModelComponent = component.Entity.Get<ModelComponent>();
 
             if (data.ModelComponent != null && modelRenderProcessor.RenderModels.TryGetValue(data.ModelComponent, out var renderModel))
