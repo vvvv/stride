@@ -21,8 +21,7 @@ namespace Stride.Shaders.Compiler
                 // Local allowed and available, let's use that
                 compiler = new EffectCompiler(fileProvider)
                 {
-                    SourceDirectories = { EffectCompilerBase.DefaultSourceShaderFolder, @"C:\Dev\vvvv\vvvv\public-vl\VL.Stride\packages\VL.Stride\shaders"},
-                    UseFileSystem = true,
+                    SourceDirectories = { EffectCompilerBase.DefaultSourceShaderFolder },
                 };
             }
 

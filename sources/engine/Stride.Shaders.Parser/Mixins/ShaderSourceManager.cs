@@ -278,10 +278,6 @@ namespace Stride.Shaders.Parser.Mixins
                         return string.CompareOrdinal(shaderName, shaderNameOnDisk) == 0;
                     }
                 }
-                else // Try database
-                {
-                    return fileProvider.FileExists(path);
-                }
             }
             else
 #endif
@@ -306,17 +302,7 @@ namespace Stride.Shaders.Parser.Mixins
                     catch (IOException)
                     {
                         if (tries == 0)
-                        {
-                            try
-                            {
-                                return fileProvider.OpenStream(path, VirtualFileMode.Open, VirtualFileAccess.Read, VirtualFileShare.Read);
-                            }
-                            catch (Exception)
-                            {
-
-                                throw;
-                            }
-                        }
+                            throw;
                     }
                 }
             }
