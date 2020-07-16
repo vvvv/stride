@@ -1,3 +1,5 @@
+// Copyright (c) Stride contributors (https://stride3d.net) and Tebjan Halm
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System.Collections.Generic;
 using Stride.Core.Annotations;
 using Stride.Core.Mathematics;
@@ -178,6 +180,12 @@ namespace Stride.Engine.Processors
         protected override void OnEntityComponentRemoved(Entity entity, [NotNull] InstancingComponent component, [NotNull] InstancingData data)
         {
             modelInstancingMap.Remove(data.RenderModel);
+
+            if (component.Type is InstancingUserArray)
+            {
+                data.RenderInstancing?.InstanceWorldBuffer?.Dispose();
+                data.RenderInstancing?.InstanceWorldInverseBuffer?.Dispose();
+            }
         }
 
         // Instancing data per InstancingComponent

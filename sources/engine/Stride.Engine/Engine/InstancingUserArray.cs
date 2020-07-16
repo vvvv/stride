@@ -1,3 +1,5 @@
+// Copyright (c) Stride contributors (https://stride3d.net) and Tebjan Halm
+// Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core;
 using Stride.Core.Mathematics;
@@ -7,8 +9,24 @@ namespace Stride.Engine
 {
     [DataContract("InstancingUserArray")]
     [Display("UserArray")]
-    public class InstancingUserArray : InstancingBase
+    public class InstancingUserArray : IInstancing
     {
+        [DataMember(10)]
+        [Display("Model Transformation Usage")]
+        public virtual ModelTransformUsage ModelTransformUsage { get; set; }
+
+        /// <summary>
+        /// The instance count
+        /// </summary>
+        [DataMemberIgnore]
+        public virtual int InstanceCount { get; private set; }
+
+        /// <summary>
+        /// The bounding box of the world matrices, updated automatically by the <see cref="InstancingProcessor"/>.
+        /// </summary>
+        [DataMemberIgnore]
+        public virtual BoundingBox BoundingBox { get; private set; } = BoundingBox.Empty;
+
         /// <summary>
         /// The instance transformation matrices.
         /// </summary>
@@ -48,7 +66,7 @@ namespace Stride.Engine
         }
 
 
-        public override void Update()
+        public virtual void Update()
         {
             if (matricesUpdated)
             {
