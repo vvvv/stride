@@ -24,6 +24,7 @@ namespace Stride.Input
             Source = source;
             this.game = game;
             this.uiControl = uiControl;
+            Id = InputDeviceUtils.DeviceNameToGuid(uiControl.SdlHandle.ToString() + "Mouse");
             
             uiControl.MouseMoveActions += OnMouseMoveEvent;
             uiControl.PointerButtonPressActions += OnMouseInputEvent;
@@ -35,7 +36,7 @@ namespace Stride.Input
         
         public override string Name => "SDL Mouse";
 
-        public override Guid Id => new Guid("0ccaf48e-e371-4b34-b6bb-a3720f6742a8");
+        public override Guid Id { get; }
 
         public override bool IsPositionLocked => isMousePositionLocked;
 

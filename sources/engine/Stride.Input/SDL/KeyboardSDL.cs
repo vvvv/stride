@@ -23,8 +23,11 @@ namespace Stride.Input
             this.window.KeyUpActions += OnKeyEvent;
             this.window.TextInputActions += OnTextInputActions;
             this.window.TextEditingActions += OnTextEditingActions;
+
+            Id = InputDeviceUtils.DeviceNameToGuid(window.SdlHandle.ToString() + "Keyboard");
+
         }
-        
+
         public void Dispose()
         {
             window.KeyDownActions -= OnKeyEvent;
@@ -33,7 +36,7 @@ namespace Stride.Input
 
         public override string Name => "SDL Keyboard";
 
-        public override Guid Id => new Guid("a25469ad-804e-4713-82da-347c6b187323");
+        public override Guid Id { get; }
 
         public override IInputSource Source { get; }
 
