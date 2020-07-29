@@ -166,6 +166,8 @@ namespace Stride.Games
 
         protected override void Destroy()
         {
+            // Unregister from graphics device
+            GraphicsDevice.WindowPresenters.Remove(Presenter);
             Presenter?.Dispose();
             Presenter = null;
             Window?.Dispose();
@@ -203,6 +205,8 @@ namespace Stride.Games
                     Presenter = new SwapChainGraphicsPresenter(GraphicsDevice, presentationParameters);
                 }
 
+                // Register presenter to graphics device
+                GraphicsDevice.WindowPresenters.Add(Presenter);
                 isBackBufferToResize = false;
             }
         }

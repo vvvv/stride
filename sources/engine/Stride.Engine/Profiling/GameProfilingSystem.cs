@@ -49,7 +49,7 @@ namespace Stride.Profiling
 
         private Color4 textColor = Color.LightGreen;
 
-        private PresentInterval userPresentInterval = PresentInterval.Default;
+        private Dictionary<GraphicsPresenter, PresentInterval> userPresentInterval = new Dictionary<GraphicsPresenter, PresentInterval>();
 
         private int lastFrame = -1;
 
@@ -59,6 +59,8 @@ namespace Stride.Profiling
 
         private uint trianglesCount;
         private uint drawCallsCount;
+
+        public GraphicsPresenter Presenter { get; set; }
 
         private struct ProfilingResult : IComparer<ProfilingResult>
         {
@@ -342,6 +344,10 @@ namespace Stride.Profiling
         /// <inheritdoc/>
         public override void Draw(GameTime gameTime)
         {
+            // Where to present the result?
+            var presenter = Presenter ?? Game.GraphicsDevice.Presenter;
+            var renderTarget = presenter.BackBuffer;
+
             // copy those values before fast text render not to influence the game stats
             drawCallsCount = GraphicsDevice.FrameDrawCalls;
             trianglesCount = GraphicsDevice.FrameTriangleCount;
@@ -350,7 +356,7 @@ namespace Stride.Profiling
             {
                 dumpTiming.Restart();
 
-                renderTargetSize = new Size2(Game.GraphicsContext.CommandList.RenderTarget.Width, Game.GraphicsContext.CommandList.RenderTarget.Height);
+                renderTargetSize = new Size2(renderTarget.Width, renderTarget.Height);
 
                 if (stringBuilderTask == null || stringBuilderTask.IsCompleted)
                 {
@@ -359,7 +365,6 @@ namespace Stride.Profiling
                 }
             }
 
-            viewportHeight = Game.GraphicsContext.CommandList.Viewport.Height;
 
             if (fastTextRenderer == null)
             {
@@ -371,7 +376,9 @@ namespace Stride.Profiling
             }
 
             // TODO GRAPHICS REFACTOR where to get command list from?
-            Game.GraphicsContext.CommandList.SetRenderTargetAndViewport(null, Game.GraphicsDevice.Presenter.BackBuffer);
+            var commandList = Game.GraphicsContext.CommandList;
+            commandList.SetRenderTargetAndViewport(null, renderTarget);
+            viewportHeight = commandList.Viewport.Height;
             fastTextRenderer.Begin(Game.GraphicsContext);
             lock (stringLock)
             {
@@ -412,10 +419,17 @@ namespace Stride.Profiling
             Visible = true;
 
             // Backup current PresentInterval state
-            userPresentInterval = GraphicsDevice.Presenter.PresentInterval;
+            userPresentInterval[GraphicsDevice.Presenter] = GraphicsDevice.Presenter.PresentInterval;
 
             // Disable VSync (otherwise GPU results might be incorrect)
             GraphicsDevice.Presenter.PresentInterval = PresentInterval.Immediate;
+
+            foreach (var wp in GraphicsDevice.WindowPresenters)
+            {
+                userPresentInterval[wp] = wp.PresentInterval;
+                wp.PresentInterval = PresentInterval.Immediate;
+            }
+
 
             if (keys.Length == 0)
             {
@@ -452,8 +466,20 @@ namespace Stride.Profiling
             Visible = false;
 
             // Restore previous PresentInterval state
-            GraphicsDevice.Presenter.PresentInterval = userPresentInterval;
-            userPresentInterval = PresentInterval.Default;
+            if (userPresentInterval.TryGetValue(GraphicsDevice.Presenter, out var presentInterval))
+            {
+                GraphicsDevice.Presenter.PresentInterval = presentInterval;
+            }
+
+            foreach (var wp in GraphicsDevice.WindowPresenters)
+            {
+                if (userPresentInterval.TryGetValue(wp, out presentInterval))
+                {
+                    wp.PresentInterval = presentInterval;
+                }
+            }
+
+            userPresentInterval.Clear();
 
             Profiler.DisableAll();
             gcProfiler.Disable();
