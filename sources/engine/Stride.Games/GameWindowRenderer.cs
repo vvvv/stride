@@ -243,18 +243,6 @@ namespace Stride.Games
         {
             if (beginDrawOk && GraphicsDevice != null)
             {
-                try
-                {
-                    Presenter.Present();
-                }
-                catch (GraphicsException ex)
-                {
-                    if (ex.Status != GraphicsDeviceStatus.Removed && ex.Status != GraphicsDeviceStatus.Reset)
-                    {
-                        throw;
-                    }
-                }
-
                 if (savedPresenter != null)
                 {
                     GraphicsDevice.Presenter = savedPresenter;
