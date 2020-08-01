@@ -60,7 +60,13 @@ namespace Stride.Profiling
         private uint trianglesCount;
         private uint drawCallsCount;
 
-        public GraphicsPresenter Presenter { get; set; }
+        /// <summary>
+        /// Gets or sets the current render target. If null, the <see cref="Game.GraphicsDevice.Presenter.BackBuffer"/> is used.
+        /// </summary>
+        /// <value>
+        /// The render target.
+        /// </value>
+        public Texture RenderTarget { get; set; }
 
         private struct ProfilingResult : IComparer<ProfilingResult>
         {
@@ -344,9 +350,8 @@ namespace Stride.Profiling
         /// <inheritdoc/>
         public override void Draw(GameTime gameTime)
         {
-            // Where to present the result?
-            var presenter = Presenter ?? Game.GraphicsDevice.Presenter;
-            var renderTarget = presenter.BackBuffer;
+            // Where to render the result?
+            var renderTarget = RenderTarget ?? Game.GraphicsDevice.Presenter.BackBuffer;
 
             // copy those values before fast text render not to influence the game stats
             drawCallsCount = GraphicsDevice.FrameDrawCalls;
