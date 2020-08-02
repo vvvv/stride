@@ -68,7 +68,7 @@ namespace Stride.Profiling
         /// </value>
         public Texture RenderTarget { get; set; }
 
-        private struct ProfilingResult : IComparer<ProfilingResult>
+        public struct ProfilingResult : IComparer<ProfilingResult>
         {
             public long AccumulatedTime;
             public long MinTime;
@@ -90,6 +90,8 @@ namespace Stride.Profiling
 
         private readonly List<ProfilingResult> profilingResults = new List<ProfilingResult>();
         private readonly Dictionary<ProfilingKey, ProfilingResult> profilingResultsDictionary = new Dictionary<ProfilingKey, ProfilingResult>();
+
+        public IReadOnlyList<ProfilingResult> ProfilingResults { get => profilingResults; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GameProfilingSystem"/> class.
@@ -250,7 +252,6 @@ namespace Stride.Profiling
                 {
                     AppendEvent(profilingResults[((int)CurrentResultPage - 1) * elementsPerPage + i], elapsedFrames, tickFrequency, containsMarks);
                 }
-                profilingResults.Clear();
 
                 if (numberOfPages > 1)
                     profilersStringBuilder.AppendFormat("PAGE {0} OF {1}", CurrentResultPage, numberOfPages);
