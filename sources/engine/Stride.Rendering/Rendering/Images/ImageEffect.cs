@@ -305,7 +305,7 @@ namespace Stride.Rendering.Images
         /// Gets the number of output render target.
         /// </summary>
         /// <value>The output count.</value>
-        protected int OutputCount
+        public int OutputCount
         {
             get
             {
@@ -319,7 +319,7 @@ namespace Stride.Rendering.Images
         /// <param name="index">The index.</param>
         /// <returns>RenderTarget.</returns>
         /// <exception cref="System.ArgumentOutOfRangeException">index</exception>
-        protected Texture GetOutput(int index)
+        public Texture GetOutput(int index)
         {
             if (index < 0)
             {
