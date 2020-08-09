@@ -245,7 +245,7 @@ namespace Stride.Rendering.Images
         /// Gets the number of input textures.
         /// </summary>
         /// <value>The input count.</value>
-        protected int InputCount
+        public int InputCount
         {
             get
             {
@@ -259,7 +259,7 @@ namespace Stride.Rendering.Images
         /// <param name="index">The index.</param>
         /// <returns>Texture.</returns>
         /// <exception cref="System.ArgumentOutOfRangeException">index</exception>
-        protected Texture GetInput(int index)
+        public Texture GetInput(int index)
         {
             if (index < 0 || index > maxInputTextureIndex)
             {
