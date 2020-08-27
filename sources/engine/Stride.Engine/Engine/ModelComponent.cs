@@ -294,7 +294,19 @@ namespace Stride.Engine
                 else
                 {
                     // If there is a skeleton, use the corresponding node's transform. Otherwise, fall back to the model transform.
-                    var transform = skeleton != null ? skeleton.NodeTransformations[mesh.NodeIndex].WorldMatrix : worldMatrix;
+                    var transform = worldMatrix;
+                    if (skeleton != null && skeleton.NodeTransformations != null)
+                    {
+                        var nodeTransformationsCount = skeleton.NodeTransformations.Length;
+
+                        if (nodeTransformationsCount > 0)
+                        {
+                            var nodeIndex = mesh.NodeIndex;
+                            if (nodeIndex >= 0 && nodeIndex < nodeTransformationsCount)
+                                transform = skeleton.NodeTransformations[mesh.NodeIndex].WorldMatrix; 
+                        }
+                    }
+
                     BoundingBox.Transform(ref mesh.BoundingBox, ref transform, out meshInfo.BoundingBox);
                     BoundingSphere.Transform(ref mesh.BoundingSphere, ref transform, out meshInfo.BoundingSphere);
                 }
