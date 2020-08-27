@@ -109,7 +109,7 @@ namespace Stride.Rendering
                         // Copy world matrix
                         var mesh = renderModel.Model.Meshes[sourceMeshIndex];
                         var meshInfo = modelComponent.MeshInfos[sourceMeshIndex];
-                        var nodeIndex = Math.Max(mesh.NodeIndex, nodeTransformations.Length - 1);
+                        var nodeIndex = Math.Min(mesh.NodeIndex, nodeTransformations.Length - 1);
                         renderMesh.World = nodeTransformations[nodeIndex].WorldMatrix;
                         renderMesh.IsScalingNegative = nodeTransformations[nodeIndex].IsScalingNegative;
                         renderMesh.BoundingBox = new BoundingBoxExt(meshInfo.BoundingBox);
