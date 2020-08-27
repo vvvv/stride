@@ -303,7 +303,7 @@ namespace Stride.Engine
                         {
                             var nodeIndex = mesh.NodeIndex;
                             if (nodeIndex >= 0 && nodeIndex < nodeTransformationsCount)
-                                transform = skeleton.NodeTransformations[mesh.NodeIndex].WorldMatrix; 
+                                transform = skeleton.NodeTransformations[nodeIndex].WorldMatrix; 
                         }
                     }
 
