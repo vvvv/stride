@@ -147,7 +147,7 @@ namespace Stride.Engine
         /// It either holds the aspect ratio of the window that called Update or the manually set aspect ratio <see cref="AspectRatio"/> if <see cref="UseCustomAspectRatio"/> is <c>true</c>.
         /// </remarks>
         [DataMemberIgnore]
-        public float ActuallyUsedAspectRatio { get; private set; }  // TODO: this should be called AspectRatio
+        public float ActuallyUsedAspectRatio { get; private set; } = 1; // TODO: this should be called AspectRatio
 
         /// <userdoc>The camera slot used in the graphics compositor)</userdoc>
         [DataMember(50)]
