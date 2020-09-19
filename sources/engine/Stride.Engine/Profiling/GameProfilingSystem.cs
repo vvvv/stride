@@ -49,7 +49,7 @@ namespace Stride.Profiling
 
         private Color4 textColor = Color.LightGreen;
 
-        private PresentInterval userPresentInterval = PresentInterval.Default;
+        private Dictionary<GraphicsPresenter, PresentInterval> userPresentInterval = new Dictionary<GraphicsPresenter, PresentInterval>();
         private bool userMinimizedState = true;
 
         private int lastFrame = -1;
@@ -477,10 +477,6 @@ namespace Stride.Profiling
         {
             Enabled = false;
             Visible = false;
-
-            // Restore previous PresentInterval state
-            GraphicsDevice.Presenter.PresentInterval = userPresentInterval;
-            userPresentInterval = PresentInterval.Default;
 
             if (userPresentInterval.TryGetValue(GraphicsDevice.Presenter, out var presentInterval))
             {
