@@ -153,8 +153,10 @@ namespace Stride.Graphics
 
         PixelFormat NormalizeBackBufferFormat(PixelFormat backBufferFormat)
         {
+            var linear = GraphicsDevice.Features.HasSRgb && GraphicsDevice.ColorSpace == ColorSpace.Linear;
+
             // If we are creating a GraphicsPresenter with 
-            if (GraphicsDevice.Features.HasSRgb && GraphicsDevice.ColorSpace == ColorSpace.Linear)
+            if (linear)
             {
                 // If the device support SRgb and ColorSpace is linear, we use automatically a SRgb backbuffer
                 if (backBufferFormat == PixelFormat.R8G8B8A8_UNorm)
@@ -166,9 +168,9 @@ namespace Stride.Graphics
                     backBufferFormat = PixelFormat.B8G8R8A8_UNorm_SRgb;
                 }
             }
-            else if (!GraphicsDevice.Features.HasSRgb)
+            else 
             {
-                // If the device does not support SRgb, but the backbuffer format asked is SRgb, convert it to non SRgb
+                // If the device does not support SRgb or the ColorSpace is Gamma, but the backbuffer format asked is SRgb, convert it to non SRgb
                 if (backBufferFormat == PixelFormat.R8G8B8A8_UNorm_SRgb)
                 {
                     backBufferFormat = PixelFormat.R8G8B8A8_UNorm;
