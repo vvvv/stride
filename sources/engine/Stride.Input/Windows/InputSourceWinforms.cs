@@ -30,7 +30,6 @@ namespace Stride.Input
         private Win32Native.WndProc inputWndProc;
 
         // My input devices
-        private GameContext<Control> gameContext;
         private Control uiControl;
         private InputManager input;
 
@@ -39,11 +38,21 @@ namespace Stride.Input
         /// </summary>
         public bool IsMousePositionLocked { get; protected set; }
 
+        public InputSourceWinforms(Control uiControl = null)
+        {
+            this.uiControl = uiControl;
+        }
+
         public override void Initialize(InputManager inputManager)
         {
             input = inputManager;
-            gameContext = inputManager.Game.Context as GameContext<Control>;
-            uiControl = gameContext.Control;
+
+            if (uiControl == null)
+            {
+                var gameContext = inputManager.Game.Context as GameContext<Control>;
+                uiControl = gameContext.Control;
+            }
+
             uiControl.LostFocus += UIControlOnLostFocus;
             MissingInputHack();
 

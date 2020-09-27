@@ -37,6 +37,8 @@ namespace Stride.Input
             uiControl.SizeChanged += OnSizeChanged;
             uiControl.GotFocus += OnGotFocus;
 
+            Id = InputDeviceUtils.DeviceNameToGuid(uiControl.Handle.ToString() + "Mouse");
+
             OnSizeChanged(this, null);
 
             BindRawInput();
@@ -61,7 +63,7 @@ namespace Stride.Input
         }
 
         public override string Name => "Windows Mouse";
-        public override Guid Id => new Guid("699e35c5-c363-4bb0-8e8b-0474ea1a5cf1");
+        public override Guid Id { get; } 
         public override bool IsPositionLocked => isPositionLocked;
 
         public override void Update(List<InputEvent> inputEvents)
