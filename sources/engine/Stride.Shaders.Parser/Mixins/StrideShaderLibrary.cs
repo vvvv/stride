@@ -98,8 +98,18 @@ namespace Stride.Shaders.Parser.Mixins
             {
                 // find the mixin that depends on this shader
                 foreach (var mixin in MixinInfos)
-                    if (mixin.ReferencedShaders.Contains(shaderName))
+                {
+                    if (mixin.IsShaderClass(shaderName))
                         mixinsToDelete.Add(mixin);
+                    else
+                    {
+                        foreach (var dep in mixin.MinimalContext)
+                        {
+                            if (dep.IsShaderClass(shaderName))
+                                mixinsToDelete.Add(mixin);
+                        }
+                    }
+                }
 
                 // remove the source hash
                 SourceHashes.Remove(shaderName);
@@ -179,7 +189,7 @@ namespace Stride.Shaders.Parser.Mixins
                 if (mixinInfo.Instanciated)
                 {
                     MixinInfos.Add(mixinInfo);
-                    context.Add(mixinInfo);
+                    mapMacrosToMixins[macrosString].Add(mixinInfo);
 
                     mixinInfo.MinimalContext.Add(mixinInfo);
 
@@ -187,6 +197,7 @@ namespace Stride.Shaders.Parser.Mixins
                     {
                         LoadNecessaryShaders(mixinInfo, macros, macrosString);
                     }
+                    mixinInfo.MinimalContext = new HashSet<ModuleMixinInfo>(mixinInfo.MinimalContext.Distinct());
                 }
             }
 
@@ -253,12 +264,7 @@ namespace Stride.Shaders.Parser.Mixins
             if (shaderSource is ShaderClassCode)
             {
                 var shaderClassSource = shaderSource as ShaderClassCode;
-                mixinInfo = new ModuleMixinInfo 
-                { 
-                    ShaderSource = shaderClassSource, 
-                    Macros = macros,
-                    ReferencedShaders = { shaderClassSource.ClassName }
-                };
+                mixinInfo = new ModuleMixinInfo { ShaderSource = shaderClassSource, Macros = macros };
                 LoadMixinFromClassSource(mixinInfo);
             }
             else if (shaderSource is ShaderMixinSource)
@@ -357,7 +363,6 @@ namespace Stride.Shaders.Parser.Mixins
                 var classSource = new ShaderClassSource(foundClass, null);
                 var foundMixinInfo = GetModuleMixinInfo(classSource, macros, macrosString);
                 mixinInfo.MinimalContext.UnionWith(foundMixinInfo.MinimalContext);
-                mixinInfo.ReferencedShaders.UnionWith(foundMixinInfo.ReferencedShaders);
             }
 
             foreach (var id in shaderDependencyVisitor.FoundIdentifiers)
@@ -369,7 +374,6 @@ namespace Stride.Shaders.Parser.Mixins
 
                 var instanciatedClassInfo = GetModuleMixinInfo(classSource, macros, macrosString);
                 mixinInfo.MinimalContext.UnionWith(instanciatedClassInfo.MinimalContext);
-                mixinInfo.ReferencedShaders.UnionWith(instanciatedClassInfo.ReferencedShaders);
 
                 var newId = new Identifier(instanciatedClassInfo.MixinName);
                 if (id.Item2 is TypeName) // in the baseclass list or in a variable declaration

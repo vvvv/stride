@@ -32,7 +32,6 @@ namespace Stride.Graphics
         private readonly List<IDisposable> sharedDataToDispose = new List<IDisposable>();
         private readonly Dictionary<object, IDisposable> sharedDataPerDevice;
         private GraphicsPresenter presenter;
-        private List<GraphicsPresenter> windowPresenters = new List<GraphicsPresenter>();
 
         internal PipelineState DefaultPipelineState;
 
@@ -216,22 +215,6 @@ namespace Stride.Graphics
             set
             {
                 presenter = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets additional window presenters. For example, if the game opens another render window.
-        /// </summary>
-        /// <value>The current presenter.</value>
-        public List<GraphicsPresenter> WindowPresenters
-        {
-            get
-            {
-                return windowPresenters;
-            }
-            set
-            {
-                windowPresenters = value;
             }
         }
 

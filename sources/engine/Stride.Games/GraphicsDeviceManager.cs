@@ -520,12 +520,6 @@ namespace Stride.Games
                     try
                     {
                         GraphicsDevice.Presenter.Present();
-
-                        foreach (var wp in GraphicsDevice.WindowPresenters)
-                        {
-                            wp?.Present();
-                        }
-
                     }
                     catch (GraphicsException ex)
                     {

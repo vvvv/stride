@@ -262,7 +262,7 @@ namespace Stride.Input
         /// <returns><c>true</c> if the specified key is pressed; otherwise, <c>false</c>.</returns>
         public bool IsKeyPressed(Keys key)
         {
-            return Keyboard.IsKeyPressed(key);
+            return Keyboard?.IsKeyPressed(key) ?? false;
         }
 
         /// <summary>
@@ -272,7 +272,7 @@ namespace Stride.Input
         /// <returns><c>true</c> if the specified key is released; otherwise, <c>false</c>.</returns>
         public bool IsKeyReleased(Keys key)
         {
-            return Keyboard.IsKeyReleased(key);
+            return Keyboard?.IsKeyReleased(key) ?? false;
         }
 
         /// <summary>
@@ -282,7 +282,7 @@ namespace Stride.Input
         /// <returns><c>true</c> if the specified key is being pressed down; otherwise, <c>false</c>.</returns>
         public bool IsKeyDown(Keys key)
         {
-            return Keyboard.IsKeyDown(key);
+            return Keyboard?.IsKeyDown(key) ?? false;
         }
 
         /// <summary>
@@ -292,7 +292,7 @@ namespace Stride.Input
         /// <returns><c>true</c> if the specified mouse button is pressed since the previous update; otherwise, <c>false</c>.</returns>
         public bool IsMouseButtonPressed(MouseButton mouseButton)
         {
-            return Mouse.IsButtonPressed(mouseButton);
+            return Mouse?.IsButtonPressed(mouseButton) ?? false;
         }
 
         /// <summary>
@@ -302,7 +302,7 @@ namespace Stride.Input
         /// <returns><c>true</c> if the specified mouse button is released; otherwise, <c>false</c>.</returns>
         public bool IsMouseButtonReleased(MouseButton mouseButton)
         {
-            return Mouse.IsButtonReleased(mouseButton);
+            return Mouse?.IsButtonReleased(mouseButton) ?? false;
         }
 
         /// <summary>
@@ -312,7 +312,7 @@ namespace Stride.Input
         /// <returns><c>true</c> if the specified mouse button is being pressed down; otherwise, <c>false</c>.</returns>
         public bool IsMouseButtonDown(MouseButton mouseButton)
         {
-            return Mouse.IsButtonDown(mouseButton);
+            return Mouse?.IsButtonDown(mouseButton) ?? false;
         }
 
         /// <summary>

@@ -27,10 +27,10 @@ namespace Stride.Engine
         public virtual BoundingBox BoundingBox { get; set; } = BoundingBox.Empty;
 
         [DataMemberIgnore]
-        public Buffer InstanceWorldBuffer;
+        public Buffer<Matrix> InstanceWorldBuffer;
 
         [DataMemberIgnore]
-        public Buffer InstanceWorldInverseBuffer;
+        public Buffer<Matrix> InstanceWorldInverseBuffer;
 
         public void Update()
         {

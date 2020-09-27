@@ -57,8 +57,6 @@ namespace Stride.Games
             if (!deviceChangeWillBeFullScreen.HasValue)
                 return;
 
-            window.FullscreenIsBorderlessWindow = FullscreenIsBorderlessWindow;
-
             if (deviceChangeWillBeFullScreen.Value) //windowed to fullscreen
             {
                 isFullScreenMaximized = true;

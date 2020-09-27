@@ -324,25 +324,6 @@ namespace Stride.Core.Serialization.Contents
             return new ContentManagerStats(LoadedAssetUrls.Values);
         }
 
-        /// <summary>
-        /// Request the ref counts for a specific asset url.
-        /// </summary>
-        public void GetReferenceCounts(string url, out bool exists, out int publicRefCount, out int privateRefCount)
-        {
-            if (LoadedAssetUrls.TryGetValue(url, out var reference))
-            {
-                exists = true;
-                publicRefCount = reference.PublicReferenceCount;
-                privateRefCount = reference.PrivateReferenceCount;
-            }
-            else
-            {
-                exists = false;
-                publicRefCount = 0;
-                privateRefCount = 0;
-            }
-        }
-
         private void PrepareSerializerContext(ContentSerializerContext contentSerializerContext, SerializerContext context)
         {
             context.Set(ContentSerializerContext.ContentSerializerContextProperty, contentSerializerContext);

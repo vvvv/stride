@@ -33,8 +33,14 @@ namespace Stride.Games
     /// </summary>
     public class GameWindowRenderer : GameSystemBase
     {
+        private PixelFormat preferredBackBufferFormat;
+        private int preferredBackBufferHeight;
+        private int preferredBackBufferWidth;
+        private PixelFormat preferredDepthStencilFormat;
+        private bool isBackBufferToResize;
         private GraphicsPresenter savedPresenter;
         private bool beginDrawOk;
+        private bool windowUserResized;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GameWindowRenderer" /> class.
@@ -45,7 +51,6 @@ namespace Stride.Games
             : base(registry)
         {
             GameContext = gameContext;
-            WindowManager = new GameWindowRendererManager();
         }
 
         /// <summary>
@@ -67,60 +72,125 @@ namespace Stride.Games
         public GraphicsPresenter Presenter { get; protected set; }
 
         /// <summary>
-        /// Gets the window manager.
+        /// Gets or sets the preferred back buffer format.
         /// </summary>
-        /// <value>
-        /// The window manager.
-        /// </value>
-        public GameWindowRendererManager WindowManager { get; private set; }
+        /// <value>The preferred back buffer format.</value>
+        public PixelFormat PreferredBackBufferFormat
+        {
+            get
+            {
+                return preferredBackBufferFormat;
+            }
+
+            set
+            {
+                if (preferredBackBufferFormat != value)
+                {
+                    preferredBackBufferFormat = value;
+                    isBackBufferToResize = true;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the height of the preferred back buffer.
+        /// </summary>
+        /// <value>The height of the preferred back buffer.</value>
+        public int PreferredBackBufferHeight
+        {
+            get
+            {
+                return preferredBackBufferHeight;
+            }
+
+            set
+            {
+                if (preferredBackBufferHeight != value)
+                {
+                    preferredBackBufferHeight = value;
+                    isBackBufferToResize = true;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the width of the preferred back buffer.
+        /// </summary>
+        /// <value>The width of the preferred back buffer.</value>
+        public int PreferredBackBufferWidth
+        {
+            get
+            {
+                return preferredBackBufferWidth;
+            }
+
+            set
+            {
+                if (preferredBackBufferWidth != value)
+                {
+                    preferredBackBufferWidth = value;
+                    isBackBufferToResize = true;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the preferred depth stencil format.
+        /// </summary>
+        /// <value>The preferred depth stencil format.</value>
+        public PixelFormat PreferredDepthStencilFormat
+        {
+            get
+            {
+                return preferredDepthStencilFormat;
+            }
+
+            set
+            {
+                preferredDepthStencilFormat = value;
+            }
+        }
 
         public override void Initialize()
         {
             var gamePlatform = Services.GetService<IGamePlatform>();
-            GameContext.RequestedWidth = WindowManager.PreferredBackBufferWidth;
-            GameContext.RequestedHeight = WindowManager.PreferredBackBufferHeight;
+            GameContext.RequestedWidth = PreferredBackBufferWidth;
+            GameContext.RequestedHeight = PreferredBackBufferHeight;
             Window = gamePlatform.CreateWindow(GameContext);
-
             Window.Visible = true;
+
+            Window.ClientSizeChanged += WindowOnClientSizeChanged;
 
             base.Initialize();
         }
 
         protected override void Destroy()
         {
-            if (Presenter != null)
-            {
-                // Unregister from graphics device
-                GraphicsDevice.WindowPresenters.Remove(Presenter);
-
-                // Make sure that the Presenter is reverted to window before shuting down
-                // otherwise the Direct3D11.Device will generate an exception on Dispose()
-                Presenter.IsFullScreen = false;
-                Presenter.Dispose(); 
-            }
+            Presenter?.Dispose();
             Presenter = null;
-
-            WindowManager?.Dispose();
-            WindowManager = null;
             Window?.Dispose();
             Window = null;
 
             base.Destroy();
         }
 
-        protected virtual void EnsurePresenter()
+        private Vector2 GetRequestedSize(out PixelFormat format)
+        {
+            var bounds = Window.ClientBounds;
+            format = PreferredBackBufferFormat == PixelFormat.None ? PixelFormat.R8G8B8A8_UNorm : PreferredBackBufferFormat;
+            return new Vector2(
+                PreferredBackBufferWidth == 0 || windowUserResized ? bounds.Width : PreferredBackBufferWidth,
+                PreferredBackBufferHeight == 0 || windowUserResized ? bounds.Height : PreferredBackBufferHeight);
+        }
+
+        protected virtual void CreateOrUpdatePresenter()
         {
             if (Presenter == null)
             {
-                var presentationParameters = new PresentationParameters(
-                    WindowManager.PreferredBackBufferWidth,
-                    WindowManager.PreferredBackBufferHeight,
-                    Window.NativeWindow,
-                    WindowManager.PreferredBackBufferFormat)
-                {
-                    DepthStencilFormat = WindowManager.PreferredDepthStencilFormat,
-                    PresentationInterval = PresentInterval.Immediate
-                };
+                PixelFormat resizeFormat;
+                var size = GetRequestedSize(out resizeFormat);
+                var presentationParameters = new PresentationParameters((int)size.X, (int)size.Y, Window.NativeWindow, resizeFormat) { DepthStencilFormat = PreferredDepthStencilFormat };
+                presentationParameters.PresentationInterval = PresentInterval.Immediate;
 
 #if STRIDE_GRAPHICS_API_DIRECT3D11 && STRIDE_PLATFORM_UWP
                 if (Game.Context is GameContextUWPCoreWindow context && context.IsWindowsMixedReality)
@@ -133,10 +203,7 @@ namespace Stride.Games
                     Presenter = new SwapChainGraphicsPresenter(GraphicsDevice, presentationParameters);
                 }
 
-                WindowManager.Initialize(this, GraphicsDevice, Services.GetService<IGraphicsDeviceFactory>());
-
-                // Register presenter to graphics device
-                GraphicsDevice.WindowPresenters.Add(Presenter);
+                isBackBufferToResize = false;
             }
         }
 
@@ -146,9 +213,20 @@ namespace Stride.Games
             {
                 savedPresenter = GraphicsDevice.Presenter;
 
-                EnsurePresenter();
+                CreateOrUpdatePresenter();
+
+                if (isBackBufferToResize || windowUserResized)
+                {
+                    PixelFormat resizeFormat;
+                    var size = GetRequestedSize(out resizeFormat);
+                    Presenter.Resize((int)size.X, (int)size.Y, resizeFormat);
+
+                    isBackBufferToResize = false;
+                    windowUserResized = false;
+                }
 
                 GraphicsDevice.Presenter = Presenter;
+
                 beginDrawOk = true;
                 return true;
             }
@@ -161,11 +239,28 @@ namespace Stride.Games
         {
             if (beginDrawOk && GraphicsDevice != null)
             {
+                try
+                {
+                    Presenter.Present();
+                }
+                catch (GraphicsException ex)
+                {
+                    if (ex.Status != GraphicsDeviceStatus.Removed && ex.Status != GraphicsDeviceStatus.Reset)
+                    {
+                        throw;
+                    }
+                }
+
                 if (savedPresenter != null)
                 {
                     GraphicsDevice.Presenter = savedPresenter;
                 }
             }
+        }
+
+        private void WindowOnClientSizeChanged(object sender, EventArgs eventArgs)
+        {
+            windowUserResized = true;
         }
     }
 }

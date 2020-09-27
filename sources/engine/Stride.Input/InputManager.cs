@@ -578,55 +578,6 @@ namespace Stride.Input
             return targetIndex;
         }
 
-        public static IInputSource CreateAdditionalWindowInputSource(GameContext windowContext)
-        {
-            // Create new input source
-            switch (windowContext.ContextType)
-            {
-#if STRIDE_UI_SDL
-                case AppContextType.DesktopSDL:
-                    {
-                        var context = windowContext as GameContextSDL;
-                        var windowInputSource = new WindowInputSourceSDL(context.Control);
-                        return windowInputSource;
-                    }
-#endif
-#if STRIDE_PLATFORM_ANDROID
-                case AppContextType.Android:
-                    break;
-#endif
-#if STRIDE_PLATFORM_IOS
-                case AppContextType.iOS:
-                    break;
-#endif
-#if STRIDE_PLATFORM_UWP
-                case AppContextType.UWPXaml:
-                case AppContextType.UWPCoreWindow:
-                    break;
-#endif
-                case AppContextType.Desktop:
-#if STRIDE_PLATFORM_WINDOWS && (STRIDE_UI_WINFORMS || STRIDE_UI_WPF)
-                    {
-                        var context = windowContext as GameContextWinforms;
-                        var windowInputSource = new InputSourceWinforms(context.Control);
-                        //Sources.Add(new InputSourceWindowsDirectInput());
-                        //if (InputSourceWindowsXInput.IsSupported())
-                        //    Sources.Add(new InputSourceWindowsXInput());
-                        return windowInputSource;
-                    }
-#endif
-#if STRIDE_INPUT_RAWINPUT
-                    //if (rawInputEnabled)
-                    //    Sources.Add(new InputSourceWindowsRawInput());
-#endif
-                    break;
-                default:
-                    throw new InvalidOperationException("GameContext type is not supported by the InputManager");
-            }
-
-            return null;
-        }
-
         private void AddSources()
         {
             // Create input sources

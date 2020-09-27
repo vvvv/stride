@@ -21,12 +21,11 @@ namespace Stride.Engine.Tests
             PerformTest(game =>
             {
                 var context = GameContextFactory.NewGameContext(contextType, isUserManagingRun: true);
-
-                var windowRenderer = new GameWindowRenderer(game.Services, context);
-
-                windowRenderer.WindowManager.PreferredBackBufferWidth = 640;
-                windowRenderer.WindowManager.PreferredBackBufferHeight = 640;
-
+                var windowRenderer = new GameWindowRenderer(game.Services, context)
+                {
+                    PreferredBackBufferWidth = 640,
+                    PreferredBackBufferHeight = 480,
+                };
                 windowRenderer.Initialize();
                 ((IContentable)windowRenderer).LoadContent();
 

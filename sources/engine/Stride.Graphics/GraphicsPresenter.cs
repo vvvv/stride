@@ -47,7 +47,31 @@ namespace Stride.Graphics
             GraphicsDevice = device;
             var description = presentationParameters.Clone();
 
-            description.BackBufferFormat = NormalizeBackBufferFormat(description.BackBufferFormat);
+            // If we are creating a GraphicsPresenter with 
+            if (device.Features.HasSRgb && device.ColorSpace == ColorSpace.Linear)
+            {
+                // If the device support SRgb and ColorSpace is linear, we use automatically a SRgb backbuffer
+                if (description.BackBufferFormat == PixelFormat.R8G8B8A8_UNorm)
+                {
+                    description.BackBufferFormat = PixelFormat.R8G8B8A8_UNorm_SRgb;
+                }
+                else if (description.BackBufferFormat == PixelFormat.B8G8R8A8_UNorm)
+                {
+                    description.BackBufferFormat = PixelFormat.B8G8R8A8_UNorm_SRgb;
+                }
+            }
+            else if (!device.Features.HasSRgb)
+            {
+                // If the device does not support SRgb, but the backbuffer format asked is SRgb, convert it to non SRgb
+                if (description.BackBufferFormat == PixelFormat.R8G8B8A8_UNorm_SRgb)
+                {
+                    description.BackBufferFormat = PixelFormat.R8G8B8A8_UNorm;
+                }
+                else if (description.BackBufferFormat == PixelFormat.B8G8R8A8_UNorm_SRgb)
+                {
+                    description.BackBufferFormat = PixelFormat.B8G8R8A8_UNorm;
+                }
+            }
 
             Description = description;
 
@@ -143,44 +167,12 @@ namespace Stride.Graphics
 
             Description.BackBufferWidth = width;
             Description.BackBufferHeight = height;
-            Description.BackBufferFormat = NormalizeBackBufferFormat(format);
+            Description.BackBufferFormat = format;
 
             ResizeBackBuffer(width, height, format);
             ResizeDepthStencilBuffer(width, height, format);
 
             GraphicsDevice.End();
-        }
-
-        PixelFormat NormalizeBackBufferFormat(PixelFormat backBufferFormat)
-        {
-            var linear = GraphicsDevice.Features.HasSRgb && GraphicsDevice.ColorSpace == ColorSpace.Linear;
-
-            // If we are creating a GraphicsPresenter with 
-            if (linear)
-            {
-                // If the device support SRgb and ColorSpace is linear, we use automatically a SRgb backbuffer
-                if (backBufferFormat == PixelFormat.R8G8B8A8_UNorm)
-                {
-                    backBufferFormat = PixelFormat.R8G8B8A8_UNorm_SRgb;
-                }
-                else if (backBufferFormat == PixelFormat.B8G8R8A8_UNorm)
-                {
-                    backBufferFormat = PixelFormat.B8G8R8A8_UNorm_SRgb;
-                }
-            }
-            else 
-            {
-                // If the device does not support SRgb or the ColorSpace is Gamma, but the backbuffer format asked is SRgb, convert it to non SRgb
-                if (backBufferFormat == PixelFormat.R8G8B8A8_UNorm_SRgb)
-                {
-                    backBufferFormat = PixelFormat.R8G8B8A8_UNorm;
-                }
-                else if (backBufferFormat == PixelFormat.B8G8R8A8_UNorm_SRgb)
-                {
-                    backBufferFormat = PixelFormat.B8G8R8A8_UNorm;
-                }
-            }
-            return backBufferFormat;
         }
 
         protected abstract void ResizeBackBuffer(int width, int height, PixelFormat format);

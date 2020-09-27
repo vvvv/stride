@@ -19,7 +19,7 @@ namespace Stride.Rendering
 
         // GPU buffers
         public bool BuffersManagedByUser;
-        public Buffer InstanceWorldBuffer;
-        public Buffer InstanceWorldInverseBuffer;
+        public Buffer<Matrix> InstanceWorldBuffer;
+        public Buffer<Matrix> InstanceWorldInverseBuffer;
     }
 }

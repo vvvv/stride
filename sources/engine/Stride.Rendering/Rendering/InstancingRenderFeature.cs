@@ -21,8 +21,8 @@ namespace Stride.Rendering
 
         // GPU buffers
         public bool BuffersManagedByUser;
-        public Buffer InstanceWorldBuffer;
-        public Buffer InstanceWorldInverseBuffer;
+        public Buffer<Matrix> InstanceWorldBuffer;
+        public Buffer<Matrix> InstanceWorldInverseBuffer;
     }
 
     public class InstancingRenderFeature : SubRenderFeature
@@ -121,14 +121,10 @@ namespace Stride.Rendering
                     var staticEffectObjectNode = staticObjectNode * effectSlotCount + i;
                     var renderEffect = renderEffects[staticEffectObjectNode];
 
-                    // Skip effects not used during this frame
-                    if (renderEffect == null || !renderEffect.IsUsedDuringThisFrame(RenderSystem))
-                        continue;
-
-                    if (instancingData.InstanceCount > 0)
+                    if (renderEffect != null)
                     {
                         renderEffect.EffectValidator.ValidateParameter(StrideEffectBaseKeys.ModelTransformUsage, instancingData.ModelTransformUsage);
-                        renderEffect.EffectValidator.ValidateParameter(StrideEffectBaseKeys.HasInstancing, instancingData.InstanceCount > 0); 
+                        renderEffect.EffectValidator.ValidateParameter(StrideEffectBaseKeys.HasInstancing, instancingData.InstanceCount > 0);
                     }
                 }
             });

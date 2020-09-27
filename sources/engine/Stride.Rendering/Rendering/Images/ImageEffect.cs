@@ -245,7 +245,7 @@ namespace Stride.Rendering.Images
         /// Gets the number of input textures.
         /// </summary>
         /// <value>The input count.</value>
-        public int InputCount
+        protected int InputCount
         {
             get
             {
@@ -259,7 +259,7 @@ namespace Stride.Rendering.Images
         /// <param name="index">The index.</param>
         /// <returns>Texture.</returns>
         /// <exception cref="System.ArgumentOutOfRangeException">index</exception>
-        public Texture GetInput(int index)
+        protected Texture GetInput(int index)
         {
             if (index < 0 || index > maxInputTextureIndex)
             {
@@ -305,7 +305,7 @@ namespace Stride.Rendering.Images
         /// Gets the number of output render target.
         /// </summary>
         /// <value>The output count.</value>
-        public int OutputCount
+        protected int OutputCount
         {
             get
             {
@@ -319,7 +319,7 @@ namespace Stride.Rendering.Images
         /// <param name="index">The index.</param>
         /// <returns>RenderTarget.</returns>
         /// <exception cref="System.ArgumentOutOfRangeException">index</exception>
-        public Texture GetOutput(int index)
+        protected Texture GetOutput(int index)
         {
             if (index < 0)
             {

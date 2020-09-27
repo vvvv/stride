@@ -139,9 +139,7 @@ namespace Stride.Games
 
         private void GameFormSDL_KeyDownActions(SDL.SDL_KeyboardEvent e)
         {
-            var altEnter = (e.keysym.sym == SDL.SDL_Keycode.SDLK_RETURN) && ((e.keysym.mod & SDL.SDL_Keymod.KMOD_ALT) != 0);
-            var f11 = e.keysym.sym == SDL.SDL_Keycode.SDLK_F11;
-            if (altEnter || f11)
+            if ((e.keysym.sym == SDL.SDL_Keycode.SDLK_RETURN) && ((e.keysym.mod & SDL.SDL_Keymod.KMOD_ALT) != 0))
             {
                 FullscreenToggle?.Invoke(this, EventArgs.Empty);
             }

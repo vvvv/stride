@@ -147,17 +147,11 @@ namespace Stride.Graphics
         {
         }
 
-        /// <summary>
-        /// The application is allowed to gain back CPU cycles if the driver cannot lock the surface immediately. 
-        /// When this is the case, the lock call throws WasStillDrawingException.
-        /// </summary>
-        public bool DoNotWait { get; set; }
-
         public override void Present()
         {
             try
             {
-                swapChain.Present((int)PresentInterval, DoNotWait ? PresentFlags.DoNotWait : PresentFlags.None);
+                swapChain.Present((int)PresentInterval, PresentFlags.None);
 #if STRIDE_GRAPHICS_API_DIRECT3D12
                 // Manually swap back buffer
                 backBuffer.NativeResource.Dispose();
