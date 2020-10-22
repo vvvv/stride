@@ -75,7 +75,7 @@ namespace Stride.Games
             DrawTime = new GameTime();
             autoTickTimer = new TimerTick();
             IsFixedTimeStep = false;
-            maximumElapsedTime = TimeSpan.FromMilliseconds(500.0);
+            maximumElapsedTime = TimeSpan.FromMilliseconds(2000.0);
             TargetElapsedTime = TimeSpan.FromTicks(TimeSpan.TicksPerSecond / 60); // target elapsed time is by default 60Hz
             TargetElapsedTime = TimeSpan.FromTicks(TimeSpan.TicksPerSecond / 60); // target elapsed time is by default 60Hz
 
