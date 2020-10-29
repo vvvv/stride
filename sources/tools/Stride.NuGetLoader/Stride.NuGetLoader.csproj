@@ -9,6 +9,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <IntermediateOutputPath>obj\$(Configuration)\$(StrideApplicationName)</IntermediateOutputPath>
     <OutputPath>bin\$(Configuration)\$(StrideApplicationName)</OutputPath>
+    <DefineConstants Condition="'$(StrideNuGetResolverUX)' == 'true'">STRIDE_NUGET_RESOLVER_UX;$(DefineConstants)</DefineConstants>
 
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
@@ -24,6 +25,13 @@
     <Compile Include="..\..\shared\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
     <Compile Include="..\..\shared\Stride.NuGetResolver\NuGetAssemblyResolver.cs" Link="NuGetAssemblyResolver.cs" />
     <Compile Include="..\..\shared\Stride.NuGetResolver\RestoreHelper.cs" Link="RestoreHelper.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(StrideNuGetLoaderWindowsDesktop)' == 'true'">
+    <Compile Include="..\..\shared\Stride.NuGetResolver\SplashScreenWindow.xaml.cs" Link="SplashScreenWindow.xaml.cs" />
+    <Page Include="..\..\shared\Stride.NuGetResolver\SplashScreenWindow.xaml" Link="SplashScreenWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
   <Import Project="Sdk.targets" Condition="'$(StrideNuGetLoaderWindowsDesktop)' != 'true'" Sdk="Microsoft.NET.Sdk" />
