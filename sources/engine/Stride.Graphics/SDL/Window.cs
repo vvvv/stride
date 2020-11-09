@@ -434,6 +434,7 @@ namespace Stride.Graphics.SDL
         public delegate void JoystickDeviceChangedDelegate(int which);
         public delegate void TouchFingerDelegate(SDL.SDL_TouchFingerEvent e);
         public delegate void NotificationDelegate();
+        public delegate void DropEventDelegate(string content);
 
         public event MouseButtonDelegate PointerButtonPressActions;
         public event MouseButtonDelegate PointerButtonReleaseActions;
@@ -460,6 +461,7 @@ namespace Stride.Graphics.SDL
         public event WindowEventDelegate MouseLeaveActions;
         public event WindowEventDelegate FocusGainedActions;
         public event WindowEventDelegate FocusLostActions;
+        public event DropEventDelegate DropFileActions;
 
         /// <summary>
         /// Process events for the current window
@@ -523,6 +525,10 @@ namespace Stride.Graphics.SDL
 
                 case SDL.SDL_EventType.SDL_FINGERUP:
                     FingerReleaseActions?.Invoke(e.tfinger);
+                    break;
+                
+                case SDL.SDL_EventType.SDL_DROPFILE:
+                    DropFileActions?.Invoke( SDL.UTF8_ToManaged(e.drop.file, true) );
                     break;
 
                 case SDL.SDL_EventType.SDL_WINDOWEVENT:
