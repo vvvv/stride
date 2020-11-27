@@ -585,11 +585,9 @@ namespace Stride.Input
             {
 #if STRIDE_UI_SDL
                 case AppContextType.DesktopSDL:
-                    {
-                        var context = windowContext as GameContextSDL;
-                        var windowInputSource = new WindowInputSourceSDL(context.Control);
-                        return windowInputSource;
-                    }
+                    var sdlContext = windowContext as GameContextSDL;
+                    var windowInputSource = new WindowInputSourceSDL(sdlContext.Control);
+                    return windowInputSource;
 #endif
 #if STRIDE_PLATFORM_ANDROID
                 case AppContextType.Android:
@@ -606,18 +604,10 @@ namespace Stride.Input
 #endif
                 case AppContextType.Desktop:
 #if STRIDE_PLATFORM_WINDOWS && (STRIDE_UI_WINFORMS || STRIDE_UI_WPF)
-                    {
-                        var context = windowContext as GameContextWinforms;
-                        var windowInputSource = new InputSourceWinforms(context.Control);
-                        //Sources.Add(new InputSourceWindowsDirectInput());
-                        //if (InputSourceWindowsXInput.IsSupported())
-                        //    Sources.Add(new InputSourceWindowsXInput());
-                        return windowInputSource;
-                    }
+
 #endif
 #if STRIDE_INPUT_RAWINPUT
-                    //if (rawInputEnabled)
-                    //    Sources.Add(new InputSourceWindowsRawInput());
+
 #endif
                     break;
                 default:
