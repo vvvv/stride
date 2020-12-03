@@ -106,7 +106,7 @@ namespace Stride.Input
         /// <summary>
         /// The keys that have been pressed since the last frame
         /// </summary>
-        public IReadOnlySet<Keys> PressedKeys
+        public Core.Collections.IReadOnlySet<Keys> PressedKeys
         {
             get
             {
@@ -118,7 +118,7 @@ namespace Stride.Input
         /// <summary>
         /// The keys that have been released since the last frame
         /// </summary>
-        public IReadOnlySet<Keys> ReleasedKeys
+        public Core.Collections.IReadOnlySet<Keys> ReleasedKeys
         {
             get
             {
@@ -130,7 +130,7 @@ namespace Stride.Input
         /// <summary>
         /// The keys that are down
         /// </summary>
-        public IReadOnlySet<Keys> DownKeys
+        public Core.Collections.IReadOnlySet<Keys> DownKeys
         {
             get
             {
@@ -142,7 +142,7 @@ namespace Stride.Input
         /// <summary>
         /// The mouse buttons that have been pressed since the last frame
         /// </summary>
-        public IReadOnlySet<MouseButton> PressedButtons
+        public Core.Collections.IReadOnlySet<MouseButton> PressedButtons
         {
             get
             {
@@ -154,7 +154,7 @@ namespace Stride.Input
         /// <summary>
         /// The mouse buttons that have been released since the last frame
         /// </summary>
-        public IReadOnlySet<MouseButton> ReleasedButtons
+        public Core.Collections.IReadOnlySet<MouseButton> ReleasedButtons
         {
             get
             {
@@ -166,7 +166,7 @@ namespace Stride.Input
         /// <summary>
         /// The mouse buttons that are down
         /// </summary>
-        public IReadOnlySet<MouseButton> DownButtons
+        public Core.Collections.IReadOnlySet<MouseButton> DownButtons
         {
             get
             {
@@ -262,7 +262,7 @@ namespace Stride.Input
         /// <returns><c>true</c> if the specified key is pressed; otherwise, <c>false</c>.</returns>
         public bool IsKeyPressed(Keys key)
         {
-            return Keyboard?.IsKeyPressed(key) ?? false;
+            return Keyboard.IsKeyPressed(key);
         }
 
         /// <summary>
@@ -272,7 +272,7 @@ namespace Stride.Input
         /// <returns><c>true</c> if the specified key is released; otherwise, <c>false</c>.</returns>
         public bool IsKeyReleased(Keys key)
         {
-            return Keyboard?.IsKeyReleased(key) ?? false;
+            return Keyboard.IsKeyReleased(key);
         }
 
         /// <summary>
@@ -282,7 +282,7 @@ namespace Stride.Input
         /// <returns><c>true</c> if the specified key is being pressed down; otherwise, <c>false</c>.</returns>
         public bool IsKeyDown(Keys key)
         {
-            return Keyboard?.IsKeyDown(key) ?? false;
+            return Keyboard.IsKeyDown(key);
         }
 
         /// <summary>
@@ -292,7 +292,7 @@ namespace Stride.Input
         /// <returns><c>true</c> if the specified mouse button is pressed since the previous update; otherwise, <c>false</c>.</returns>
         public bool IsMouseButtonPressed(MouseButton mouseButton)
         {
-            return Mouse?.IsButtonPressed(mouseButton) ?? false;
+            return Mouse.IsButtonPressed(mouseButton);
         }
 
         /// <summary>
@@ -302,7 +302,7 @@ namespace Stride.Input
         /// <returns><c>true</c> if the specified mouse button is released; otherwise, <c>false</c>.</returns>
         public bool IsMouseButtonReleased(MouseButton mouseButton)
         {
-            return Mouse?.IsButtonReleased(mouseButton) ?? false;
+            return Mouse.IsButtonReleased(mouseButton);
         }
 
         /// <summary>
@@ -312,7 +312,7 @@ namespace Stride.Input
         /// <returns><c>true</c> if the specified mouse button is being pressed down; otherwise, <c>false</c>.</returns>
         public bool IsMouseButtonDown(MouseButton mouseButton)
         {
-            return Mouse?.IsButtonDown(mouseButton) ?? false;
+            return Mouse.IsButtonDown(mouseButton);
         }
 
         /// <summary>

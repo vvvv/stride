@@ -75,9 +75,10 @@ namespace Stride.Games
             DrawTime = new GameTime();
             autoTickTimer = new TimerTick();
             IsFixedTimeStep = false;
-            maximumElapsedTime = TimeSpan.FromMilliseconds(500.0);
+            maximumElapsedTime = TimeSpan.FromMilliseconds(2000.0);
             TargetElapsedTime = TimeSpan.FromTicks(TimeSpan.TicksPerSecond / 60); // target elapsed time is by default 60Hz
-            
+            TargetElapsedTime = TimeSpan.FromTicks(TimeSpan.TicksPerSecond / 60); // target elapsed time is by default 60Hz
+
             TreatNotFocusedLikeMinimized = true;
             WindowMinimumUpdateRate = new ThreadThrottler(TimeSpan.FromSeconds(0d));
             MinimizedMinimumUpdateRate = new ThreadThrottler(15); // by default 15 updates per second while minimized
@@ -268,6 +269,17 @@ namespace Stride.Games
         /// </summary>
         /// <value>The target elapsed time.</value>
         public TimeSpan TargetElapsedTime { get; set; }
+
+        /// <summary>
+        /// Gets or sets the value indicating whether the user provides the elapsed time increment for the time calculation.
+        /// </summary>
+        public bool IsUserManagingTime { get; set; }
+
+        /// <summary>
+        /// Gets or sets the elapsed time, for the next tick/update if called from external code. Should be set just before calling the RunCallback.
+        /// Default is 1/60s, i.e. 60fps
+        /// </summary>
+        public TimeSpan ElapsedUserTime { get; set; }
 
         /// <summary>
         /// Access to the throttler used to set the minimum time allowed between each updates.
@@ -504,10 +516,19 @@ namespace Stride.Games
         {
             try
             {
-                // Update the timer
-                autoTickTimer.Tick();
+                TimeSpan elapsedAdjustedTime;
 
-                var elapsedAdjustedTime = autoTickTimer.ElapsedTimeWithPause;
+                if (IsUserManagingTime)
+                {
+                    // Use user provided time
+                    elapsedAdjustedTime = ElapsedUserTime;
+                }
+                else
+                {
+                    // Update the timer
+                    autoTickTimer.Tick();
+                    elapsedAdjustedTime = autoTickTimer.ElapsedTimeWithPause;
+                }
 
                 if (forceElapsedTimeToZero)
                 {

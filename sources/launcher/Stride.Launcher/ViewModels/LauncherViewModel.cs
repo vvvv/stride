@@ -509,7 +509,8 @@ namespace Stride.LauncherApp.ViewModels
                     metricsForEditorBefore120 = new MetricsClient(CommonApps.StrideEditorAppId, versionOverride: activeStoreVersion.Version.ToString());
                 }
 
-                Process.Start(mainExecutable, argument);
+                // We set the WorkingDirectory so that global.json is properly resolved
+                Process.Start(new ProcessStartInfo(mainExecutable, argument) { WorkingDirectory = Path.GetDirectoryName(mainExecutable) } );
             }
             catch (Exception e)
             {
@@ -550,7 +551,7 @@ namespace Stride.LauncherApp.ViewModels
         {
             try
             {
-                Process.Start(url);
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             }
             // FIXME: catch only specific exceptions?
             catch (Exception)
