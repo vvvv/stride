@@ -35,7 +35,7 @@ namespace Stride.Rendering.Materials
         /// Initializes a new instance of the <see cref="MaterialNormalMapFeature"/> class.
         /// </summary>
         /// <param name="normalMap">The normal map.</param>
-        public MaterialNormalMapFeature(IComputeColor normalMap)
+        public MaterialNormalMapFeature(IComputeNode<Vector4> normalMap)
         {
             ScaleAndBias = true;
             NormalMap = normalMap;
@@ -51,7 +51,7 @@ namespace Stride.Rendering.Materials
         [DataMember(10)]
         [Display("Normal Map")]
         [NotNull]
-        public IComputeColor NormalMap { get; set; }
+        public IComputeNode<Vector4> NormalMap { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to scale by (2,2) and offset by (-1,-1) the normal map.

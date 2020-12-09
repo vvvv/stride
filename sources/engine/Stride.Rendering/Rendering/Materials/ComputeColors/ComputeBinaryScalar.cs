@@ -10,7 +10,7 @@ namespace Stride.Rendering.Materials.ComputeColors
     /// </summary>
     [DataContract("ComputeBinaryScalar")]
     [Display("Binary Operator")]
-    public class ComputeBinaryScalar : ComputeBinaryBase<IComputeScalar>, IComputeScalar
+    public class ComputeBinaryScalar : ComputeBinaryBase<float>, IComputeScalar
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="ComputeBinaryScalar"/> class.
@@ -25,7 +25,7 @@ namespace Stride.Rendering.Materials.ComputeColors
         /// <param name="leftChild">The left child.</param>
         /// <param name="rightChild">The right child.</param>
         /// <param name="binaryOperator">The material binary operand.</param>
-        public ComputeBinaryScalar(IComputeScalar leftChild, IComputeScalar rightChild, BinaryOperator binaryOperator)
+        public ComputeBinaryScalar(IComputeNode<float> leftChild, IComputeNode<float> rightChild, BinaryOperator binaryOperator)
             : base(leftChild, rightChild, binaryOperator)
         {
         }

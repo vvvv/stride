@@ -23,5 +23,20 @@ namespace Stride.Rendering.Materials
         /// </summary>
         /// <returns>ShaderSource.</returns>
         ShaderSource GenerateShaderSource(ShaderGeneratorContext context, MaterialComputeColorKeys baseKeys);
+
+        /// <summary>
+        /// Indicates if the <see cref="IComputeNode"/> has changed since the last time it was checked, which might require recompilation of the shader mixins.
+        /// Once polled, it will reset all cached states and revert to false until other changes have been triggered.
+        /// </summary>
+        bool HasChanged { get; }
+    }
+
+    /// <summary>
+    /// Base interface for all <see cref="IComputeNode"/> 
+    /// that restricts the connectability of this compute node to a certain type giving you compile-time type safety
+    /// </summary>
+    /// <typeparam name="T">Any type that in this context allows to restrict the set of connectable nodes to the ones that make sense</typeparam>
+    public interface IComputeNode<T> : IComputeNode
+    { 
     }
 }

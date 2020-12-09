@@ -36,5 +36,11 @@ namespace Stride.Rendering.Materials.ComputeColors
         /// </summary>
         /// <returns>ShaderSource.</returns>
         public abstract ShaderSource GenerateShaderSource(ShaderGeneratorContext context, MaterialComputeColorKeys baseKeys);
+
+        /// <summary>
+        /// Indicates if the <see cref="IComputeNode"/> has changed since the last time it was checked, which might require recompilation of the shader mixins.
+        /// Once polled, it will reset all cached states and revert to false until other changes have been triggered.
+        /// </summary>
+        public abstract bool HasChanged { get; } 
     }
 }

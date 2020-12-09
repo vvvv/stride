@@ -40,7 +40,7 @@ namespace Stride.Rendering.Materials
         [NotNull]
         [DataMember(10)]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 2)]
-        public IComputeScalar Alpha { get; set; }
+        public IComputeNode<float> Alpha { get; set; }
 
         /// <summary>
         /// Gets or sets the tint color.
@@ -49,7 +49,7 @@ namespace Stride.Rendering.Materials
         /// <userdoc>The tint color to apply on the material during the blend.</userdoc>
         [NotNull]
         [DataMember(20)]
-        public IComputeColor Tint { get; set; }
+        public IComputeNode<Vector4> Tint { get; set; }
 
         public override void GenerateShader(MaterialGeneratorContext context)
         {

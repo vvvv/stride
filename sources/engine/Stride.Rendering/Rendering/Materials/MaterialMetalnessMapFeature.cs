@@ -27,7 +27,7 @@ namespace Stride.Rendering.Materials
         /// Initializes a new instance of the <see cref="MaterialMetalnessMapFeature"/> class.
         /// </summary>
         /// <param name="metalnessMap">The metalness map.</param>
-        public MaterialMetalnessMapFeature(IComputeScalar metalnessMap)
+        public MaterialMetalnessMapFeature(IComputeNode<float> metalnessMap)
         {
             MetalnessMap = metalnessMap;
         }
@@ -40,7 +40,7 @@ namespace Stride.Rendering.Materials
         [Display("Metalness Map")]
         [NotNull]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 3)]
-        public IComputeScalar MetalnessMap { get; set; }
+        public IComputeNode<float> MetalnessMap { get; set; }
 
         public override void GenerateShader(MaterialGeneratorContext context)
         {

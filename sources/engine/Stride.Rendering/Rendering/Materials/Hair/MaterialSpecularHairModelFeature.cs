@@ -196,7 +196,7 @@ namespace Stride.Rendering.Materials
         [DataMember(140)]
         [DataMemberCustomSerializer]
         [Display("Specular shift texture")]
-        public IComputeScalar HairSpecularHighlightsShiftNoise { get; set; } = new ComputeTextureScalar(); // TODO: Document which texture must be used for this, so there is no confusion like in the Mizuchi documentation.
+        public IComputeNode<float> HairSpecularHighlightsShiftNoise { get; set; } = new ComputeTextureScalar(); // TODO: Document which texture must be used for this, so there is no confusion like in the Mizuchi documentation.
 
         /// <summary>
         /// The texure that is multiplied with the secondary specular reflections to give them a sparkling look.
@@ -208,7 +208,7 @@ namespace Stride.Rendering.Materials
         [DataMember(150)]
         [DataMemberCustomSerializer]
         [Display("Secondary specular noise")]
-        public IComputeScalar HairSecondarySpecularGlintsNoise { get; set; } = new ComputeTextureScalar(); // TODO: Document which texture must be used for this, so there is no confusion like in the Mizuchi documentation.
+        public IComputeNode<float> HairSecondarySpecularGlintsNoise { get; set; } = new ComputeTextureScalar(); // TODO: Document which texture must be used for this, so there is no confusion like in the Mizuchi documentation.
 
         /// <summary>
         /// Defines whether the tangent or bitangent vectors represent the hair strands direction.

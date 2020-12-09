@@ -24,5 +24,7 @@ namespace Stride.Rendering.Materials.ComputeColors
         }
 
         protected abstract string GetColorChannelAsString();
+
+        public override bool HasChanged => false;
     }
 }

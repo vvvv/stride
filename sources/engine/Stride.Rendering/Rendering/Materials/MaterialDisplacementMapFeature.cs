@@ -29,7 +29,7 @@ namespace Stride.Rendering.Materials
         /// Initializes a new instance of the <see cref="MaterialDisplacementMapFeature"/> class.
         /// </summary>
         /// <param name="displacementMap">The displacement map.</param>
-        public MaterialDisplacementMapFeature(IComputeScalar displacementMap)
+        public MaterialDisplacementMapFeature(IComputeNode<float> displacementMap)
         {
             ScaleAndBias = true;
             DisplacementMap = displacementMap;
@@ -47,7 +47,7 @@ namespace Stride.Rendering.Materials
         [DataMember(10)]
         [Display("Displacement Map")]
         [NotNull]
-        public IComputeScalar DisplacementMap { get; set; }
+        public IComputeNode<float> DisplacementMap { get; set; }
 
         /// <summary>
         /// Gets or sets the displacement map.
@@ -59,7 +59,7 @@ namespace Stride.Rendering.Materials
         [DataMember(20)]
         [Display("Intensity")]
         [NotNull]
-        public IComputeScalar Intensity { get; set; }
+        public IComputeNode<float> Intensity { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to scale by (2,2,2) and bias by (-1,-1,-1) the displacement map.

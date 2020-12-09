@@ -21,7 +21,7 @@ namespace Stride.Rendering.Materials
         /// <param name="context">The material generator context</param>
         /// <param name="parentLayerContext">The parent layer context</param>
         /// <param name="blendMap">The blend map used for this layer</param>
-        public MaterialBlendLayerContext(MaterialGeneratorContext context, MaterialBlendLayerContext parentLayerContext, IComputeScalar blendMap)
+        public MaterialBlendLayerContext(MaterialGeneratorContext context, MaterialBlendLayerContext parentLayerContext, IComputeNode<float> blendMap)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
             Context = context;
@@ -44,7 +44,7 @@ namespace Stride.Rendering.Materials
 
         public MaterialBlendLayerContext Parent { get; }
 
-        public IComputeScalar BlendMap { get; }
+        public IComputeNode<float> BlendMap { get; }
 
         public Dictionary<MaterialShaderStage, MaterialBlendLayerPerStageContext> ContextPerStage { get; }
 
@@ -54,7 +54,7 @@ namespace Stride.Rendering.Materials
 
         internal MaterialBlendLayerPerStageContext PendingPixelLayerContext { get; }
 
-        internal IComputeScalar BlendMapForShadingModel { get; set; }
+        internal IComputeNode<float> BlendMapForShadingModel { get; set; }
 
         internal int ShadingModelCount { get; set; }
 
@@ -63,7 +63,7 @@ namespace Stride.Rendering.Materials
             return ContextPerStage[stage];
         }
 
-        public void SetStreamBlend(MaterialShaderStage stage, IComputeScalar blendMap)
+        public void SetStreamBlend(MaterialShaderStage stage, IComputeNode<float> blendMap)
         {
             SetStream(stage, MaterialBlendLayer.BlendStream, blendMap, MaterialKeys.BlendMap, MaterialKeys.BlendValue, null);
         }

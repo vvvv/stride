@@ -204,7 +204,7 @@ namespace Stride.Rendering.Materials
         /// Pushes a new layer with the specified blend map.
         /// </summary>
         /// <param name="blendMap">The blend map used by this layer.</param>
-        public void PushLayer(IComputeScalar blendMap)
+        public void PushLayer(IComputeNode<float> blendMap)
         {
             if (Step != MaterialGeneratorStep.GenerateShader)
                 return;

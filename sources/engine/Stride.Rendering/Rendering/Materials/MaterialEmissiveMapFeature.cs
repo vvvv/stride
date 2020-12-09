@@ -31,7 +31,7 @@ namespace Stride.Rendering.Materials
         /// </summary>
         /// <param name="emissiveMap">The emissive map.</param>
         /// <exception cref="System.ArgumentNullException">emissiveMap</exception>
-        public MaterialEmissiveMapFeature(IComputeColor emissiveMap)
+        public MaterialEmissiveMapFeature(IComputeNode<Vector4> emissiveMap)
         {
             if (emissiveMap == null) throw new ArgumentNullException("emissiveMap");
             EmissiveMap = emissiveMap;
@@ -47,7 +47,7 @@ namespace Stride.Rendering.Materials
         [Display("Emissive Map")]
         [NotNull]
         [DataMember(10)]
-        public IComputeColor EmissiveMap { get; set; }
+        public IComputeNode<Vector4> EmissiveMap { get; set; }
 
         /// <summary>
         /// Gets or sets the intensity.
@@ -57,7 +57,7 @@ namespace Stride.Rendering.Materials
         [Display("Intensity")]
         [NotNull]
         [DataMember(20)]
-        public IComputeScalar Intensity { get; set; }
+        public IComputeNode<float> Intensity { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to use the alpha component of the emissive map as main alpha color for the material.

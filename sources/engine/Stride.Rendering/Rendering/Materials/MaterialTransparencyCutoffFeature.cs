@@ -38,7 +38,7 @@ namespace Stride.Rendering.Materials
         [NotNull]
         [DataMember(10)]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 2)]
-        public IComputeScalar Alpha { get; set; }
+        public IComputeNode<float> Alpha { get; set; }
 
         public override void GenerateShader(MaterialGeneratorContext context)
         {

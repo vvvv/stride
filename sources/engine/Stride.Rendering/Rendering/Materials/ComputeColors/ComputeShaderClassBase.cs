@@ -16,12 +16,12 @@ namespace Stride.Rendering.Materials.ComputeColors
     /// <typeparam name="T">Type of the node (scalar or color)</typeparam>
     [DataContract(Inherited = true)]
     [Display("Shader")]
-    public abstract class ComputeShaderClassBase<T> : ComputeNode where T : class, IComputeNode
+    public class ComputeShaderClassBase<T> : ComputeNode, IComputeNode<T>
     {
         protected ComputeShaderClassBase()
         {
             Generics = new ComputeColorParameters();
-            CompositionNodes = new Dictionary<string, T>();
+            CompositionNodes = new Dictionary<string, IComputeNode<T>>();
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Stride.Rendering.Materials.ComputeColors
         /// </userdoc>
         [DataMember(40)]
         [MemberCollection(ReadOnly = true)]
-        public Dictionary<string, T> CompositionNodes { get; set; }
+        public Dictionary<string, IComputeNode<T>> CompositionNodes { get; set; }
 
         /// <summary>
         /// The members of this class.
@@ -168,5 +168,20 @@ namespace Stride.Rendering.Materials.ComputeColors
 
         /// <inheritdoc/>
         public override string ToString() => "Shader";
+
+        private int hashCode = 0;
+
+        /// <inheritdoc/>
+        public override bool HasChanged
+        {
+            get
+            {
+                if (hashCode != 0 && hashCode == (MixinReference?.GetHashCode() ?? 0))
+                    return false;
+
+                hashCode = (MixinReference?.GetHashCode() ?? 0);
+                return true;
+            }
+        }
     }
 }

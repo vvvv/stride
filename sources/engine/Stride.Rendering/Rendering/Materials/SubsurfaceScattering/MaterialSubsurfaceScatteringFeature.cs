@@ -62,7 +62,7 @@ namespace Stride.Rendering.Materials
         [NotNull]
         [DataMember(20)]
         [Display("Translucency map")]
-        public IComputeScalar TranslucencyMap { get; set; } = new ComputeTextureScalar();   // IComputeScalar instead of IMaterialSubsurfaceScatteringStrengthMap, because this way the editor displays it more nicely.
+        public IComputeNode<float> TranslucencyMap { get; set; } = new ComputeTextureScalar();   // IComputeScalar instead of IMaterialSubsurfaceScatteringStrengthMap, because this way the editor displays it more nicely.
 
         /// <summary>
         /// The profile mixin to use for the scattering calculations.

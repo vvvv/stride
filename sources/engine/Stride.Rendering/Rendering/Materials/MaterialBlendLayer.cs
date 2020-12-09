@@ -67,7 +67,7 @@ namespace Stride.Rendering.Materials
         [DefaultValue(null)]
         [DataMember(40)]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 2)]
-        public IComputeScalar BlendMap { get; set; }
+        public IComputeNode<float> BlendMap { get; set; }
 
         /// <summary>
         /// Gets or sets the material overrides.

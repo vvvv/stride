@@ -41,7 +41,7 @@ namespace Stride.Rendering.Materials
         [Display("Occlusion Map")]
         [DataMember(10)]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 3)]
-        public IComputeScalar AmbientOcclusionMap { get; set; }
+        public IComputeNode<float> AmbientOcclusionMap { get; set; }
 
         /// <summary>
         /// Gets or sets how much the occlusion map can influence direct lighting (default: 0).
@@ -53,7 +53,7 @@ namespace Stride.Rendering.Materials
         [DataMember(15)]
         [NotNull]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 3)]
-        public IComputeScalar DirectLightingFactor { get; set; }
+        public IComputeNode<float> DirectLightingFactor { get; set; }
 
         /// <summary>
         /// Gets or sets the cavity map.
@@ -64,7 +64,7 @@ namespace Stride.Rendering.Materials
         [Display("Cavity Map")]
         [DataMember(20)]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 3)]
-        public IComputeScalar CavityMap { get; set; }
+        public IComputeNode<float> CavityMap { get; set; }
 
         /// <summary>
         /// Gets or sets the diffuse cavity influence.
@@ -75,7 +75,7 @@ namespace Stride.Rendering.Materials
         [DataMember(30)]
         [NotNull]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 3)]
-        public IComputeScalar DiffuseCavity { get; set; }
+        public IComputeNode<float> DiffuseCavity { get; set; }
 
         /// <summary>
         /// Gets or sets the specular cavity.
@@ -86,7 +86,7 @@ namespace Stride.Rendering.Materials
         [DataMember(40)]
         [NotNull]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 3)]
-        public IComputeScalar SpecularCavity { get; set; }
+        public IComputeNode<float> SpecularCavity { get; set; }
 
         public override void GenerateShader(MaterialGeneratorContext context)
         {

@@ -11,11 +11,6 @@ namespace Stride.Rendering.Materials.ComputeColors
     [Display("Float4")]
     public class ComputeFloat4 : ComputeValueBase<Vector4>, IComputeColor
     {
-        private bool hasChanged = true;
-
-        // Possible optimization will be to keep this on the ComputeValueBase<T> side
-        private Vector4 cachedValue;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ComputeFloat4"/> class.
         /// </summary>
@@ -31,24 +26,6 @@ namespace Stride.Rendering.Materials.ComputeColors
         public ComputeFloat4(Vector4 value)
             : base(value)
         {
-            cachedValue = Vector4.Zero;
-
-            // Force recompilation of the shader mixins the first time ComputeColor is created by setting the value to true
-            hasChanged = true;
-        }
-
-        /// <inheritdoc/>
-        public bool HasChanged
-        {
-            get
-            {
-                if (!hasChanged && cachedValue == Value)
-                    return false;
-
-                hasChanged = false;
-                cachedValue = Value;
-                return true;
-            }
         }
 
         /// <inheritdoc/>

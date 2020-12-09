@@ -34,6 +34,8 @@ namespace Stride.Rendering.Materials.ComputeColors
             Scale = scale;
             Offset = offset;
             Key = null;
+            hasChanged = true;
+            cachedTexture = null;
         }
 
         /// <summary>
@@ -253,6 +255,26 @@ namespace Stride.Rendering.Materials.ComputeColors
             }
 
             return shaderSource;
+        }
+
+        private bool hasChanged = true;
+
+        // Possible optimization will be to keep this on the ComputeTextureBase side
+        private Texture cachedTexture;
+
+
+        /// <inheritdoc/>
+        public override bool HasChanged
+        {
+            get
+            {
+                if (!hasChanged && cachedTexture == Texture)
+                    return false;
+
+                hasChanged = false;
+                cachedTexture = Texture;
+                return true;
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -44,7 +44,7 @@ namespace Stride.Rendering.Materials
         [Display("Falloff map")]
         [NotNull]
         // TODO: Make the editor only display RGB, not RGBA.
-        public IComputeColor FalloffMap { get; set; } = new ComputeColor(new Color4(1.0f, 0.37f, 0.3f, 1.0f));    // Default falloff for skin.
+        public IComputeNode<Vector4> FalloffMap { get; set; } = new ComputeColor(new Color4(1.0f, 0.37f, 0.3f, 1.0f));    // Default falloff for skin.
         
         public ShaderSource Generate(MaterialGeneratorContext context)
         {

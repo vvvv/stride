@@ -30,7 +30,7 @@ namespace Stride.Rendering.Materials
         [Display("Layer transition distance")]
         [NotNull]
         [DataMemberRange(0.001, 2.000, 0.0100, 0.100, 3)]
-        public IComputeScalar LODDistance { get; set; }
+        public IComputeNode<float> LODDistance { get; set; }
 
         #region Base Paint Layer Parameters
         /// <summary>
@@ -44,7 +44,7 @@ namespace Stride.Rendering.Materials
         [Display("Base paint diffuse map", "Base paint")]
         [NotNull]
         [DataMemberCustomSerializer]
-        public IComputeColor BasePaintDiffuseMap { get; set; }
+        public IComputeNode<Vector4> BasePaintDiffuseMap { get; set; }
 
         /// <summary>
         /// Gets or sets the base paint smoothness map.
@@ -57,7 +57,7 @@ namespace Stride.Rendering.Materials
         [Display("Base paint gloss map", "Base paint")]
         [NotNull]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 3)]
-        public IComputeScalar BasePaintGlossinessMap { get; set; }
+        public IComputeNode<float> BasePaintGlossinessMap { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the <see cref="BasePaintGlossinessMap"/> is invert.
@@ -83,7 +83,7 @@ namespace Stride.Rendering.Materials
         [Display("Metal flake diffuse map", "Metal flakes")]
         [NotNull]
         [DataMemberCustomSerializer]
-        public IComputeColor MetalFlakesDiffuseMap { get; set; }
+        public IComputeNode<Vector4> MetalFlakesDiffuseMap { get; set; }
 
         /// <summary>
         /// Gets or sets the metal flakes smoothness map.
@@ -96,7 +96,7 @@ namespace Stride.Rendering.Materials
         [Display("Metal flake gloss map", "Metal flakes")]
         [NotNull]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 3)]
-        public IComputeScalar MetalFlakesGlossinessMap { get; set; }
+        public IComputeNode<float> MetalFlakesGlossinessMap { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether this <see cref="MetalFlakesGlossinessMap"/> is invert.
@@ -119,7 +119,7 @@ namespace Stride.Rendering.Materials
         [Display("Metal flake metalness map", "Metal flakes")]
         [NotNull]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 3)]
-        public IComputeScalar MetalFlakesMetalnessMap { get; set; }
+        public IComputeNode<float> MetalFlakesMetalnessMap { get; set; }
 
         /// <summary>
         /// Gets or sets the normal map used for the metal flakes layer.
@@ -131,7 +131,7 @@ namespace Stride.Rendering.Materials
         [DataMember(180)]
         [Display("Metal flake normal map", "Metal flakes")]
         [NotNull]
-        public IComputeColor MetalFlakesNormalMap { get; set; }
+        public IComputeNode<Vector4> MetalFlakesNormalMap { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to scale by (2,2) and offset by (-1,-1) the normal map.
@@ -170,7 +170,7 @@ namespace Stride.Rendering.Materials
         [Display("Clear coat gloss map", "Clear coat")]
         [NotNull]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 3)]
-        public IComputeScalar ClearCoatGlossinessMap { get; set; }
+        public IComputeNode<float> ClearCoatGlossinessMap { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the <see cref="ClearCoatGlossinessMap"/> is invert.
@@ -193,7 +193,7 @@ namespace Stride.Rendering.Materials
         [Display("Clear coat metalness map", "Clear coat")]
         [NotNull]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 3)]
-        public IComputeScalar ClearCoatMetalnessMap { get; set; }
+        public IComputeNode<float> ClearCoatMetalnessMap { get; set; }
 
         /// <summary>
         /// Gets or sets the normal map used for the clear coat layer.
@@ -205,7 +205,7 @@ namespace Stride.Rendering.Materials
         [DataMember(240)]
         [Display("Orange peel normal map", "Clear coat")]
         [NotNull]
-        public IComputeColor OrangePeelNormalMap { get; set; }
+        public IComputeNode<Vector4> OrangePeelNormalMap { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to scale by (2,2) and offset by (-1,-1) the normal map.

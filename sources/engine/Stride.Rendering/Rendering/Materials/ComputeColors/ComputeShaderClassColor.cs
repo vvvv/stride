@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Stride.Core;
+using Stride.Core.Mathematics;
 
 namespace Stride.Rendering.Materials.ComputeColors
 {
@@ -10,21 +11,7 @@ namespace Stride.Rendering.Materials.ComputeColors
     /// </summary>
     [DataContract("ComputeShaderClassColor")]
     [Display("Shader")]
-    public class ComputeShaderClassColor : ComputeShaderClassBase<IComputeColor>, IComputeColor
+    public class ComputeShaderClassColor : ComputeShaderClassBase<Vector4>, IComputeColor
     {
-        private int hashCode = 0;
-
-        /// <inheritdoc/>
-        public bool HasChanged
-        {
-            get
-            {
-                if (hashCode != 0 && hashCode == (MixinReference?.GetHashCode() ?? 0))
-                    return false;
-
-                hashCode = (MixinReference?.GetHashCode() ?? 0);
-                return true;
-            }
-        }
     }
 }

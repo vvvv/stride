@@ -11,7 +11,7 @@ namespace Stride.Rendering.Materials.ComputeColors
     /// </summary>
     /// <typeparam name="T"></typeparam>
     [DataContract(Inherited = true)]
-    public abstract class ComputeValueBase<T> : ComputeKeyedBase
+    public abstract class ComputeValueBase<T> : ComputeKeyedBase, IComputeNode<T> 
     {
         private T value;
 
@@ -29,6 +29,9 @@ namespace Stride.Rendering.Materials.ComputeColors
         protected ComputeValueBase(T value) : this()
         {
             Value = value;
+
+            // Force recompilation of the shader mixins the first time ComputeColor is created by setting the value to true
+            hasChanged = true;
         }
 
         /// <summary>
@@ -53,5 +56,24 @@ namespace Stride.Rendering.Materials.ComputeColors
                 }
             }
         }
+
+        protected bool hasChanged = true;
+
+        private T cachedValue;
+
+        /// <inheritdoc/>
+        public override bool HasChanged
+        {
+            get
+            {
+                if (!hasChanged && cachedValue.Equals(Value))
+                    return false;
+
+                hasChanged = false;
+                cachedValue = Value;
+                return true;
+            }
+        }
+
     }
 }

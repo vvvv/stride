@@ -2,6 +2,7 @@
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Stride.Core;
+using Stride.Core.Mathematics;
 
 namespace Stride.Rendering.Materials.ComputeColors
 {
@@ -10,31 +11,15 @@ namespace Stride.Rendering.Materials.ComputeColors
     /// </summary>
     [DataContract("ComputeBinaryColor")]
     [Display("Binary Operator")]
-    public class ComputeBinaryColor : ComputeBinaryBase<IComputeColor>, IComputeColor
+    public class ComputeBinaryColor : ComputeBinaryBase<Vector4>, IComputeColor
     {
-        private BinaryOperator cachedOperator;
-
         public ComputeBinaryColor()
         {
         }
 
-        public ComputeBinaryColor(IComputeColor leftChild, IComputeColor rightChild, BinaryOperator binaryOperator)
+        public ComputeBinaryColor(IComputeNode<Vector4> leftChild, IComputeNode<Vector4> rightChild, BinaryOperator binaryOperator)
             : base(leftChild, rightChild, binaryOperator)
         {
-        }
-
-        /// <inheritdoc/>
-        public bool HasChanged
-        {
-            get
-            {
-                // Null children force skip changes
-                if (LeftChild == null || RightChild == null || ((cachedOperator == Operator) && !LeftChild.HasChanged && !RightChild.HasChanged))
-                    return false;
-
-                cachedOperator = Operator;
-                return true;
-            }
         }
     }
 }

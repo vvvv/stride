@@ -34,7 +34,7 @@ namespace Stride.Rendering.Materials
         /// Initializes a new instance of the <see cref="MaterialDiffuseMapFeature"/> class.
         /// </summary>
         /// <param name="diffuseMap">The diffuse map.</param>
-        public MaterialDiffuseMapFeature(IComputeColor diffuseMap)
+        public MaterialDiffuseMapFeature(IComputeNode<Vector4> diffuseMap)
         {
             if (diffuseMap == null) throw new ArgumentNullException("diffuseMap");
             DiffuseMap = diffuseMap;
@@ -47,7 +47,7 @@ namespace Stride.Rendering.Materials
         [Display("Diffuse Map")]
         [NotNull]
         [DataMemberCustomSerializer]
-        public IComputeColor DiffuseMap { get; set; }
+        public IComputeNode<Vector4> DiffuseMap { get; set; }
 
         public override void GenerateShader(MaterialGeneratorContext context)
         {

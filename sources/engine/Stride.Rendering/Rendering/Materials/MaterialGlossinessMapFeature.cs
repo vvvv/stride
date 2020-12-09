@@ -32,7 +32,7 @@ namespace Stride.Rendering.Materials
         /// Initializes a new instance of the <see cref="MaterialGlossinessMapFeature"/> class.
         /// </summary>
         /// <param name="glossinessMap">The glossiness map.</param>
-        public MaterialGlossinessMapFeature(IComputeScalar glossinessMap)
+        public MaterialGlossinessMapFeature(IComputeNode<float> glossinessMap)
         {
             GlossinessMap = glossinessMap;
         }
@@ -44,7 +44,7 @@ namespace Stride.Rendering.Materials
         [Display("Gloss map")]
         [NotNull]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 3)]
-        public IComputeScalar GlossinessMap { get; set; }
+        public IComputeNode<float> GlossinessMap { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether this <see cref="MaterialGlossinessMapFeature"/> is invert.

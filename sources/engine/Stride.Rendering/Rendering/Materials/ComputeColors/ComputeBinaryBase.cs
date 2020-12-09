@@ -16,7 +16,7 @@ namespace Stride.Rendering.Materials.ComputeColors
     [DataContract(Inherited = true)]
     [Display("Binary Operator")]
     [InlineProperty]
-    public abstract class ComputeBinaryBase<T> : ComputeNode where T : class, IComputeNode
+    public class ComputeBinaryBase<T> : ComputeNode, IComputeNode<T>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="ComputeBinaryBase{T}"/> class.
@@ -31,7 +31,7 @@ namespace Stride.Rendering.Materials.ComputeColors
         /// <param name="leftChild">The left child.</param>
         /// <param name="rightChild">The right child.</param>
         /// <param name="binaryOperator">The material binary operand.</param>
-        protected ComputeBinaryBase(T leftChild, T rightChild, BinaryOperator binaryOperator)
+        protected ComputeBinaryBase(IComputeNode<T> leftChild, IComputeNode<T> rightChild, BinaryOperator binaryOperator)
         {
             LeftChild = leftChild;
             RightChild = rightChild;
@@ -56,7 +56,7 @@ namespace Stride.Rendering.Materials.ComputeColors
         /// </userdoc>
         [DataMember(20)]
         [Display("Left")]
-        public T LeftChild { get; set; }
+        public IComputeNode<T> LeftChild { get; set; }
 
         /// <summary>
         /// The right (foreground) child node.
@@ -66,7 +66,7 @@ namespace Stride.Rendering.Materials.ComputeColors
         /// </userdoc>
         [DataMember(30)]
         [Display("Right")]
-        public T RightChild { get; set; }
+        public IComputeNode<T> RightChild { get; set; }
 
         /// <inheritdoc/>
         public override IEnumerable<IComputeNode> GetChildren(object context = null)
@@ -175,6 +175,22 @@ namespace Stride.Rendering.Materials.ComputeColors
                     return "ComputeColorThreshold";
                 default:
                     throw new ArgumentOutOfRangeException("binaryOperand");
+            }
+        }
+
+        private BinaryOperator cachedOperator;
+
+        /// <inheritdoc/>
+        public override bool HasChanged
+        {
+            get
+            {
+                // Null children force skip changes
+                if (LeftChild == null || RightChild == null || ((cachedOperator == Operator) && !LeftChild.HasChanged && !RightChild.HasChanged))
+                    return false;
+
+                cachedOperator = Operator;
+                return true;
             }
         }
     }

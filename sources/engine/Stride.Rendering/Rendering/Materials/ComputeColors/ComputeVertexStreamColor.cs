@@ -29,7 +29,7 @@ namespace Stride.Rendering.Materials.ComputeColors
         }
 
         /// <inheritdoc/>
-        public bool HasChanged
+        public override bool HasChanged
         {
             get
             {

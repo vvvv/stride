@@ -9,7 +9,7 @@ namespace Stride.Rendering.Materials
     /// Base interface for scalar compute color nodes.
     /// </summary>
     [InlineProperty]
-    public interface IComputeScalar : IComputeNode
+    public interface IComputeScalar : IComputeNode<float>
     {    
     }
 }

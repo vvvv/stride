@@ -6,6 +6,7 @@ using System.ComponentModel;
 
 using Stride.Core;
 using Stride.Core.Annotations;
+using Stride.Core.Mathematics;
 using Stride.Rendering.Materials.ComputeColors;
 
 namespace Stride.Rendering.Materials
@@ -37,7 +38,7 @@ namespace Stride.Rendering.Materials
         [DataMember(10)]
         [Display("Specular Map")]
         [NotNull]
-        public IComputeColor SpecularMap { get; set; }
+        public IComputeNode<Vector4> SpecularMap { get; set; }
 
         /// <summary>
         /// Gets or sets the specular intensity.
@@ -46,7 +47,7 @@ namespace Stride.Rendering.Materials
         [DataMember(20)]
         [NotNull]
         [DataMemberRange(0.0, 1.0, 0.01, 0.1, 3)]
-        public IComputeScalar Intensity { get; set; }
+        public IComputeNode<float> Intensity { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether this instance is energy conservative.

@@ -15,10 +15,6 @@ namespace Stride.Rendering.Materials.ComputeColors
     public class ComputeColor : ComputeValueBase<Color4>, IComputeColor
     {
         private bool premultiplyAlpha;
-        private bool hasChanged = true;
-
-        // Possible optimization will be to keep this on the ComputeValueBase<T> side
-        private Color4 cachedColor;
 
         /// <summary>
         /// Gets or sets a value indicating whether to convert the texture in pre-multiplied alpha.
@@ -56,31 +52,12 @@ namespace Stride.Rendering.Materials.ComputeColors
             : base(value)
         {
             premultiplyAlpha = true;
-
-            cachedColor = Color4.Black;
-
-            // Force recompilation of the shader mixins the first time ComputeColor is created by setting the value to true
-            hasChanged = true;
         }
 
         /// <inheritdoc/>
         public override string ToString()
         {
             return "Color";
-        }
-
-        /// <inheritdoc/>
-        public bool HasChanged
-        {
-            get
-            {
-                if (!hasChanged && cachedColor == Value)
-                    return false;
-
-                hasChanged = false;
-                cachedColor = Value;
-                return true;
-            }
         }
 
         public override ShaderSource GenerateShaderSource(ShaderGeneratorContext context, MaterialComputeColorKeys baseKeys)
