@@ -39,6 +39,9 @@ namespace Stride.Graphics.SDL
 #endif
             // Pass first mouse event when user clicked on window 
             SDL.SDL_SetHint(SDL.SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
+
+            // Don't leave fullscreen on focus loss
+            SDL.SDL_SetHint(SDL.SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
         }
 
         /// <summary>
@@ -159,6 +162,15 @@ namespace Stride.Graphics.SDL
         }
 
         /// <summary>
+        /// Minimize the window when focus is lost in fullscreen, default is false.
+        /// </summary>
+        public bool MinimizeOnFocusLoss
+        {
+            get { return SDL.SDL_GetHint(SDL.SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS) == "1"; }
+            set { SDL.SDL_SetHint(SDL.SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, (value ? "1" : "0")); }
+        }
+
+        /// <summary>
         /// Show window. The first time a window is shown we execute any actions from <see cref="HandleCreated"/>.
         /// </summary>
         public void Show()
@@ -167,18 +179,36 @@ namespace Stride.Graphics.SDL
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether fullscreen mode should be a borderless window matching the desktop size.
+        /// Decides whether to set the SDL_WINDOW_FULLSCREEN_DESKTOP (fake fullscreen) or SDL_WINDOW_FULLSCREEN (real fullscreen) flag.
+        /// </summary>
+        public bool FullscreenIsBorderlessWindow { get; set; } = false;
+
+        /// <summary>
         /// Are we showing the window in full screen mode?
         /// </summary>
         public bool IsFullScreen
         {
             get
             {
-                return (SDL.SDL_GetWindowFlags(SdlHandle) & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN) != 0;
+                var flags = SDL.SDL_GetWindowFlags(SdlHandle);
+                return CheckFullscreenFlag(flags);
             }
             set
             {
-                SDL.SDL_SetWindowFullscreen(SdlHandle, (uint)(value ? SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN : 0));
+                var fsFlag = GetFullscreenFlag();
+                SDL.SDL_SetWindowFullscreen(SdlHandle, (uint)(value ? fsFlag : 0));
             }
+        }
+
+        private SDL.SDL_WindowFlags GetFullscreenFlag()
+        {
+            return FullscreenIsBorderlessWindow ? SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP : SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN;
+        }
+
+        private static bool CheckFullscreenFlag(uint flags)
+        {
+            return ((flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN) != 0) || ((flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP) != 0);
         }
 
         /// <summary>
@@ -211,7 +241,7 @@ namespace Stride.Graphics.SDL
             get
             {
                 uint flags = SDL.SDL_GetWindowFlags(SdlHandle);
-                if ((flags & (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN) != 0)
+                if (CheckFullscreenFlag(flags))
                 {
                     return FormWindowState.Fullscreen;
                 }
@@ -233,7 +263,7 @@ namespace Stride.Graphics.SDL
                 switch (value)
                 {
                     case FormWindowState.Fullscreen:
-                        SDL.SDL_SetWindowFullscreen(SdlHandle, (uint)SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN);
+                        SDL.SDL_SetWindowFullscreen(SdlHandle, (uint)GetFullscreenFlag());
                         break;
                     case FormWindowState.Maximized:
                         SDL.SDL_MaximizeWindow(SdlHandle);
@@ -388,6 +418,11 @@ namespace Stride.Graphics.SDL
             }
         }
 
+        public void SetRelativeMouseMode(bool enabled)
+        {
+            SDL.SDL_SetRelativeMouseMode(enabled ? SDL.SDL_bool.SDL_TRUE : SDL.SDL_bool.SDL_FALSE);
+        }
+
         // Events that one can hook up.
         public delegate void MouseButtonDelegate(SDL.SDL_MouseButtonEvent e);
         public delegate void MouseMoveDelegate(SDL.SDL_MouseMotionEvent e);
@@ -399,6 +434,7 @@ namespace Stride.Graphics.SDL
         public delegate void JoystickDeviceChangedDelegate(int which);
         public delegate void TouchFingerDelegate(SDL.SDL_TouchFingerEvent e);
         public delegate void NotificationDelegate();
+        public delegate void DropEventDelegate(string content);
 
         public event MouseButtonDelegate PointerButtonPressActions;
         public event MouseButtonDelegate PointerButtonReleaseActions;
@@ -425,6 +461,7 @@ namespace Stride.Graphics.SDL
         public event WindowEventDelegate MouseLeaveActions;
         public event WindowEventDelegate FocusGainedActions;
         public event WindowEventDelegate FocusLostActions;
+        public event DropEventDelegate DropFileActions;
 
         /// <summary>
         /// Process events for the current window
@@ -488,6 +525,10 @@ namespace Stride.Graphics.SDL
 
                 case SDL.SDL_EventType.SDL_FINGERUP:
                     FingerReleaseActions?.Invoke(e.tfinger);
+                    break;
+                
+                case SDL.SDL_EventType.SDL_DROPFILE:
+                    DropFileActions?.Invoke( SDL.UTF8_ToManaged(e.drop.file, true) );
                     break;
 
                 case SDL.SDL_EventType.SDL_WINDOWEVENT:

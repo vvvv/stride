@@ -15,6 +15,7 @@ using Stride.Graphics;
 using Stride.Shaders.Parser.Mixins;
 using Stride.Core.VisualStudio;
 using Stride.Core.Extensions;
+using System.Runtime.InteropServices;
 
 namespace Stride.Assets.Templates
 {
@@ -118,6 +119,9 @@ namespace Stride.Assets.Templates
                     // We are going to regenerate this platform, so we are removing it before
                     package.Session.Projects.Remove(existingProject);
                 }
+
+                AddOption(parameters, "TargetFramework", platform.Platform.TargetFramework);
+                AddOption(parameters, "RuntimeIdentifier", platform.Platform.RuntimeIdentifier);
 
                 var projectDirectory = Path.GetDirectoryName(projectFullPath.ToWindowsPath());
                 if (projectDirectory != null && Directory.Exists(projectDirectory))

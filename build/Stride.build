@@ -10,14 +10,13 @@ Example of use:
     <StrideSolution>$(StrideRoot)build\Stride</StrideSolution>
     <StrideSolutionLauncher>$(StrideRoot)build\Stride.Launcher</StrideSolutionLauncher>
     <StridePlatforms Condition="'$(StridePlatforms)' == ''">Windows</StridePlatforms>
-    <BuildProperties>Configuration=Release;NoWarn=1591;DeployExtension=false;StridePlatforms=$([MSBuild]::Escape('$(StridePlatforms)'));StrideGraphicsApisDependentBuildAll=$(StrideGraphicsApisDependentBuildAll)</BuildProperties>
+    <BuildProperties>Configuration=Release;NoWarn=1591;DeployExtension=false;StridePlatforms=$([MSBuild]::Escape('$(StridePlatforms)'));StrideGraphicsApiDependentBuildAll=$(StrideGraphicsApiDependentBuildAll)</BuildProperties>
     <StrideSign Condition="'$(StrideSign)' == ''">true</StrideSign>
     <BuildProperties Condition="'$(StrideSign)' != ''">$(BuildProperties);StrideSign=$(StrideSign)</BuildProperties>
-    <BuildProperties Condition="'$(StrideOfficialBuild)' != ''">$(BuildProperties);StrideOfficialBuild=$(StrideOfficialBuild)</BuildProperties>
     <NuGetPath>$(MSBuildThisFileDirectory).nuget\NuGet.exe</NuGetPath>
     <XunitRunnerConsoleVersion>2.4.1</XunitRunnerConsoleVersion>
     <StrideStoreUrl Condition="'$(StrideStoreUrl)' == ''">https://api.nuget.org/v3/index.json</StrideStoreUrl>
-    <AdvancedInstallerPath Condition="'$(AdvancedInstallerPath)' == '' And Exists('$(MSBuildProgramFiles32)\Caphyon\Advanced Installer 15.5.1\bin\x86\advinst.exe')">$(MSBuildProgramFiles32)\Caphyon\Advanced Installer 15.5.1\bin\x86\advinst.exe</AdvancedInstallerPath>
+    <AdvancedInstallerPath Condition="'$(AdvancedInstallerPath)' == '' And Exists('$(MSBuildProgramFiles32)\Caphyon\Advanced Installer 17.9\bin\x86\AdvancedInstaller.com')">$(MSBuildProgramFiles32)\Caphyon\Advanced Installer 17.9\bin\x86\AdvancedInstaller.com</AdvancedInstallerPath>
     <StrideBuildPrerequisitesInstaller Condition="'$(StrideBuildPrerequisitesInstaller)' == ''">true</StrideBuildPrerequisitesInstaller>
   </PropertyGroup>
 
@@ -49,6 +48,7 @@ Example of use:
   <Target Name="PrerequisitesInstaller">
     <Delete Files="$(StrideRoot)Bin\Prerequisites\install-prerequisites.exe"/>
     <Exec Command='"$(AdvancedInstallerPath)" /rebuild "$(StrideRoot)sources\prerequisites\prerequisites.aip"'/>
+    <!-- Note: this exe will be signed as part of GameStudio.nupkg -->
   </Target>
 
   <!--
@@ -70,10 +70,11 @@ Example of use:
       <NuGetPackage Include="..\bin\packages\*.nupkg"/>
       <!-- Remove GameStudio (pushed in a second stage) -->
       <NuGetPackage Remove="@(NuGetPackage)" Condition="$([System.String]::Copy('%(Filename)').Contains('Stride.GameStudio'))"/>
-      <!-- Remove Samples.Templates (pushed only when requested since versionned separately -->
-      <NuGetPackage Remove="@(NuGetPackage)" Condition="'$(StridePublishSkipSamplesTemplates)' == 'true' And $([System.String]::Copy('%(Filename)').Contains('Stride.Samples.Templates'))"/>
+      <!-- Remove Samples.Templates (we use -SkipDuplicate since version is rarely bumped) -->
+      <NuGetPackage Remove="@(NuGetPackage)" Condition="$([System.String]::Copy('%(Filename)').Contains('Stride.Samples.Templates'))"/>
     </ItemGroup>
-    <Exec Command='"$(NuGetPath)" push %(NuGetPackage.Identity) -ApiKey $(StrideStoreApiKey) -Source $(StrideStoreUrl) -Timeout 1800 -NoSymbols'/>
+    <Exec Command='"$(NuGetPath)" push %(NuGetPackage.Identity) -ApiKey $(StrideStoreApiKey) -Source $(StrideStoreUrl) -Timeout 1800 -NoSymbols -SkipDuplicate'/>
+    <Exec Command='"$(NuGetPath)" push ..\bin\packages\Stride.Samples.Templates*.nupkg -ApiKey $(StrideStoreApiKey) -Source $(StrideStoreUrl) -Timeout 1800 -NoSymbols -SkipDuplicate'/>
     <!-- Push GameStudio so that dependencies are already uploaded -->
     <Exec Command='"$(NuGetPath)" push ..\bin\packages\Stride.GameStudio*.nupkg -ApiKey $(StrideStoreApiKey) -Source $(StrideStoreUrl) -Timeout 1800 -NoSymbols'/>
   </Target>
@@ -112,23 +113,20 @@ Example of use:
     <MSBuild Targets="Build" Projects="$(StrideRoot)deps\Stride.GitVersioning\Stride.GitVersioning.csproj"/>
     
     <!-- Create SharedAssemblyInfo.NuGet.cs with Git information (different between official build and internal builds) -->
-    <GenerateVersionFile Condition="'$(StrideOfficialBuild)' == 'true'" RootDirectory="$(StrideRoot)" VersionFile="sources\shared\SharedAssemblyInfo.cs" GeneratedVersionFile="sources\shared\SharedAssemblyInfo.NuGet.cs" NuGetVersionSuffixOverride="" SpecialVersionGitCommit="true">
-      <Output TaskParameter="NuGetVersion" PropertyName="StridePackageVersion"/>
-    </GenerateVersionFile>
-    <GenerateVersionFile Condition="'$(StrideOfficialBuild)' != 'true'" RootDirectory="$(StrideRoot)" VersionFile="sources\shared\SharedAssemblyInfo.cs" GeneratedVersionFile="sources\shared\SharedAssemblyInfo.NuGet.cs" SpecialVersionGitHeight="true" SpecialVersionGitCommit="true">
+    <GenerateVersionFile RootDirectory="$(StrideRoot)" VersionFile="sources\shared\SharedAssemblyInfo.cs" GeneratedVersionFile="sources\shared\SharedAssemblyInfo.NuGet.cs" RevisionGitHeight="true" SpecialVersionGitCommit="true">
       <Output TaskParameter="NuGetVersion" PropertyName="StridePackageVersion"/>
     </GenerateVersionFile>
 
     <Message Text="Done preparing build for version $(StridePackageVersion)"/>
-    <TeamCitySetBuildNumber BuildNumber="$(StridePackageVersion)" Condition="'$(TEAMCITY_BUILD_PROPERTIES_FILE)' != '' " />
+    <Message Text="##teamcity[buildNumber '$(StridePackageVersion)']" Importance="High" Condition="'$(TEAMCITY_BUILD_PROPERTIES_FILE)' != '' " />
   </Target>
   <PropertyGroup>
     <_StridePackageTargetPrerequisitesInstaller Condition="'$(StrideBuildPrerequisitesInstaller)' == 'true'">PrerequisitesInstaller</_StridePackageTargetPrerequisitesInstaller>
   </PropertyGroup>
-  <Target Name="Package" DependsOnTargets="PreparePackageBuild;$(_StridePackageTargetPrerequisitesInstaller);Build;VSIXPlugin"/>
+  <Target Name="Package" DependsOnTargets="PreparePackageBuild;$(_StridePackageTargetPrerequisitesInstaller);Build;SignPackage;VSIXPlugin"/>
 
   <Target Name="RestoreInternal">
-    <MSBuild Targets="Restore" Projects="$(StrideSolution).sln" Properties="StrideGraphicsApisDependentBuildAll=$(StrideGraphicsApisDependentBuildAll);StrideGraphicsApis=$(StrideGraphicsApis);StridePlatforms=$(StridePlatforms)" />
+    <MSBuild Targets="Restore" Projects="$(StrideSolution).sln" Properties="StrideGraphicsApiDependentBuildAll=$(StrideGraphicsApiDependentBuildAll);StrideGraphicsApis=$(StrideGraphicsApis);StridePlatforms=$(StridePlatforms)" />
   </Target>
   
   <Target Name="Restore">
@@ -136,7 +134,7 @@ Example of use:
   </Target>
 
   <Target Name="Build">
-    <MSBuild Targets="Restore" Projects="$(MSBuildThisFileFullPath)" Properties="StridePlatforms=$(StridePlatforms);StrideSolution=$(StrideSolution);StrideGraphicsApisDependentBuildAll=$(StrideGraphicsApisDependentBuildAll)"/>
+    <MSBuild Targets="Restore" Projects="$(MSBuildThisFileFullPath)" Properties="StridePlatforms=$(StridePlatforms);StrideSolution=$(StrideSolution);StrideGraphicsApiDependentBuildAll=$(StrideGraphicsApiDependentBuildAll)"/>
     <MSBuild Targets="Build" Projects="$(StrideSolution).sln" Properties="$(BuildProperties);Platform=Mixed Platforms"/>
   </Target>
 
@@ -149,8 +147,8 @@ Example of use:
   </Target>
   
   <Target Name="BuildWindows">
-    <MSBuild Targets="Restore" Projects="$(MSBuildThisFileFullPath)" Properties="StridePlatforms=$(StridePlatforms);StrideSolution=$(StrideSolution);StrideGraphicsApisDependentBuildAll=$(StrideGraphicsApisDependentBuildAll)"/>
-    <MSBuild Targets="Build" Projects="$(StrideSolution).sln" Properties="$(BuildProperties);StrideSkipAutoPack=true;StrideSkipUnitTests=true;StrideGraphicsApisDependentBuildAll=$(StrideGraphicsApisDependentBuildAll)"/>
+    <MSBuild Targets="Restore" Projects="$(MSBuildThisFileFullPath)" Properties="StridePlatforms=$(StridePlatforms);StrideSolution=$(StrideSolution);StrideGraphicsApiDependentBuildAll=$(StrideGraphicsApiDependentBuildAll)"/>
+    <MSBuild Targets="Build" Projects="$(StrideSolution).sln" Properties="$(BuildProperties);StrideSkipAutoPack=true;StrideSkipUnitTests=true;StrideGraphicsApiDependentBuildAll=$(StrideGraphicsApiDependentBuildAll)"/>
   </Target>
 
   <Target Name="BuildWindowsDirect3D11">
@@ -214,8 +212,8 @@ Example of use:
       <StrideSolution>$(StrideSolution).Runtime</StrideSolution>
       <StridePlatforms>Linux</StridePlatforms>
     </PropertyGroup>
-    <MSBuild Targets="Restore" Projects="$(MSBuildThisFileFullPath)" Properties="StridePlatforms=$(StridePlatforms);StrideSolution=$(StrideSolution);StrideGraphicsApisDependentBuildAll=$(StrideGraphicsApisDependentBuildAll)"/>
-    <MSBuild Targets="Build" Projects="$(StrideSolution).sln" Properties="$(BuildProperties);StridePlatforms=$(StridePlatforms);StrideGraphicsApis=OpenGL;StrideSkipAutoPack=true;StrideSkipUnitTests=true;StrideGraphicsApisDependentBuildAll=$(StrideGraphicsApisDependentBuildAll)"/>
+    <MSBuild Targets="Restore" Projects="$(MSBuildThisFileFullPath)" Properties="StridePlatforms=$(StridePlatforms);StrideSolution=$(StrideSolution);StrideGraphicsApiDependentBuildAll=$(StrideGraphicsApiDependentBuildAll)"/>
+    <MSBuild Targets="Build" Projects="$(StrideSolution).sln" Properties="$(BuildProperties);StridePlatforms=$(StridePlatforms);StrideGraphicsApis=OpenGL;StrideSkipAutoPack=true;StrideSkipUnitTests=true;StrideGraphicsApiDependentBuildAll=$(StrideGraphicsApiDependentBuildAll)"/>
   </Target> 
 
   <Target Name="BuildLinuxVulkan">
@@ -271,6 +269,7 @@ Example of use:
     
     <ItemGroup>
       <UnitTestGame Include="21-StrideRuntime.Tests\Stride.Engine.Tests.Windows"/>
+      <UnitTestGame Include="21-StrideRuntime.Tests\Stride.Engine.NoAssets.Tests.Windows"/>
       <UnitTestGame Include="21-StrideRuntime.Tests\Stride.Graphics.Tests.10_0.Windows"/>
       <UnitTestGame Include="21-StrideRuntime.Tests\Stride.Graphics.Tests.Windows"/>
       <UnitTestGame Include="21-StrideRuntime.Tests\Stride.Navigation.Tests.Windows"/>
@@ -439,16 +438,22 @@ Example of use:
     <Delete Files="@(FilesToDeleteLauncher)"/>
     
     <!-- Generate the nuget package for the launcher application -->
-    <Exec Command='"$(NuGetPath)" pack "$(StrideRoot)sources\launcher\Stride.LauncherApp\Stride.LauncherApp.nuspec" -BasePath "$(StrideRoot)sources\launcher\Stride.LauncherApp\bin\Release" -OutputDirectory "$(StrideRoot)bin\launcher"' />
+    <Exec Command='"$(NuGetPath)" pack "$(StrideRoot)sources\launcher\Stride.Launcher\Stride.Launcher.nuspec" -BasePath "$(StrideRoot)sources\launcher\Stride.Launcher\bin\Release\publish" -OutputDirectory "$(StrideRoot)bin\launcher"' />
+
+    <Exec Condition="'$(StrideSign)' == 'true'" Command='sign\SignClient sign -c "sign\appsettings.json" --input "..\bin\launcher\*.nupkg" --name "Stride" --user "$(StrideSignUser)" --secret "$(StrideSignSecret)"' EchoOff="true" />
   </Target>
   
   <!--
   Package Installer: StrideSetup.exe
   -->
-  <Target Name="PackageInstallerSimple" DependsOnTargets="PackageLauncher">
+  <Target Name="PackageInstallerSimple" DependsOnTargets="PackageLauncher;DownloadSignClient;SignCredentialsCheck">
     <Delete Files="$(StrideRoot)bin\launcher\StrideSetup.exe"/>
     <!-- Run advanced installer -->
     <Exec Command='"$(AdvancedInstallerPath)" /rebuild "$(StrideRoot)sources\launcher\Setup\setup.aip"'/>
+
+    <Message Importance="high" Text="Signing installer"/> 
+    <Exec Condition="'$(StrideSign)' == 'true'" Command='sign\SignClient sign -c "sign\appsettings.json" --input "..\sources\launcher\Setup\setup-SetupFiles\StrideSetup.exe" --name "Stride" --user "$(StrideSignUser)" --secret "$(StrideSignSecret)"' EchoOff="true" />
+
     <Copy SourceFiles="$(StrideRoot)sources\launcher\Setup\setup-SetupFiles\StrideSetup.exe" DestinationFolder="$(StrideRoot)bin\launcher"/>
   </Target>
   <Target Name="PackageInstallerCustom" DependsOnTargets="PackageLauncher">
@@ -492,8 +497,11 @@ Example of use:
   <!--
   Package Installer: launcher-prerequisites.exe
   -->
-  <Target Name="LauncherPrerequisitesInstaller">
+  <Target Name="LauncherPrerequisitesInstaller" DependsOnTargets="DownloadSignClient;SignCredentialsCheck">
     <Exec Command='"$(AdvancedInstallerPath)" /rebuild "$(StrideRoot)sources\launcher\Prerequisites\launcher-prerequisites.aip"'/>
+
+    <Message Importance="high" Text="Signing launcher prerequisites"/> 
+    <Exec Condition="'$(StrideSign)' == 'true'" Command='sign\SignClient sign -c "sign\appsettings.json" --input "..\sources\launcher\Prerequisites\*.exe" --name "Stride" --user "$(StrideSignUser)" --secret "$(StrideSignSecret)"' EchoOff="true" />
   </Target>
 
   <!--
@@ -512,9 +520,30 @@ Example of use:
     <Exec Command='"$(NuGetPath)" push ..\bin\launcher\*.nupkg -ApiKey $(StrideStoreApiKey) -Source $(StrideStoreUrl) -NoSymbols'/>
   </Target>
   
-  <Target Name="BuildLauncher">
-    <MSBuild Targets="Restore" Projects="$(MSBuildThisFileFullPath)" Properties="StrideSolution=$(StrideSolutionLauncher)"/>
-    <MSBuild Targets="Build" Projects="$(StrideSolutionLauncher).sln" Properties="$(BuildProperties);Platform=Any CPU"/>
+  <Target Name="BuildLauncher" DependsOnTargets="DownloadSignClient;SignCredentialsCheck">
+    <PropertyGroup>
+      <StrideSolution>Stride.Launcher</StrideSolution>
+    </PropertyGroup>
+    <MSBuild Targets="Restore" Projects="$(MSBuildThisFileFullPath)" Properties="StridePlatforms=Windows;StrideSolution=$(StrideSolution)"/>
+    <MSBuild Projects="..\sources\launcher\Stride.Launcher\Stride.Launcher.csproj" Targets="Publish" Properties="$(BuildProperties);PublishProfile=FolderProfile;SolutionName=Stride.Launcher" />
+
+    <Message Importance="high" Text="Signing launcher"/> 
+    <Exec Condition="'$(StrideSign)' == 'true'" Command='sign\SignClient sign -c "sign\appsettings.json" --input "..\sources\launcher\Stride.Launcher\bin\Release\publish\*.exe" --name "Stride" --user "$(StrideSignUser)" --secret "$(StrideSignSecret)"' EchoOff="true" />
+  </Target>
+
+  <Target Name="DownloadSignClient" Condition="'$(StrideSign)' == 'true'">
+    <Exec Command="dotnet tool install SignClient --tool-path sign" Condition="!Exists('sign\SignClient.exe')" />
+  </Target>
+
+  <Target Name="SignCredentialsCheck" Condition="'$(StrideSign)' == 'true'">
+    <Error Condition="'$(StrideSignUser)' == ''" Text="StrideSignUser is not set. Please set StrideSign to false if you don't want to sign using code certificates." />
+    <Error Condition="'$(StrideSignSecret)' == ''" Text="StrideSignSecret is not set. Please set StrideSign to false if you don't want to sign using code certificates." />
+  </Target>
+
+  <Target Name="SignPackage" DependsOnTargets="DownloadSignClient;SignCredentialsCheck" Condition="'$(StrideSign)' == 'true'">
+    <!-- nupkg containing executables to sign -->
+    <Message Importance="high" Text="Signing packages"/> 
+    <Exec Command='sign\SignClient sign -c "sign\appsettings.json" --input "..\bin\packages\*.nupkg" --name "Stride" --user "$(StrideSignUser)" --secret "$(StrideSignSecret)" -f "sign\nupkgfilter.txt"' EchoOff="true" />
   </Target>
 
 </Project>

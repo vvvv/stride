@@ -48,6 +48,9 @@
     <IntermediateOutputPath>$(BaseIntermediateOutputPath)$(StridePlatform)-$(StrideGraphicsApi)\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(StridePlatform)' == 'Windows'">
+    <StartupObject>xunit.runner.stride.Program</StartupObject>
+  </PropertyGroup>
   <ItemGroup Condition="'$(StridePlatform)' == 'Windows'">
     <Compile Condition="'$(StrideGraphicsApiDependent)' != 'true'" Include="$(MSBuildThisFileDirectory)..\shared\tests\xunit\LauncherSimple.Windows.cs">
       <Link>LauncherSimple.Windows.cs</Link>
@@ -74,7 +77,7 @@
     <None Update="**\*.sdfx" Generator="StrideEffectCodeGenerator" />
   </ItemGroup>
 
-  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.87" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="3.0.22" />
   <Import Condition="'$(IsCrossTargetingBuild)' == 'true'" Project="$(MSBuildThisFileDirectory)Stride.UnitTests.CrossTargeting.targets"/>
 
   <!-- Add Default targets used by Msbuild for undefined Platforms / or when skipping compilation under a platform -->

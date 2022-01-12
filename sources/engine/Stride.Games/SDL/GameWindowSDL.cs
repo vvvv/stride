@@ -57,6 +57,8 @@ namespace Stride.Games
             if (!deviceChangeWillBeFullScreen.HasValue)
                 return;
 
+            window.FullscreenIsBorderlessWindow = FullscreenIsBorderlessWindow;
+
             if (deviceChangeWillBeFullScreen.Value) //windowed to fullscreen
             {
                 isFullScreenMaximized = true;
@@ -185,6 +187,11 @@ namespace Stride.Games
                     ExitCallback?.Invoke();
                 }
             }
+        }
+
+        public override IMessageLoop CreateUserManagedMessageLoop()
+        {
+            return new SDLMessageLoop(window);
         }
 
         private void WindowOnMouseEnterActions(SDL.SDL_WindowEvent sdlWindowEvent)

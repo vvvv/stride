@@ -30,8 +30,7 @@ namespace Stride.Input
         private Win32Native.WndProc inputWndProc;
 
         // My input devices
-        private GameContext<Control> gameContext;
-        private Control uiControl;
+        private readonly Control uiControl;
         private InputManager input;
 
         /// <summary>
@@ -39,11 +38,15 @@ namespace Stride.Input
         /// </summary>
         public bool IsMousePositionLocked { get; protected set; }
 
+        public InputSourceWinforms(Control uiControl)
+        {
+            this.uiControl = uiControl ?? throw new ArgumentNullException(nameof(uiControl));
+        }
+
         public override void Initialize(InputManager inputManager)
         {
             input = inputManager;
-            gameContext = inputManager.Game.Context as GameContext<Control>;
-            uiControl = gameContext.Control;
+
             uiControl.LostFocus += UIControlOnLostFocus;
             MissingInputHack();
 
@@ -196,7 +199,7 @@ namespace Stride.Input
             {
                 // We need to check the scan code to check which SHIFT key it is.
                 var scanCode = (lParam & 0x00FF0000) >> 16;
-                return (scanCode != 36) ? WinFormsKeys.LShiftKey : WinFormsKeys.RShiftKey;
+                return (scanCode != 0x36) ? WinFormsKeys.LShiftKey : WinFormsKeys.RShiftKey;
             }
 
             if (virtualKey == WinFormsKeys.Menu)

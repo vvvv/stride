@@ -18,8 +18,18 @@ namespace Stride.PackageInstall
 {
     class Program
     {
-        private static readonly string[] NecessaryVS2019Workloads = new[] { "Microsoft.VisualStudio.Workload.ManagedDesktop", "Microsoft.VisualStudio.Workload.NetCoreTools", "Microsoft.NetCore.ComponentGroup.DevelopmentTools.2.1" };
-        private static readonly string[] NecessaryBuildTools2019Workloads = new[] { "Microsoft.VisualStudio.Workload.MSBuildTools", "Microsoft.VisualStudio.Workload.NetCoreBuildTools", "Microsoft.Net.Component.4.6.1.TargetingPack" };
+        private static readonly new(string Id, string Name)[] NecessaryVS2019Workloads = new[]
+        {
+            ("Microsoft.VisualStudio.Workload.ManagedDesktop", ".NET desktop development"),
+            ("Microsoft.VisualStudio.Workload.NetCoreTools", ".NET core cross-platform development"),
+            ("Microsoft.NetCore.ComponentGroup.DevelopmentTools.2.1", "Development Tools plus .NET Core 2.1"),
+        };
+        private static readonly new(string Id, string Name)[] NecessaryBuildTools2019Workloads = new[]
+        {
+            ("Microsoft.VisualStudio.Workload.MSBuildTools", "MSBuild Tools"),
+            ("Microsoft.VisualStudio.Workload.NetCoreBuildTools", ".NET Core build tools"),
+            ("Microsoft.Net.Component.4.6.1.TargetingPack", ".NET Framework 4.6.1 targeting pack"),
+        };
         private const bool AllowVisualStudioOnly = true; // Somehow this doesn't work well yet, so disabled for now
 
         static int Main(string[] args)
@@ -36,15 +46,15 @@ namespace Stride.PackageInstall
                     case "/install":
                     case "/repair":
                     {
+                        // Make sure we have the proper VS2019/BuildTools prerequisites
+                        CheckVisualStudioAndBuildTools();
+
                         // Run prerequisites installer (if it exists)
                         var prerequisitesInstallerPath = @"install-prerequisites.exe";
                         if (File.Exists(prerequisitesInstallerPath))
                         {
                             RunProgramAndAskUntilSuccess("prerequisites", prerequisitesInstallerPath, string.Empty, DialogBoxTryAgain);
                         }
-
-                        // Make sure we have the proper VS2019/BuildTools prerequisites
-                        CheckVisualStudioAndBuildTools();
 
                         break;
                     }
@@ -59,7 +69,15 @@ namespace Stride.PackageInstall
             }
         }
 
-        private static int RunProgramAndAskUntilSuccess(string programName, string fileName, string arguments, Func<string, Process, bool> processError)
+        enum RunProgramResult
+        {
+            Retry,
+            Ignore,
+            Success,
+            Abort,
+        }
+
+        private static int RunProgramAndAskUntilSuccess(string programName, string fileName, string arguments, Func<string, Process, RunProgramResult> processError)
         {
         TryAgain:
             try
@@ -73,9 +91,16 @@ namespace Stride.PackageInstall
                 prerequisitesInstallerProcess.WaitForExit();
                 if (prerequisitesInstallerProcess.ExitCode != 0)
                 {
-                    if (!processError(programName, prerequisitesInstallerProcess))
-                        return prerequisitesInstallerProcess.ExitCode;
-                    goto TryAgain;
+                    switch (processError(programName, prerequisitesInstallerProcess))
+                    {
+                        case RunProgramResult.Ignore:
+                        case RunProgramResult.Success:
+                            return 0;
+                        case RunProgramResult.Retry:
+                            goto TryAgain;
+                        case RunProgramResult.Abort:
+                            return prerequisitesInstallerProcess.ExitCode;
+                    }
                 }
                 return 0;
             }
@@ -95,13 +120,22 @@ namespace Stride.PackageInstall
             }
         }
 
-        private static bool DialogBoxTryAgain(string programName, Process process)
+        private static RunProgramResult DialogBoxTryAgain(string programName, Process process)
         {
-            var result = MessageBox.Show($"The installation of {programName} returned with code {process.ExitCode}.\r\nDo you want to try it again?", "Error", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            return result == DialogResult.Yes;
+            var result = MessageBox.Show($"The installation of {programName} returned with code {process.ExitCode}.\r\nDo you want to try it again?", "Error", MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.Question);
+            switch (result)
+            {
+                case DialogResult.Abort:
+                    return RunProgramResult.Abort;
+                case DialogResult.Retry:
+                    return RunProgramResult.Retry;
+                case DialogResult.Ignore:
+                    return RunProgramResult.Ignore;
+            }
+            return RunProgramResult.Success;
         }
 
-        private static bool DialogBoxTryAgainVS(string programName, Process process)
+        private static RunProgramResult DialogBoxTryAgainVS(string programName, Process process, string extraMessage)
         {
             var additionalErrorLines = FindVisualStudioInstallerErrors();
             var updateError = additionalErrorLines.FirstOrDefault(x => x.Contains("UpdateRequiredException"));
@@ -112,21 +146,30 @@ namespace Stride.PackageInstall
                 var webClient = new WebClient();
                 if (downloadUrl.Success && TryDownloadAndExecuteVSSetup(downloadUrl.Value))
                 {
-                    return true;
+                    return RunProgramResult.Success;
                 }
                 else
                 {
                     Process.Start(process.StartInfo.FileName);
                     var result2 = MessageBox.Show($"It seems Visual Studio Installer needs to self-update.\r\nWe're running it for you, please click Update, and then click OK on this dialog box only once the Update is done.", "Error", MessageBoxButtons.OKCancel, MessageBoxIcon.Information);
-                    return result2 == DialogResult.OK;
+                    return result2 == DialogResult.OK ? RunProgramResult.Success : RunProgramResult.Abort;
                 }
             }    
             var additionalErrors = string.Join(Environment.NewLine, additionalErrorLines);
             if (additionalErrors.Length > 0)
                 additionalErrors = "\r\n\r\nAdditional details from log files:\r\n\r\n" + additionalErrors;
 
-            var result = MessageBox.Show($"The installation of {programName} returned with code {process.ExitCode}.\r\nDo you want to try it again?{additionalErrors}", "Error", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            return result == DialogResult.Yes;
+            var result = MessageBox.Show($"The installation of {programName} returned with code {process.ExitCode}.\r\n{extraMessage}Do you want to try it again?{additionalErrors}", "Error", MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.Question);
+            switch (result)
+            {
+                case DialogResult.Abort:
+                    return RunProgramResult.Abort;
+                case DialogResult.Retry:
+                    return RunProgramResult.Retry;
+                case DialogResult.Ignore:
+                    return RunProgramResult.Ignore;
+            }
+            return RunProgramResult.Success;
         }
 
         private static bool TryDownloadAndExecuteVSSetup(string vsSetupUrl)
@@ -164,7 +207,7 @@ namespace Stride.PackageInstall
             }
 
             // Check if there is any VS2019 installed with necessary workloads
-            var matchingVisualStudioInstallation = VisualStudioVersions.AvailableVisualStudioInstances.FirstOrDefault(x => NecessaryVS2019Workloads.All(workload => x.PackageVersions.ContainsKey(workload)));
+            var matchingVisualStudioInstallation = VisualStudioVersions.AvailableVisualStudioInstances.FirstOrDefault(x => NecessaryVS2019Workloads.All(workload => x.PackageVersions.ContainsKey(workload.Id)));
             if (AllowVisualStudioOnly && matchingVisualStudioInstallation != null)
             {
                 if (!matchingVisualStudioInstallation.Complete)
@@ -185,12 +228,11 @@ namespace Stride.PackageInstall
 
                     // Second, check workloads
                     {
-                        var vsInstallerExitCode = RunProgramAndAskUntilSuccess("Visual Studio", vsInstallerPath, $"modify --noUpdateInstaller --passive --norestart --installPath \"{existingVisualStudio2019Install.InstallationPath}\" {string.Join(" ", NecessaryVS2019Workloads.Select(x => $"--add {x}"))}", DialogBoxTryAgainVS);
+                        var extraMessage = $"\r\nPlease manually install the following workloads / components using \"Visual Studio Installer\":\r\n  - {string.Join("\r\n - ", NecessaryVS2019Workloads.Where(workload => !existingVisualStudio2019Install.PackageVersions.ContainsKey(workload.Id)).Select(workload => workload.Name))}\r\n\r\n";
+                        var vsInstallerExitCode = RunProgramAndAskUntilSuccess("Visual Studio", vsInstallerPath, $"modify --noUpdateInstaller --passive --norestart --installPath \"{existingVisualStudio2019Install.InstallationPath}\" {string.Join(" ", NecessaryVS2019Workloads.Select(x => $"--add {x.Id}"))}", (programName, process) => DialogBoxTryAgainVS(programName, process, extraMessage));
                         if (vsInstallerExitCode != 0)
                         {
-                            var errorMessage = $"Visual Studio 2019 install failed with error {vsInstallerExitCode}";
-                            MessageBox.Show(errorMessage, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            throw new InvalidOperationException(errorMessage);
+                            throw new InvalidOperationException($"Visual Studio 2019 install failed with error {vsInstallerExitCode}");
                         }
                     }
 
@@ -204,7 +246,7 @@ namespace Stride.PackageInstall
                 {
                     // Otherwise, fallback to vs_buildtools standalone detection and install
                     var buildTools = VisualStudioVersions.AvailableBuildTools.Where(x => x.PackageVersions.ContainsKey("Microsoft.VisualStudio.Workload.MSBuildTools")).ToList();
-                    var matchingBuildTool = buildTools.FirstOrDefault(x => NecessaryBuildTools2019Workloads.All(workload => x.PackageVersions.ContainsKey(workload)));
+                    var matchingBuildTool = buildTools.FirstOrDefault(x => NecessaryBuildTools2019Workloads.All(workload => x.PackageVersions.ContainsKey(workload.Id)));
                     string buildToolsCommandLine = null;
 
                     if (matchingBuildTool == null)
@@ -212,19 +254,19 @@ namespace Stride.PackageInstall
                         if (buildTools.Count > 0)
                         {
                             // Incomplete installation
-                            buildToolsCommandLine = $"modify --wait --passive --norestart --installPath \"{buildTools.First().InstallationPath}\" {string.Join(" ", NecessaryBuildTools2019Workloads.Select(x => $"--add {x}"))}";
+                            buildToolsCommandLine = $"modify --wait --passive --norestart --installPath \"{buildTools.First().InstallationPath}\" {string.Join(" ", NecessaryBuildTools2019Workloads.Select(x => $"--add {x.Id}"))}";
                         }
                         else
                         {
                             // Not installed yet
-                            buildToolsCommandLine = $"--wait --passive --norestart {string.Join(" ", NecessaryBuildTools2019Workloads.Select(x => $"--add {x}"))}";
+                            buildToolsCommandLine = $"--wait --passive --norestart {string.Join(" ", NecessaryBuildTools2019Workloads.Select(x => $"--add {x.Id}"))}";
                         }
                     }
 
                     if (buildToolsCommandLine != null)
                     {
                         // Run vs_buildtools again
-                        RunProgramAndAskUntilSuccess("Build Tools", "vs_buildtools.exe", buildToolsCommandLine, DialogBoxTryAgainVS);
+                        RunProgramAndAskUntilSuccess("Build Tools", "vs_buildtools.exe", buildToolsCommandLine, (programName, process) => DialogBoxTryAgainVS(programName, process, string.Empty));
                     }
                 }
             }
@@ -236,7 +278,7 @@ namespace Stride.PackageInstall
             {
                 // Not sure why, but it seems VS Update is sometimes sending Ctrl+C to our process...
                 Console.CancelKeyPress += Console_IgnoreControlC;
-                var vsInstallerExitCode = RunProgramAndAskUntilSuccess("Visual Studio", vsInstallerPath, $"update --noUpdateInstaller --passive --norestart --installPath \"{existingVisualStudioInstall.InstallationPath}\"", DialogBoxTryAgainVS);
+                var vsInstallerExitCode = RunProgramAndAskUntilSuccess("Visual Studio", vsInstallerPath, $"update --noUpdateInstaller --passive --norestart --installPath \"{existingVisualStudioInstall.InstallationPath}\"", (programName, process) => DialogBoxTryAgainVS(programName, process, string.Empty));
                 if (vsInstallerExitCode != 0)
                 {
                     var errorMessage = $"{existingVisualStudioInstall.DisplayName} update failed with error {vsInstallerExitCode}";

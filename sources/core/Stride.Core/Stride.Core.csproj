@@ -1,9 +1,10 @@
 <Project>
   <PropertyGroup>
     <StrideRuntime>true</StrideRuntime>
+    <StrideRuntimeNet5>true</StrideRuntimeNet5>
   </PropertyGroup>
   <Import Project="..\..\targets\Stride.Core.props" />
-  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="2.0.87" />
+  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="3.0.22" />
   
   <PropertyGroup>
     <Description>Core assembly for all Stride assemblies.</Description>
@@ -48,7 +49,7 @@
   </Choose>
   
   <ItemGroup>
-    <PackageReference Include="Stride.ServiceWire" Version="5.3.3" />
+    <PackageReference Include="ServiceWire" Version="5.3.4" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="2.2.3" />
   </ItemGroup>
@@ -122,5 +123,5 @@
   </ItemGroup>
   
   <Import Project="$(StrideSdkTargets)" />
-  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="2.0.87" />
+  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="3.0.22" />
 </Project>
