@@ -27,24 +27,6 @@ Example of use:
   </Target>
   
   <!--
-  VSIX Stride plugin
-  Don't forget to build for VS2013 by using MSBuild 12.0, 
-  or if you're using a newer version of MSBuild, pass the flag /p:VisualStudioVersion=12.0 when calling MSBuild in the command line.
-  
-  <Target Name="VSIXPlugin" DependsOnTargets="Restore">
-    <ItemGroup>
-      <FilesToDeleteVSIX Include="$(StrideRoot)bin\vsix\*.nupkg"/>
-    </ItemGroup>
-
-    <Delete Files="@(FilesToDeleteVSIX)"/>
-
-    <MSBuild Targets="91-VisualStudio\Stride_VisualStudio_Package;91-VisualStudio\Stride_VisualStudio_PackageInstall" Projects="$(StrideSolution).sln" Properties="$(BuildProperties);Platform=Mixed Platforms"/>
-    <Exec Command='"$(NuGetPath)" pack "$(StrideRoot)sources\tools\Stride.VisualStudio.Package\Stride.VisualStudio.Package.nuspec" -BasePath "$(StrideRoot)sources\tools\Stride.VisualStudio.Package" -OutputDirectory "$(StrideRoot)bin\vsix"' />
- 
-    <Exec Command='sign\SignClient sign -c "sign\appsettings.json" --input "..\bin\vsix\*.nupkg" --name "Stride" --user "$(StrideSignUser)" --secret "$(StrideSignSecret.Replace("%", "%%"))" -f "sign\nupkgfilter.txt"' EchoOff="true" />
-  </Target>
-  -->
-  <!--
   Package Installer: install-prerequisites.exe
   -->
   <Target Name="PrerequisitesInstaller" DependsOnTargets="DownloadSignClient;SignCredentialsCheck">
@@ -59,7 +41,6 @@ Example of use:
   <Target Name="FullBuild">
     <CallTarget Targets="Build"/>
     <CallTarget Targets="Package"/>
-    <!--<CallTarget Targets="VSIXPlugin"/>-->
   </Target>
   
   <!--
@@ -81,14 +62,6 @@ Example of use:
     <Exec Command='"$(NuGetPath)" push ..\bin\packages\Stride.GameStudio*.nupkg -ApiKey $(StrideStoreApiKey) -Source $(StrideStoreUrl) -Timeout 1800 -NoSymbols'/>
   </Target>
 
-  <!--
-  Publish VSIX nupkg from this folder to the store
-  
-  <Target Name="PublishVSIX">
-    <Error Condition="'$(StrideStoreApiKey)' == ''" Text="Missing env variable StrideStoreApiKey"/>
-    <Exec Command='"$(NuGetPath)" push ..\bin\vsix\*.nupkg -ApiKey $(StrideStoreApiKey) -Source $(StrideStoreUrl) -NoSymbols'/>
-  </Target>
-  -->
   <!--
   Build Stride: Windows, Android, iOS, Windows 10 (UWP)
   -->
