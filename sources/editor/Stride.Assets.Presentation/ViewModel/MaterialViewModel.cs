@@ -74,7 +74,7 @@ namespace Stride.Assets.Presentation.ViewModel
         }
 
 
-        private void UpdateNode<T>(ComputeShaderClassBase<T> node, IObjectNode ownerNode) where T : class, IComputeNode
+        private void UpdateNode<T>(ComputeShaderClassBase<T> node, IObjectNode ownerNode) 
         {
             var projectShaders = new Dictionary<string, string>();
             foreach (var asset in Directory.Package.AllAssets.Where(x => x.Asset is EffectShaderAsset))
@@ -93,7 +93,6 @@ namespace Stride.Assets.Presentation.ViewModel
         }
 
         private void UpdateGenerics<T>(ShaderClassType shader, ComputeShaderClassBase<T> node, IObjectNode ownerNode)
-            where T : class, IComputeNode
         {
             var genericsNode = ownerNode[nameof(ComputeShaderClassBase<T>.Generics)].Target;
             var keysToRemove = new List<string>(node.Generics.Keys);
@@ -139,7 +138,6 @@ namespace Stride.Assets.Presentation.ViewModel
         }
 
         private void UpdateCompositionNodes<T>(ShaderClassType shader, ComputeShaderClassBase<T> node, IObjectNode ownerNode)
-            where T : class, IComputeNode
         {
             var keysToRemove = new List<object>(node.CompositionNodes.Keys);
             var compositionNodesNode = ownerNode[nameof(ComputeShaderClassBase<T>.CompositionNodes)].Target;

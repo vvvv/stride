@@ -32,7 +32,6 @@ namespace Stride.Assets.Materials
         }
 
         public static ShaderClassType ParseReferencedShader<T>(this ComputeShaderClassBase<T> node, IDictionary<string, string> projectShaders)
-            where T : class, IComputeNode
         {
             ShaderClassType shader = null;
 
