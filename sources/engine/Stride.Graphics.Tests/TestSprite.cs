@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Threading.Tasks;
@@ -82,7 +82,7 @@ namespace Stride.Graphics.Tests
             spriteUv.Sprites[0].Draw(spriteBatch, positionUv, spriteEffects: SpriteEffects.FlipVertically);
 
             positionSphere = positionUv + new Vector2(spriteSphereSize.X + spaceSpan, 0);
-            spriteSphere.Sprites[0].Draw(spriteBatch, positionSphere, (float)Math.PI / 2);
+            spriteSphere.Sprites[0].Draw(spriteBatch, positionSphere, MathF.PI / 2);
 
             positionSphere.X += spriteSphereSize.X + spaceSpan;
             spriteSphere.Sprites[0].Draw(spriteBatch, positionSphere, Color.GreenYellow, Vector2.One);

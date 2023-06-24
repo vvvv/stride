@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2013 SharpDX - Alexandre Mutel
@@ -23,6 +23,7 @@
 
 using System;
 using System.Reflection;
+using System.Threading;
 using Stride.Core;
 using Stride.Core.Annotations;
 using Stride.Core.Diagnostics;
@@ -416,7 +417,21 @@ namespace Stride.Games
             }
 
             // Gets the GameWindow Context
-            Context = gameContext ?? GameContextFactory.NewDefaultGameContext();
+            if (gameContext == null)
+            {
+                AppContextType c;
+                if (OperatingSystem.IsWindows())
+                    c = AppContextType.Desktop;
+                else if (OperatingSystem.IsAndroid())
+                    c = AppContextType.Android;
+                else if (OperatingSystem.IsIOS() || OperatingSystem.IsTvOS() || OperatingSystem.IsWatchOS())
+                    c = AppContextType.iOS;
+                else
+                    c = AppContextType.DesktopSDL;
+                gameContext = GameContextFactory.NewGameContext(c);
+            }
+            
+            Context = gameContext;
 
             PrepareContext();
 
@@ -489,7 +504,7 @@ namespace Stride.Games
                 // If this instance is not active, sleep for an inactive sleep time
                 if (!IsActive)
                 {
-                    Utilities.Sleep(InactiveSleepTime);
+                    Thread.Sleep(InactiveSleepTime);
                     return;
                 }
 

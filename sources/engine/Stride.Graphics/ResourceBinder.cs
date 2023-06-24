@@ -1,8 +1,10 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #if STRIDE_GRAPHICS_API_DIRECT3D11 || STRIDE_GRAPHICS_API_OPENGL
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Stride.Core;
 using Stride.Shaders;
 
@@ -60,8 +62,9 @@ namespace Stride.Graphics
 
                 var descriptorSet = descriptorSets[setIndex];
 
-                var bindingOperation = Interop.Pin(ref bindingOperations[0]);
-                for (int index = 0; index < bindingOperations.Length; index++, bindingOperation = Interop.IncrementPinned(bindingOperation))
+                ref var bindingOperation = ref MemoryMarshal.GetArrayDataReference(bindingOperations);
+                ref var end = ref Unsafe.Add(ref bindingOperation, bindingOperations.Length);
+                for (; Unsafe.IsAddressLessThan(ref bindingOperation, ref end); bindingOperation = ref Unsafe.Add(ref bindingOperation, 1))
                 {
                     var value = descriptorSet.HeapObjects[descriptorSet.DescriptorStartOffset + bindingOperation.EntryIndex];
                     switch (bindingOperation.Class)

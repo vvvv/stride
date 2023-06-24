@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.IO;
@@ -11,8 +11,6 @@ namespace Stride.Core.Assets
     public static class DirectoryHelper
     {
         private const string StrideSolution = @"build\Stride.sln";
-        private const string StrideNuspec = @"stride.nuspec";
-        private static string packageDirectoryOverride;
 
         /// <summary>
         /// Gets the path to the file corresponding to the given package name in the given directory.

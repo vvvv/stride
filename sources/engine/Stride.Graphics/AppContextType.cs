@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2012 SharpDX - Alexandre Mutel
@@ -42,11 +42,6 @@ namespace Stride.Games
         /// Game running on desktop in a WPF window through a D3DImage.
         /// </summary>
         DesktopWpf,
-
-        /// <summary>
-        /// Game running on desktop in an OpenTK form.
-        /// </summary>
-        DesktopOpenTK,
 
         /// <summary>
         /// Game running on Android in an AndroidStrideGameView.

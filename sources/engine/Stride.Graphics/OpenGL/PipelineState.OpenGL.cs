@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #if STRIDE_GRAPHICS_API_OPENGL
 using System;
@@ -7,13 +7,6 @@ using Stride.Core;
 using Stride.Core.Storage;
 using Stride.Shaders;
 using Stride.Core.Extensions;
-#if STRIDE_GRAPHICS_API_OPENGLES
-using OpenTK.Graphics.ES30;
-using PrimitiveTypeGl = OpenTK.Graphics.ES30.PrimitiveType;
-#else
-using OpenTK.Graphics.OpenGL;
-using PrimitiveTypeGl = OpenTK.Graphics.OpenGL.PrimitiveType;
-#endif
 
 namespace Stride.Graphics
 {

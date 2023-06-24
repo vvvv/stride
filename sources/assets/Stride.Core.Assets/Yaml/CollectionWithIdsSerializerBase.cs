@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections;
@@ -233,7 +233,7 @@ namespace Stride.Core.Yaml
         }
 
         /// <summary>
-        /// Transforms the given collection or dictionary into a dictionary of (ids, items) or a dictionary of (ids & keys, items).
+        /// Transforms the given collection or dictionary into a dictionary of (ids, items) or a dictionary of (ids &amp; keys, items).
         /// </summary>
         /// <param name="descriptor">The type descriptor of the collection.</param>
         /// <param name="collection">The collection for which to create the mapping dictionary.</param>

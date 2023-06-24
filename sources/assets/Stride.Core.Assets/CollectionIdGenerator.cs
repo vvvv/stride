@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections;
@@ -94,6 +94,20 @@ namespace Stride.Core.Assets
                 }
             }
             base.VisitDictionary(dictionary, descriptor);
+        }
+
+        public override void VisitSet(IEnumerable set, SetDescriptor descriptor)
+        {
+            if (ShouldGenerateItemIdCollection(set))
+            {
+                IEnumerator enumerator = (set as IEnumerable).GetEnumerator();
+                var itemIds = CollectionItemIdHelper.GetCollectionItemIds(set);
+                while (enumerator.MoveNext())
+                {
+                    itemIds.Add(enumerator.Current, ItemId.New());
+                }
+            }
+            base.VisitSet(set, descriptor);
         }
 
         private bool ShouldGenerateItemIdCollection(object collection)

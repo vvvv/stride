@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -209,9 +209,12 @@ namespace Stride.Assets.Models
                 {
                     // Data
                     fixed (byte* dataValues0 = parameters0.DataValues)
-                    fixed (byte* dataValues1 = parameters1.DataValues)
-                        if (!Core.Utilities.CompareMemory((IntPtr)dataValues0 + parameterKeyInfo.Offset, (IntPtr)dataValues1 + otherParameterKeyInfo.Offset, parameterKeyInfo.Count))
+                    fixed (byte* dataValues1 = parameters1.DataValues) {
+                        var lhs = new Span<byte>(dataValues0 + parameterKeyInfo.Offset, parameterKeyInfo.Count);
+                        var rhs = new Span<byte>(dataValues1 + otherParameterKeyInfo.Offset, parameterKeyInfo.Count);
+                        if (!lhs.SequenceEqual(rhs))
                             return false;
+                    }
                 }
                 else if (parameterKeyInfo.BindingSlot != -1)
                 {

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -52,16 +52,16 @@ namespace Stride.Physics
             var other = obj as ConeColliderShapeDesc;
             if (other == null) return false;
 
-            return Math.Abs(other.Height - Height) < float.Epsilon &&
-                   Math.Abs(other.Radius - Radius) < float.Epsilon &&
+            return MathF.Abs(other.Height - Height) < float.Epsilon &&
+                   MathF.Abs(other.Radius - Radius) < float.Epsilon &&
                    other.Orientation == Orientation &&
                    other.LocalOffset == LocalOffset &&
                    other.LocalRotation == LocalRotation;
         }
 
-        public ColliderShape CreateShape()
+        public ColliderShape CreateShape(IServiceRegistry services)
         {
-            return new ConeColliderShape(Height, Radius, Orientation) { LocalOffset = LocalOffset, LocalRotation = LocalRotation };
+            return new ConeColliderShape(Height, Radius, Orientation) { LocalOffset = LocalOffset, LocalRotation = LocalRotation, Description = this };
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
@@ -136,7 +136,7 @@ namespace Stride.Rendering.Lights
             // Calculate the width and height of the near plane in world space:
             var nearClipDistance = Math.Min(spotLight.ProjectionPlaneDistance, spotLight.Range);
             float angleOuterInRadians = MathUtil.DegreesToRadians(Math.Max(spotLight.AngleInner, spotLight.AngleOuter));
-            float height = (float)Math.Tan(angleOuterInRadians / 2.0f) * nearClipDistance;  // TODO: Is this correct?
+            float height = MathF.Tan(angleOuterInRadians / 2.0f) * nearClipDistance;  // TODO: Is this correct?
             float width = height * spotLight.AspectRatio;  // TODO: Is this correct?
 
             Matrix viewMatrix = light.WorldMatrix;

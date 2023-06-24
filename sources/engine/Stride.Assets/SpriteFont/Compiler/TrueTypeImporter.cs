@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2013 SharpDX - Alexandre Mutel
@@ -112,8 +112,8 @@ namespace Stride.Assets.SpriteFont.Compiler
             {
                 M11 = 1,
                 M22 = 1,
-                M31 = -(float)Math.Floor(xOffset) + 1,
-                M32 = -(float)Math.Floor(yOffset) + 1
+                M31 = -MathF.Floor(xOffset) + 1,
+                M32 = -MathF.Floor(yOffset) + 1
             };
 
             Bitmap bitmap;
@@ -126,7 +126,7 @@ namespace Stride.Assets.SpriteFont.Compiler
                 var glyphRun = new GlyphRun
                 {
                     FontFace = fontFace,
-                    Advances = new[] { (float)Math.Ceiling(advanceWidth) },
+                    Advances = new[] { MathF.Ceiling(advanceWidth) },
                     FontSize = fontSize,
                     BidiLevel = 0,
                     Indices = indices,

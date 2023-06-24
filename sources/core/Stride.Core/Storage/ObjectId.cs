@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Runtime.InteropServices;
@@ -95,7 +95,7 @@ namespace Stride.Core.Storage
         }
 
         /// <summary>
-        /// Performs an explicit conversion from <see cref="ObjectId"/> to <see cref="byte[]"/>.
+        /// Performs an explicit conversion from <see cref="ObjectId"/> to <see cref="byte"/>[].
         /// </summary>
         /// <param name="objectId">The object id.</param>
         /// <returns>The result of the conversion.</returns>

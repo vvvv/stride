@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -14,7 +14,7 @@ namespace Stride.Rendering.Images
     /// </summary>
     /// <typeparam name="T">Pixel struct that should match the input texture format</typeparam>
     /// <remarks>The input texture should be small enough to avoid CPU/GPU readback stalling</remarks>
-    public class ImageReadback<T> : ImageEffect where T : struct
+    public class ImageReadback<T> : ImageEffect where T : unmanaged
     {
         private readonly List<Texture> stagingTargets;
 

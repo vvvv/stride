@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.Linq;
@@ -17,5 +17,7 @@ namespace Stride.Rendering.Images
         public static readonly PermutationParameterKey<float> BlurScale = ParameterKeys.NewPermutation<float>(2f);
 
         public static readonly PermutationParameterKey<float> EdgeSharpness = ParameterKeys.NewPermutation<float>(4f);
+
+        public static readonly PermutationParameterKey<bool> IsOrthographic = ParameterKeys.NewPermutation<bool>();
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -12,6 +12,7 @@ using Stride.Assets.Presentation.AssetEditors.GameEditor;
 using Stride.Assets.Presentation.AssetEditors.GameEditor.Game;
 using Stride.Engine;
 using Stride.Engine.Processors;
+using Stride.Assets.Presentation.AssetEditors.GameEditor.ViewModels;
 
 namespace Stride.Assets.Presentation.SceneEditor
 {
@@ -44,6 +45,8 @@ namespace Stride.Assets.Presentation.SceneEditor
         public bool SelectionMaskVisible = true;
         public bool GridVisible = true;
         public Color3 GridColor = (Color3)new Color(180, 180, 180);
+        public float GridOpacity = 0.35f;
+        public int GridAxisIndex = (int)ViewportGridAxis.Y;
         public bool CameraPreviewVisible = true;
         public RenderMode RenderMode = RenderMode.SingleStream;
         public string ActiveStream = string.Empty;
@@ -72,7 +75,12 @@ namespace Stride.Assets.Presentation.SceneEditor
         {
             return new SceneSettingsData
             {
-                HiddenGizmos = new List<string> { DisplayAttribute.GetDisplayName(typeof(TransformComponent)), DisplayAttribute.GetDisplayName(typeof(PhysicsComponent)) }
+                HiddenGizmos = new List<string>
+                {
+                    DisplayAttribute.GetDisplayName(typeof(TransformComponent)),
+                    DisplayAttribute.GetDisplayName(typeof(PhysicsComponent)),
+                    DisplayAttribute.GetDisplayName(typeof(Stride.Physics.PhysicsConstraintComponent)),
+                }
             };
         }
     }

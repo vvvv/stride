@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -41,7 +41,7 @@ namespace Stride.Physics
                     {
                         LocalScaling = cachedScaling,
                     };
-                    rotation = Matrix.RotationZ((float)Math.PI / 2.0f);
+                    rotation = Matrix.RotationZ(MathF.PI / 2.0f);
                     break;
                 case ShapeOrientation.UpY:
                     InternalShape = new BulletSharp.ConeShape(Radius, Height)
@@ -55,7 +55,7 @@ namespace Stride.Physics
                     {
                         LocalScaling = cachedScaling,
                     };
-                    rotation = Matrix.RotationX((float)Math.PI / 2.0f);
+                    rotation = Matrix.RotationX(MathF.PI / 2.0f);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(Orientation));

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.Collections.Generic;
@@ -38,6 +38,7 @@ namespace Stride.Rendering.Materials
         public MaterialNormalMapFeature(IComputeNode<Vector4> normalMap)
         {
             ScaleAndBias = true;
+            IsXYNormal = true;
             NormalMap = normalMap;
         }
 
@@ -73,7 +74,7 @@ namespace Stride.Rendering.Materials
         /// If there's no Z component in the texture, reconstruct it from the X and Y components. This assumes that Z = sqrt(1 - x*x - y*y) and that Z is always positive, so no normal vector can point to the back side of the surface. We recommend you enable this option, as Stride might remove the Z component when you compress normal maps.
         /// </userdoc>
         [DataMember(30)]
-        [DefaultValue(false)]
+        [DefaultValue(true)]
         [Display("Reconstruct Z")]
         public bool IsXYNormal { get; set; }
 

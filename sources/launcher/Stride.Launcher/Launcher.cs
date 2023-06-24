@@ -1,26 +1,26 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows;
-using Stride.Core.Assets.Editor;
 using Stride.Core.Annotations;
+using Stride.Core.Assets.Editor;
 using Stride.Core.Extensions;
 using Stride.Core.IO;
+using Stride.Core.Packages;
 using Stride.Core.Windows;
-using Stride.PrivacyPolicy;
 using Stride.LauncherApp.CrashReport;
 using Stride.LauncherApp.Services;
 using Stride.Metrics;
+using Stride.PrivacyPolicy;
 using Dispatcher = System.Windows.Threading.Dispatcher;
-using Stride.Core.Packages;
 using MessageBox = System.Windows.MessageBox;
-using System.Diagnostics;
 
 namespace Stride.LauncherApp
 {
@@ -55,7 +55,7 @@ namespace Stride.LauncherApp
         /// <returns></returns>
         internal static string GetExecutablePath()
         {
-            return Process.GetCurrentProcess().MainModule.FileName;
+            return Environment.ProcessPath;
         }
 
         /// <summary>
@@ -234,5 +234,5 @@ namespace Stride.LauncherApp
         }
     }
 }
-    
+
 

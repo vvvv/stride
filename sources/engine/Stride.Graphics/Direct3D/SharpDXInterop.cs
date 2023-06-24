@@ -1,8 +1,9 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 #if STRIDE_GRAPHICS_API_DIRECT3D11 || STRIDE_GRAPHICS_API_DIRECT3D12
 
+using System.Runtime.CompilerServices;
 using SharpDX;
 #if STRIDE_GRAPHICS_API_DIRECT3D11
 using SharpDX.Direct3D11;
@@ -14,6 +15,11 @@ namespace Stride.Graphics
 {
     public static class SharpDXInterop
     {
+        public static ref SharpDX.DataBox AsSharpDX(ref this DataBox @this) => ref Unsafe.As<DataBox, SharpDX.DataBox>(ref @this);
+        public static ref SharpDX.Direct3D11.ResourceRegion AsSharpDX(ref this ResourceRegion @this) => ref Unsafe.As<ResourceRegion, SharpDX.Direct3D11.ResourceRegion>(ref @this);
+        public static ref DataBox AsStride(ref this SharpDX.DataBox @this) => ref Unsafe.As<SharpDX.DataBox, DataBox>(ref @this);
+        public static ref ResourceRegion AsStride(ref this SharpDX.Direct3D11.ResourceRegion @this) => ref Unsafe.As<SharpDX.Direct3D11.ResourceRegion, ResourceRegion>(ref @this);
+
         /// <summary>
         /// Gets the native device (DX11/DX12)
         /// </summary>
@@ -71,13 +77,14 @@ namespace Stride.Graphics
         /// <param name="device">The GraphicsDevice in use</param>
         /// <param name="dxTexture2D">The DX11 texture</param>
         /// <param name="takeOwnership">If false AddRef will be called on the texture, if true will not, effectively taking ownership</param>
+        /// <param name="isSRgb">Set the format to SRgb</param>
         /// <returns></returns>
-        public static Texture CreateTextureFromNative(GraphicsDevice device, object dxTexture2D, bool takeOwnership)
+        public static Texture CreateTextureFromNative(GraphicsDevice device, object dxTexture2D, bool takeOwnership, bool isSRgb = false)
         {
 #if STRIDE_GRAPHICS_API_DIRECT3D11
-            return CreateTextureFromNativeImpl(device, (Texture2D)dxTexture2D, takeOwnership);
+            return CreateTextureFromNativeImpl(device, (Texture2D)dxTexture2D, takeOwnership, isSRgb);
 #elif STRIDE_GRAPHICS_API_DIRECT3D12
-            return CreateTextureFromNativeImpl(device, (Resource)dxTexture2D, takeOwnership);
+            return CreateTextureFromNativeImpl(device, (Resource)dxTexture2D, takeOwnership, isSRgb);
 #endif
         }
 
@@ -129,8 +136,9 @@ namespace Stride.Graphics
         /// <param name="device">The GraphicsDevice in use</param>
         /// <param name="dxTexture2D">The DX11 texture</param>
         /// <param name="takeOwnership">If false AddRef will be called on the texture, if true will not, effectively taking ownership</param>
+        /// <param name="isSRgb">Set the format to SRgb</param>
         /// <returns></returns>
-        private static Texture CreateTextureFromNativeImpl(GraphicsDevice device, Texture2D dxTexture2D, bool takeOwnership)
+        private static Texture CreateTextureFromNativeImpl(GraphicsDevice device, Texture2D dxTexture2D, bool takeOwnership, bool isSRgb = false)
         {
             var tex = new Texture(device);
 
@@ -140,7 +148,7 @@ namespace Stride.Graphics
                 unknown.AddReference();
             }
 
-            tex.InitializeFromImpl(dxTexture2D, false);
+            tex.InitializeFromImpl(dxTexture2D, isSRgb);
 
             return tex;
         }
@@ -193,8 +201,9 @@ namespace Stride.Graphics
         /// <param name="device">The GraphicsDevice in use</param>
         /// <param name="dxTexture2D">The DX11 texture</param>
         /// <param name="takeOwnership">If false AddRef will be called on the texture, if true will not, effectively taking ownership</param>
+        /// <param name="isSRgb">Set the format to SRgb</param>
         /// <returns></returns>
-        private static Texture CreateTextureFromNativeImpl(GraphicsDevice device, Resource dxTexture2D, bool takeOwnership)
+        private static Texture CreateTextureFromNativeImpl(GraphicsDevice device, Resource dxTexture2D, bool takeOwnership, bool isSRgb = false)
         {
             var tex = new Texture(device);
 
@@ -204,7 +213,7 @@ namespace Stride.Graphics
                 unknown.AddReference();
             }
 
-            tex.InitializeFromImpl(dxTexture2D, false);
+            tex.InitializeFromImpl(dxTexture2D, isSRgb);
 
             return tex;
         }

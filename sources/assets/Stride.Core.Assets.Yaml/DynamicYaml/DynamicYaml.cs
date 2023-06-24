@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -46,7 +46,7 @@ namespace Stride.Core.Yaml
             var input = new StringReader(assetAsString);
             yamlStream = new YamlStream();
             yamlStream.Load(input);
-            
+
             if (yamlStream.Documents.Count != 1 || !(yamlStream.Documents[0].RootNode is YamlMappingNode))
                 throw new YamlException("Unable to load the given stream");
         }

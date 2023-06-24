@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Globalization;
@@ -92,8 +92,8 @@ namespace Stride.Core.Mathematics
         /// <returns>A HSV color</returns>
         public static ColorHSV FromColor(Color4 color)
         {
-            float max = Math.Max(color.R, Math.Max(color.G, color.B));
-            float min = Math.Min(color.R, Math.Min(color.G, color.B));
+            float max = MathF.Max(color.R, MathF.Max(color.G, color.B));
+            float min = MathF.Min(color.R, MathF.Min(color.G, color.B));
 
             float delta = max - min;
             float h = 0.0f;
@@ -197,6 +197,22 @@ namespace Stride.Core.Mathematics
                                  S.ToString(format, formatProvider),
                                  V.ToString(format, formatProvider),
                                  A.ToString(format, formatProvider));
+        }     
+        
+        /// <summary>
+        /// Deconstructs the vector's components into named variables.
+        /// </summary>
+        /// <param name="h">The H component</param>
+        /// <param name="s">The S component</param>
+        /// <param name="v">The V component</param>
+        /// <param name="a">The A component</param>
+        public void Deconstruct(out float h, out float s, out float v, out float a)
+        {
+            h = H;
+            s = S;
+            v = V;
+            a = A;
         }
+
     }
 }

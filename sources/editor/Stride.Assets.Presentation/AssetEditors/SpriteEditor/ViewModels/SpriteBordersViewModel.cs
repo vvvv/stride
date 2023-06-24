@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Windows;
@@ -46,10 +46,10 @@ namespace Stride.Assets.Presentation.AssetEditors.SpriteEditor.ViewModels
                 ClampBorders(ref value);
                 var vector4 = new Vector4
                 {
-                    X = (float)Math.Round(value.X, MidpointRounding.AwayFromZero),
-                    Y = (float)Math.Round(value.Y, MidpointRounding.AwayFromZero),
-                    Z = (float)Math.Round(value.Z, MidpointRounding.AwayFromZero),
-                    W = (float)Math.Round(value.W, MidpointRounding.AwayFromZero),
+                    X = MathF.Round(value.X, MidpointRounding.AwayFromZero),
+                    Y = MathF.Round(value.Y, MidpointRounding.AwayFromZero),
+                    Z = MathF.Round(value.Z, MidpointRounding.AwayFromZero),
+                    W = MathF.Round(value.W, MidpointRounding.AwayFromZero),
                 };
                 borderBinding.Value = vector4;
             }

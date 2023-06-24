@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -6,11 +6,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Runtime.Loader;
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
+//using Newtonsoft.Json.Linq;
 using NuGet.Commands;
 using NuGet.Common;
 using NuGet.Configuration;
@@ -36,8 +38,15 @@ namespace Stride.Core.Assets
             assembliesResolved = true;
         }
 
-        internal static void SetupNuGet(string packageName, string packageVersion)
+        /// <summary>
+        /// Set up an Assembly resolver which on first missing Assembly runs Nuget resolver over <paramref name="packageName"/>.
+        /// </summary>
+        /// <param name="packageName">Name of the root package for NuGet resolution.</param>
+        /// <param name="packageVersion">Package version.</param>
+        /// <param name="metadataAssembly">Assembly for getting target framrwork and platform.</param>
+        internal static void SetupNuGet(string packageName, string packageVersion, Assembly metadataAssembly = null)
         {
+            metadataAssembly ??= Assembly.GetEntryAssembly();
             // Make sure our nuget local store is added to nuget config
             var folder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string strideFolder = null;
@@ -123,15 +132,14 @@ namespace Stride.Core.Assets
                             SynchronizationContext.SetSynchronizationContext(null);
 
                             // Determine current TFM
-                            var framework = Assembly
-                                .GetEntryAssembly()?
+                            var framework = metadataAssembly
                                 .GetCustomAttribute<TargetFrameworkAttribute>()?
                                 .FrameworkName ?? ".NETFramework,Version=v4.7.2";
                             var nugetFramework = NuGetFramework.ParseFrameworkName(framework, DefaultFrameworkNameProvider.Instance);
 
 #if NETCOREAPP
-                            // Add TargetPlatform to net5.0 TFM (i.e. net5.0 to net5.0-windows7.0)
-                            var platform = Assembly.GetEntryAssembly()?.GetCustomAttribute<TargetPlatformAttribute>()?.PlatformName ?? string.Empty;
+                            // Add TargetPlatform to net6.0 TFM (i.e. net6.0 to net6.0-windows7.0)
+                            var platform = metadataAssembly?.GetCustomAttribute<TargetPlatformAttribute>()?.PlatformName ?? string.Empty;
                             if (framework.StartsWith(FrameworkConstants.FrameworkIdentifiers.NetCoreApp) && platform != string.Empty)
                             {
                                 var platformParseResult = Regex.Match(platform, @"([a-zA-Z]+)(\d+.*)");
@@ -145,16 +153,25 @@ namespace Stride.Core.Assets
 
                             // Only allow this specific version
                             var versionRange = new VersionRange(new NuGetVersion(packageVersion), true, new NuGetVersion(packageVersion), true);
-                            var (request, result) = RestoreHelper.Restore(logger, nugetFramework, "win", packageName, versionRange);
+                            var (request, result) = RestoreHelper.Restore(logger, nugetFramework, RuntimeInformation.RuntimeIdentifier, packageName, versionRange);
                             if (!result.Success)
                             {
                                 throw new InvalidOperationException($"Could not restore NuGet packages");
                             }
 
                             assemblies = RestoreHelper.ListAssemblies(result.LockFile);
+
+                            // Register the native libraries
+                            var nativeLibs = RestoreHelper.ListNativeLibs(result.LockFile);
+                            RegisterNativeDependencies(assemblies, nativeLibs);
                         }
                         catch (Exception e)
                         {
+#if STRIDE_NUGET_RESOLVER_UX
+                            logger.LogError($@"Error restoring NuGet packages: {e}");
+                            dialogClosed.Task.Wait();
+#else
+                            // Display log in console
                             var logText = $@"Error restoring NuGet packages!
 
 ==== Exception details ====
@@ -165,10 +182,6 @@ namespace Stride.Core.Assets
 
 {string.Join(Environment.NewLine, logger.Logs.Select(x => $"[{x.Level}] {x.Message}"))}
 ";
-#if STRIDE_NUGET_RESOLVER_UX
-                            dialogClosed.Task.Wait();
-#else
-                            // Display log in console
                             Console.WriteLine(logText);
 #endif
                             Environment.Exit(1);
@@ -219,6 +232,27 @@ namespace Stride.Core.Assets
         private static void CheckPackageSource(ISettings settings, string name, string url)
         {
             settings.AddOrUpdate("packageSources", new SourceItem(name, url));
+        }
+
+        /// <summary>
+        /// Registers the listed native libs in Stride.Core.NativeLibraryHelper using reflection to avoid a compile time dependency on Stride.Core
+        /// </summary>
+        private static void RegisterNativeDependencies(List<string> assemblies, List<string> nativeLibs)
+        {
+            var strideCoreAssembly = Assembly.LoadFrom(assemblies.FirstOrDefault(a => Path.GetFileNameWithoutExtension(a) == "Stride.Core"));
+            if (strideCoreAssembly is null)
+                throw new InvalidOperationException($"Couldn't find assembly 'Stride.Core' in restored packages");
+
+            var nativeLibraryHelperType = strideCoreAssembly.GetType("Stride.Core.NativeLibraryHelper");
+            if (nativeLibraryHelperType is null)
+                throw new InvalidOperationException($"Couldn't find type 'Stride.Core.NativeLibraryHelper' in {strideCoreAssembly}");
+
+            var registerDependencyMethod = nativeLibraryHelperType.GetMethod("RegisterDependency");
+            if (registerDependencyMethod is null)
+                throw new InvalidOperationException($"Couldn't find method 'RegisterDependency' in {nativeLibraryHelperType}");
+
+            foreach (var lib in nativeLibs)
+                registerDependencyMethod.Invoke(null, new[] { lib });
         }
 
         public class Logger : ILogger

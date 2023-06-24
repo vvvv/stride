@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.Collections.Generic;
@@ -120,17 +120,18 @@ namespace Stride.Rendering
 
         private void UpdateMaterial(RenderMesh renderMesh, MaterialPass materialPass, MaterialInstance modelMaterialInstance, ModelComponent modelComponent)
         {
-            renderMesh.MaterialPass = materialPass;
-
             var isShadowCaster = modelComponent.IsShadowCaster;
             if (modelMaterialInstance != null)
                 isShadowCaster &= modelMaterialInstance.IsShadowCaster;
 
-            if (isShadowCaster != renderMesh.IsShadowCaster)
+            if (isShadowCaster != renderMesh.IsShadowCaster
+                || materialPass.HasTransparency != renderMesh.MaterialPass?.HasTransparency)
             {
                 renderMesh.IsShadowCaster = isShadowCaster;
                 VisibilityGroup.NeedActiveRenderStageReevaluation = true;
             }
+
+            renderMesh.MaterialPass = materialPass;
         }
 
         private Material FindMaterial(Material materialOverride, MaterialInstance modelMaterialInstance)

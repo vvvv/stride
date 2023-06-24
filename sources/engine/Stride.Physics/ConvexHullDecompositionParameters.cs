@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -74,8 +74,8 @@ namespace Stride.Physics
                 other.AngleSampling == AngleSampling &&
                 other.PosRefine == PosRefine &&
                 other.AngleRefine == AngleRefine &&
-                Math.Abs(other.Alpha - Alpha) < float.Epsilon &&
-                Math.Abs(other.Threshold - Threshold) < float.Epsilon;
+                MathF.Abs(other.Alpha - Alpha) < float.Epsilon &&
+                MathF.Abs(other.Threshold - Threshold) < float.Epsilon;
         }
     }
 }

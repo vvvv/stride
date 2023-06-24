@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -41,7 +41,7 @@ namespace Stride.Core.Diagnostics
     /// By default, the profiler is not enabled, so there is a minimum performance impact leaving it in the code (it has
     /// the costs of a lock and a dictionary lookup). It doesn't measure anything and doesn't produce any KPI.
     /// 
-    /// To enable a particular profiler (before using <see cref="Begin()"/> method):
+    /// To enable a particular profiler (before using <see cref="Begin"/> method):
     /// <code>
     /// Profiler.Enable(GameInitialization);
     ///  </code>

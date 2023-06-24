@@ -1,11 +1,10 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 #if STRIDE_PLATFORM_IOS
 using UIKit;
-using Stride.Starter;
 #endif
 using Stride.Core;
 using Stride.Core.Diagnostics;
@@ -23,7 +22,7 @@ namespace Stride.Graphics.Regression
 
         public static void RunGameTest(Game game)
         {
-#if STRIDE_PLATFORM_WINDOWS_DESKTOP
+#if STRIDE_PLATFORM_DESKTOP
 
             using (game)
             {
@@ -68,7 +67,7 @@ namespace Stride.Graphics.Regression
                         var window = UIApplication.SharedApplication.KeyWindow;
                         var rootNavigationController = (UINavigationController)window.RootViewController;
 
-                        // create the stride game view 
+                        /*// create the stride game view 
                         var bounds = UIScreen.MainScreen.Bounds;
                         var strideGameView = new iOSStrideView((System.Drawing.RectangleF)bounds) { ContentScaleFactor = UIScreen.MainScreen.Scale };
 
@@ -82,7 +81,9 @@ namespace Stride.Graphics.Regression
                         rootNavigationController.PushViewController(gameContext.Control.GameViewController, false);
 
                         // launch the game
-                        game.Run(gameContext);
+                        game.Run(gameContext);*/
+                        throw new NotImplementedException();
+
                     });
 #elif STRIDE_PLATFORM_ANDROID
                     // Start activity

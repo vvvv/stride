@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2012 SharpDX - Alexandre Mutel
@@ -74,6 +74,7 @@
 // particular purpose and non-infringement.
 #pragma warning disable SA1310 // Field names should not contain underscore
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Stride.Core;
 
@@ -104,7 +105,7 @@ namespace Stride.Graphics
             /// <param name="aBitMask">A bit mask.</param>
             public DDSPixelFormat(PixelFormatFlags flags, int fourCC, int rgbBitCount, uint rBitMask, uint gBitMask, uint bBitMask, uint aBitMask)
             {
-                Size = Utilities.SizeOf<DDSPixelFormat>();
+                Size = Unsafe.SizeOf<DDSPixelFormat>();
                 Flags = flags;
                 FourCC = fourCC;
                 RGBBitCount = rgbBitCount;

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -137,7 +137,8 @@ namespace Stride.Assets
             }
 
             // Update NuGet references
-            var projectFullPath = (dependentPackage.Container as SolutionProject)?.FullPath;
+            var solutionProject = dependentPackage.Container as SolutionProject;
+            var projectFullPath = solutionProject?.FullPath;
             if (projectFullPath != null)
             {
                 try
@@ -146,6 +147,20 @@ namespace Stride.Assets
                     var isProjectDirty = false;
 
                     var packageReferences = project.GetItems("PackageReference").ToList();
+
+                    // Remove Stride reference for older executable projects (it was necessary in the past due to runtime.json)
+                    if (dependency.Version.MinVersion < new PackageVersion("4.1.0.0")
+                        && solutionProject.Type == ProjectType.Executable
+                        && (solutionProject.Platform == PlatformType.macOS || solutionProject.Platform == PlatformType.Linux))
+                    {
+                        var strideReference = packageReferences.FirstOrDefault(x => x.EvaluatedInclude == "Stride");
+                        if (strideReference != null)
+                        {
+                            packageReferences.Remove(strideReference);
+                            project.RemoveItem(strideReference);
+                            isProjectDirty = true;
+                        }
+                    }
 
                     foreach (var packageReference in packageReferences)
                     {
@@ -198,6 +213,29 @@ namespace Stride.Assets
 
                                 if (!shaderFile.IsImported)
                                     project.RemoveItem(shaderFile);
+                            }
+                        }
+                    }
+
+                    if (dependency.Version.MinVersion < new PackageVersion("4.1.0.0") && solutionProject != null)
+                    {
+                        var tfm = project.GetProperty("TargetFramework");
+                        if (tfm != null)
+                        {
+                            // Library
+                            if (tfm.EvaluatedValue == "netstandard2.0"
+                                || (tfm.EvaluatedValue.StartsWith("net4") && solutionProject.Type == ProjectType.Library))
+                            {
+                                // In case it's a single TargetFramework, add the "s" at the end
+                                tfm.Xml.Name = "TargetFrameworks";
+                                tfm.Xml.Value = "net6.0";
+                                isProjectDirty = true;
+                            }
+                            // Executable
+                            else if ((tfm.EvaluatedValue.StartsWith("net4") || tfm.EvaluatedValue.StartsWith("net5")) && solutionProject.Type == ProjectType.Executable)
+                            {
+                                tfm.Xml.Value = solutionProject.Platform == PlatformType.Windows ? "net6.0-windows" : "net6.0";
+                                isProjectDirty = true;
                             }
                         }
                     }

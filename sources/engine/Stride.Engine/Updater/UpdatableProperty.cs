@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Reflection;
@@ -37,7 +37,14 @@ namespace Stride.Updater
             ldarg obj
             ldarg.0
             ldfld native int class Stride.Updater.UpdatableProperty::Getter
+            ldarg.0
+            ldfld bool Stride.Updater.UpdatableProperty::VirtualDispatchSetter
+            brfalse nonVirtualCall
+            calli object(native int) // Note: .NET 6 doesn't work with object, using IntPtr instead
+            br end
+        nonVirtualCall:
             calli instance object()
+        end:
             ret
 #endif
             throw new NotImplementedException();
@@ -57,7 +64,14 @@ namespace Stride.Updater
             ldarg data
             ldarg.0
             ldfld native int class Stride.Updater.UpdatableProperty::Setter
+            ldarg.0
+            ldfld bool Stride.Updater.UpdatableProperty::VirtualDispatchSetter
+            brfalse nonVirtualCall
+            calli void(native int, object) // Note: .NET 6 doesn't work with object, using IntPtr instead
+            br end
+        nonVirtualCall:
             calli instance void(object)
+        end:
             ret
 #endif
             throw new NotImplementedException();

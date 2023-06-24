@@ -5,7 +5,6 @@
     <StrideNativeOutputName>libstridevr</StrideNativeOutputName>
   </PropertyGroup>
   <Import Project="..\..\targets\Stride.props" />
-  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" Version="3.0.22" />
   <PropertyGroup>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
@@ -16,26 +15,25 @@
     <StrideCodeAnalysis>true</StrideCodeAnalysis>
   </PropertyGroup>
   <Choose>
-    <When Condition=" '$(StridePlatform)' == 'Android'">
+    <When Condition=" '$(TargetFramework)' == '$(StrideFrameworkAndroid)'">
       <ItemGroup>
-        <Reference Include="Mono.Android" />
         <Reference Include="GoogleVRJava">
           <HintPath>..\..\..\deps\GoogleVR\lib\Android\GoogleVRJava.dll</HintPath>
         </Reference>
-      </ItemGroup>
-    </When>
-    <When Condition=" '$(StridePlatform)' == 'iOS'">
-      <ItemGroup>
-        <Reference Include="Xamarin.iOS" />
       </ItemGroup>
     </When>
   </Choose>
   <Choose>
     <When Condition=" '$(StrideGraphicsApi)' == 'Direct3D11' Or '$(StrideGraphicsApi)' == 'Direct3D12' ">
       <ItemGroup>
-        <StrideNativeLib Include="..\..\..\deps\OpenVR\$(StridePlatform)\**\openvr_api.*">
-          <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-          <RelativePath>%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <StrideNativeLib Include="..\..\..\deps\OpenVR\$(StridePlatformDeps)\**\openvr_api.*">
+          <Link>runtimes\%(RecursiveDir)native\%(Filename)%(Extension)</Link>
+          <RelativePath>runtimes\%(RecursiveDir)native\%(Filename)%(Extension)</RelativePath>
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </StrideNativeLib>
+        <StrideNativeLib Include="..\..\..\deps\OpenXR\openxr_loader.dll">
+          <Link>runtimes\win-x64\native\%(RecursiveDir)%(Filename)%(Extension)</Link>
+          <RelativePath>runtimes\win-x64\native\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </StrideNativeLib>
       </ItemGroup>
@@ -55,7 +53,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <StrideContent Condition="'$(StridePlatform)' == 'Linux'" Include="Stride.VirtualReality.dll.config" />
     <None Include="Stride.Native.Libs.targets">
       <SubType>Designer</SubType>
     </None>
@@ -65,15 +62,18 @@
     <None Include="OculusOVR\OculusOVR.cpp" />
     <None Include="Fove\Fove.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Silk.NET.OpenXR" Version="2.15.0" />
+  </ItemGroup>
   <Import Project="$(StrideSdkTargets)" />
-  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" Version="3.0.22" />
 
   <PropertyGroup>
-    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeExtraAssemblies</TargetsForTfmSpecificBuildOutput>
+    <TargetsForTfmSpecificBuildOutput>_StrideIncludeExtraAssemblies;$(TargetsForTfmSpecificBuildOutput)</TargetsForTfmSpecificBuildOutput>
+
   </PropertyGroup>
-  <Target Name="IncludeExtraAssemblies">
+  <Target Name="_StrideIncludeExtraAssemblies">
     <ItemGroup>
-      <BuildOutputInPackage Include="$(OutputPath)GoogleVRJava.dll" Condition=" '$(StridePlatform)' == 'Android' " />
+      <BuildOutputInPackage Include="$(OutputPath)GoogleVRJava.dll" Condition=" '$(TargetFramework)' == '$(StrideFrameworkAndroid)' " />
     </ItemGroup>
   </Target>
 </Project>

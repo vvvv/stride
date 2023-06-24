@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 #include "Common.h"
@@ -1778,7 +1778,7 @@ extern "C" {
 
 		DLL_EXPORT_API void xnAudioSourceSetBuffer(xnAudioSource* source, xnAudioBuffer* buffer)
 		{
-			//this function is called only when the audio source is acutally fully cached in memory, so we deal only with the first buffer
+			//this function is called only when the audio source is actually fully cached in memory, so we deal only with the first buffer
 			source->streamed_ = false;
 			source->freeBuffers_[0] = buffer;
 			memcpy(&source->single_buffer_, &buffer->buffer_, sizeof(XAUDIO2_BUFFER));

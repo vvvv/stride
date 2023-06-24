@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.ComponentModel;
@@ -19,6 +19,7 @@ namespace Stride.Engine
     // TODO GRAPHICS REFACTOR
     //[DefaultEntityComponentRenderer(typeof(LightComponentRenderer), -10)]
     [DefaultEntityComponentRenderer(typeof(LightProcessor))]
+    [AllowMultipleComponents]
     [ComponentOrder(12000)]
     [ComponentCategory("Lights")]
     public sealed class LightComponent : ActivableEntityComponent

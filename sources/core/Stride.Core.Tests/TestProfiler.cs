@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Xunit;
 using Stride.Core.Diagnostics;
+using System.Threading;
 
 namespace Stride.Core.Tests
 {
@@ -23,7 +24,7 @@ namespace Stride.Core.Tests
             {
                 using (var profile = Profiler.Begin(TestKey))
                 {
-                    Utilities.Sleep(100);
+                    Thread.Sleep(100);
                 }
             }
             watcher.Finish();
@@ -44,7 +45,7 @@ namespace Stride.Core.Tests
                 Profiler.Enable(TestKey);
                 using (var profile = Profiler.Begin(TestKey))
                 {
-                    Utilities.Sleep(timeToWait);
+                    Thread.Sleep(timeToWait);
                 }
             }
             watcher.Finish();
@@ -69,7 +70,7 @@ namespace Stride.Core.Tests
                 {
                     using (var profile2 = Profiler.Begin(Test2Key))
                     {
-                        Utilities.Sleep(timeToWait);
+                        Thread.Sleep(timeToWait);
                     }
                 }
             }
@@ -94,10 +95,10 @@ namespace Stride.Core.Tests
                 Profiler.EnableAll();
                 using (var profile = Profiler.Begin(TestKey))
                 {
-                    Utilities.Sleep(timeToWait);
+                    Thread.Sleep(timeToWait);
                     profile.Mark();
 
-                    Utilities.Sleep(timeToWait);
+                    Thread.Sleep(timeToWait);
                     profile.Mark();
                 }
             }
@@ -123,7 +124,7 @@ namespace Stride.Core.Tests
                 using (var profile = Profiler.Begin(TestKey))
                 {
                     profile.SetAttribute("MyAttribute", 5);
-                    Utilities.Sleep(timeToWait);
+                    Thread.Sleep(timeToWait);
                     profile.Mark();
                 }
             }

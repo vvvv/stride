@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -107,7 +107,7 @@ namespace Stride.Physics
                 0f;
         }
 
-        public ColliderShape CreateShape()
+        public ColliderShape CreateShape(IServiceRegistry services)
         {
             object unmanagedArray;
 
@@ -149,6 +149,7 @@ namespace Stride.Physics
                         {
                             LocalOffset = LocalOffset + new Vector3(0, GetCenteringOffset(), 0),
                             LocalRotation = LocalRotation,
+                            Description = this
                         };
 
             return shape;

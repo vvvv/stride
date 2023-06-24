@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -26,13 +26,14 @@ namespace Stride.Rendering.Compositing
         [DefaultValue(false)]
         public bool IgnoreDevicePosition { get; set; } = false;
 
+        private bool _copyMirror = true;
         /// <summary>
         /// Specifies if VR rendering should be copied to the current render target.
         /// </summary>
         /// <userdoc>Copy VR rendering to the current render target. Leave disabled to have different rendering on desktop than VR headset.</userdoc>
         [DataMember(25)]
         [DefaultValue(true)]
-        public bool CopyMirror { get; set; } = true;
+        public bool CopyMirror = true;
 
         [DataMember(30)]
         public List<VRDeviceDescription> RequiredApis { get; } = new List<VRDeviceDescription>();

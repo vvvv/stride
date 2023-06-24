@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors. (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -20,7 +20,7 @@ namespace Stride.Core.Mathematics
         /// <summary>
         /// The size of the <see cref="Stride.Core.Mathematics.Double2"/> type, in bytes.
         /// </summary>
-        public static readonly int SizeInBytes = Utilities.SizeOf<Double2>();
+        public static readonly int SizeInBytes = Unsafe.SizeOf<Double2>();
 
         /// <summary>
         /// A <see cref="Stride.Core.Mathematics.Double2"/> with all of its components set to zero.
@@ -1436,6 +1436,17 @@ namespace Stride.Core.Mathematics
                 return false;
 
             return Equals((Double2)value);
+        }
+                                
+        /// <summary>
+        /// Deconstructs the vector's components into named variables.
+        /// </summary>
+        /// <param name="x">The X component</param>
+        /// <param name="y">The Y component</param>
+        public void Deconstruct(out double x, out double y)
+        {
+            x = X;
+            y = Y;
         }
 
 #if WPFInterop

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System.Linq;
 using Stride.Core.Annotations;
@@ -38,7 +38,8 @@ namespace Stride.Core.Assets.Editor.Quantum.NodePresenters.Commands
             {
                 var elementType = collectionDescriptor.ElementType;
                 // We also add the same conditions that for AddNewItem
-                return collectionDescriptor.HasRemoveAt && AddNewItemCommand.CanAdd(elementType);
+                return (collectionDescriptor.HasRemoveAt || collectionDescriptor.HasRemove)
+                    && AddNewItemCommand.CanAdd(elementType);
             }
             // TODO: add a HasRemove in the dictionary descriptor and test it!
             return true;

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -469,7 +469,7 @@ namespace Stride.Core.IO
         }
 
         /// <summary>
-        /// Creates the relative path that can access to <see cref="target"/> from <see cref="sourcePath"/>.
+        /// Creates the relative path that can access to <paramref name="target"/> from <paramref name="sourcePath"/>.
         /// </summary>
         /// <param name="target">The target.</param>
         /// <param name="sourcePath">The source path.</param>

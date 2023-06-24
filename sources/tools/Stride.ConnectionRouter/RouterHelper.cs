@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Specialized;
@@ -47,7 +47,7 @@ namespace Stride.ConnectionRouter
                 }
 
                 // Make sure to use .exe rather than .dll (.NET Core)
-                var defaultRouterAssemblyLocation = Path.ChangeExtension(typeof(Router).Assembly.Location, ".exe");
+                var defaultRouterAssemblyLocation = LoaderToolLocator.GetExecutable(typeof(Router).Assembly.Location);
                 if (defaultRouterAssemblyLocation == null)
                 {
                     throw new InvalidOperationException("Could not find Connection Router assembly location");

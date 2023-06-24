@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -270,8 +270,8 @@ namespace Stride.Assets.Physics
                 var minHeight = heightRage.X;
                 var maxHeight = heightRage.Y;
 
-                min = (float)Math.Round((minHeight / heightScale), MidpointRounding.AwayFromZero);
-                max = (float)Math.Round((maxHeight / heightScale), MidpointRounding.AwayFromZero);
+                min = MathF.Round((minHeight / heightScale), MidpointRounding.AwayFromZero);
+                max = MathF.Round((maxHeight / heightScale), MidpointRounding.AwayFromZero);
 
                 if (heightScale < 0)
                 {

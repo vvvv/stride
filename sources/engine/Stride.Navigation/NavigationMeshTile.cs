@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.Collections.Generic;
@@ -20,7 +20,7 @@ namespace Stride.Navigation
         /// </summary>
         [DataMemberCustomSerializer]
         public byte[] Data;
-        
+
         /// <summary>
         /// Extracts the navigation mesh geometry from the data for this tile
         /// </summary>
@@ -29,7 +29,7 @@ namespace Stride.Navigation
         /// <returns><c>true</c> on success, <c>false</c> on failure</returns>
         internal unsafe bool GetTileVertices(IList<Vector3> vertices, IList<int> indices)
         {
-            if (Data == null || Data.Length == 0)
+            if ((Data?.Length ?? 0) == 0)
                 return false;
 
             fixed (byte* dataPtr = Data)

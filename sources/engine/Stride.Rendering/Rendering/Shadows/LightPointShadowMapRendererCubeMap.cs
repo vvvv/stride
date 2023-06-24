@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -106,7 +106,7 @@ namespace Stride.Rendering.Shadows
 
             // Calculate angle of the projection with border pixels taken into account to allow filtering
             float halfMapSize = (float)textureMapSize.Width / 2;
-            float halfFov = (float)Math.Atan((halfMapSize + BorderPixels) / halfMapSize);
+            float halfFov = MathF.Atan((halfMapSize + BorderPixels) / halfMapSize);
             shaderData.Projection = Matrix.PerspectiveFovRH(halfFov * 2, 1.0f, clippingPlanes.X, clippingPlanes.Y);
 
             Vector2 atlasSize = new Vector2(lightShadowMap.Atlas.Width, lightShadowMap.Atlas.Height);

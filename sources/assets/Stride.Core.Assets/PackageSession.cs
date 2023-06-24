@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -220,8 +220,6 @@ namespace Stride.Core.Assets
 
     public class StandalonePackage : PackageContainer
     {
-        private readonly Package package;
-
         public StandalonePackage([NotNull] Package package)
             : base(package)
         {
@@ -232,7 +230,7 @@ namespace Stride.Core.Assets
         /// </summary>
         public List<string> Assemblies { get; } = new List<string>();
 
-        public override string ToString() => $"Package: {package.Meta.Name}";
+        public override string ToString() => $"Package: {Package.Meta.Name}";
     }
 
     public enum DependencyType

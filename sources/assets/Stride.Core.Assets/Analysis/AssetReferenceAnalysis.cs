@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -236,6 +236,53 @@ namespace Stride.Core.Assets.Analysis
                             var newValue = new UDirectory(location);
                             descriptor.SetValue(dictionaryObj, key, newValue);
                             return newValue;
+                        });
+                }
+            }
+
+            public override void VisitSetItem(IEnumerable setObject, SetDescriptor descriptor, object item, ITypeDescriptor itemDescriptor)
+            {
+                base.VisitSetItem(setObject, descriptor, item, itemDescriptor);
+                var assetReference = item as AssetReference;
+                var attachedReference = AttachedReferenceManager.GetAttachedReference(item);
+                if (assetReference != null)
+                {
+                    AddLink(assetReference,
+                        (guid, location) =>
+                        {
+                            var link = AssetReference.New(guid ?? assetReference.Id, location);
+                            descriptor.Add(setObject, link);
+                            return link;
+                        });
+                }
+                else if (attachedReference != null)
+                {
+                    AddLink(attachedReference,
+                        (guid, location) =>
+                        {
+                            object link = guid.HasValue && guid.Value != AssetId.Empty ? AttachedReferenceManager.CreateProxyObject(descriptor.ElementType, guid.Value, location) : null;
+                            descriptor.Add(setObject, link);
+                            return link;
+                        });
+                }
+                else if (item is UFile)
+                {
+                    AddLink(item,
+                        (guid, location) =>
+                        {
+                            var link = new UFile(location);
+                            descriptor.Add(setObject, link);
+                            return link;
+                        });
+                }
+                else if (item is UDirectory)
+                {
+                    AddLink(item,
+                        (guid, location) =>
+                        {
+                            var link = new UDirectory(location);
+                            descriptor.Add(setObject, link);
+                            return link;
                         });
                 }
             }

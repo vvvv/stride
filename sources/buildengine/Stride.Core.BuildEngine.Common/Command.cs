@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Stride.Core;
@@ -147,11 +147,11 @@ namespace Stride.Core.BuildEngine
                 var hash = prepareContext.ComputeInputHash(inputFile.Type, inputFile.Path);
                 if (hash == ObjectId.Empty)
                 {
-                    writer.NativeStream.WriteByte(0);
+                    writer.UnderlyingStream.WriteByte(0);
                 }
                 else
                 {
-                    writer.NativeStream.Write((byte[])hash, 0, ObjectId.HashSize);
+                    writer.UnderlyingStream.Write((byte[])hash, 0, ObjectId.HashSize);
                 }
             }
         }

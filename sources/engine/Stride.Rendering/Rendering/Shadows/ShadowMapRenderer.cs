@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -282,7 +282,7 @@ namespace Stride.Rendering.Shadows
         private static float ComputeSizeFactor(LightShadowMapSize shadowMapSize)
         {
             // Then reduce the size based on the shadow map size
-            var factor = (float)Math.Pow(2.0f, (int)shadowMapSize - 3.0f);
+            var factor = MathF.Pow(2.0f, (int)shadowMapSize - 3.0f);
             return factor;
         }
     }

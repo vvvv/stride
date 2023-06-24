@@ -1,6 +1,6 @@
-// Copyright (c) Stride contributors (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
-#if STRIDE_PLATFORM_WINDOWS_DESKTOP && (STRIDE_UI_WINFORMS || STRIDE_UI_WPF)
+#if (STRIDE_UI_WINFORMS || STRIDE_UI_WPF)
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -108,13 +108,7 @@ namespace Stride.Input.RawInput
         }
 
         private static unsafe bool RegisterDevice(RawInputDevice device)
-        {
-            var devices = new RawInputDevice[1] { device };
-            fixed (void* ptr = devices)
-            {
-                return Win32.RegisterRawInputDevices(ptr, 1, (uint)sizeof(RawInputDevice));
-            }
-        }
+            => Win32.RegisterRawInputDevices(&device, 1, (uint)sizeof(RawInputDevice));
 
         public static bool RegisterDevice(UsagePage usagePage, UsageId usageId, ModeFlags flags, IntPtr target)
         {

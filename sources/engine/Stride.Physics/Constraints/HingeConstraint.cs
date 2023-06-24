@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Stride.Core.Mathematics;
@@ -15,6 +15,15 @@ namespace Stride.Physics
         public void SetFrames(Matrix frameA, Matrix frameB)
         {
             InternalHingeConstraint.SetFrames(frameA, frameB);
+        }
+
+        /// <summary>
+        /// Sets the hinge axis for body A (this works mostly for body-world constraints).
+        /// </summary>
+        /// <param name="axisInA">The hinge axis.</param>
+        public void SetAxis(Vector3 axisInA)
+        {
+            InternalHingeConstraint.SetAxis(axisInA);
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core;
@@ -66,7 +66,7 @@ namespace Stride.Physics
 
             return other.HeightStickSize == HeightStickSize &&
                 other.HeightRange == HeightRange &&
-                Math.Abs(other.HeightScale - HeightScale) < float.Epsilon &&
+                MathF.Abs(other.HeightScale - HeightScale) < float.Epsilon &&
                 other.InitialByte == InitialByte;
         }
     }

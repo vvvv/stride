@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core.Serialization.Contents;
@@ -38,7 +38,7 @@ namespace Stride.Core.Serialization
             this.url = url;
         }
 
-        // <summary>
+        /// <summary>
         /// Gets the Url of the referenced asset.
         /// </summary>
         [DataMember(10)]

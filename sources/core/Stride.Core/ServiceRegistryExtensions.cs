@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -8,20 +8,6 @@ namespace Stride.Core
 {
     public static class ServiceRegistryExtensions
     {
-        /// <summary>
-        /// Gets a service instance from a specified interface contract.
-        /// </summary>
-        /// <typeparam name="T">Type of the interface contract of the service</typeparam>
-        /// <param name="registry">The registry.</param>
-        /// <returns>An instance of the requested service registered to this registry.</returns>
-        [CanBeNull]
-        [Obsolete("Use the generic overload of IServiceRegistry.GetService instead")]
-        public static T GetServiceAs<T>([NotNull] this IServiceRegistry registry)
-            where T : class
-        {
-            return registry.GetService<T>();
-        }
-
         /// <summary>
         /// Gets a service instance from a specified interface contract.
         /// </summary>

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // -----------------------------------------------------------------------------
@@ -28,12 +28,13 @@
 */
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Stride.Core.Mathematics
 {
     /// <summary>
-    /// Represents a three dimensional mathematical vector.
+    /// Represents a two dimensional mathematical vector.
     /// </summary>
     [DataContract("Int2")]
     [DataStyle(DataStyle.Compact)]
@@ -43,27 +44,27 @@ namespace Stride.Core.Mathematics
         /// <summary>
         /// The size of the <see cref="Stride.Core.Mathematics.Int2"/> type, in bytes.
         /// </summary>
-        public static readonly int SizeInBytes = Utilities.SizeOf<Int2>();
+        public static readonly int SizeInBytes = Unsafe.SizeOf<Int2>();
 
         /// <summary>
         /// A <see cref="Stride.Core.Mathematics.Int2"/> with all of its components set to zero.
         /// </summary>
-        public static readonly Int2 Zero = new Int2();
+        public static readonly Int2 Zero = new();
 
         /// <summary>
         /// The X unit <see cref="Stride.Core.Mathematics.Int2"/> (1, 0, 0).
         /// </summary>
-        public static readonly Int2 UnitX = new Int2(1, 0);
+        public static readonly Int2 UnitX = new(1, 0);
 
         /// <summary>
         /// The Y unit <see cref="Stride.Core.Mathematics.Int2"/> (0, 1, 0).
         /// </summary>
-        public static readonly Int2 UnitY = new Int2(0, 1);
+        public static readonly Int2 UnitY = new(0, 1);
 
         /// <summary>
         /// A <see cref="Stride.Core.Mathematics.Int2"/> with all of its components set to one.
         /// </summary>
-        public static readonly Int2 One = new Int2(1, 1);
+        public static readonly Int2 One = new(1, 1);
 
         /// <summary>
         /// The X component of the vector.
@@ -434,7 +435,7 @@ namespace Stride.Core.Mathematics
         public static void SmoothStep(ref Int2 start, ref Int2 end, float amount, out Int2 result)
         {
             amount = (amount > 1) ? 1 : ((amount < 0) ? 0 : amount);
-            amount = (amount * amount) * (3 - (2 * amount));
+            amount = amount * amount * (3 - (2 * amount));
 
             result.X = (int)(start.X + ((end.X - start.X) * amount));
             result.Y = (int)(start.Y + ((end.Y - start.Y) * amount));
@@ -695,8 +696,8 @@ namespace Stride.Core.Mathematics
         /// </returns>
         public bool Equals(Int2 other)
         {
-            return ((float)Math.Abs(other.X - X) < MathUtil.ZeroTolerance &&
-                (float)Math.Abs(other.Y - Y) < MathUtil.ZeroTolerance);
+            return MathF.Abs(other.X - X) < MathUtil.ZeroTolerance &&
+                MathF.Abs(other.Y - Y) < MathUtil.ZeroTolerance;
         }
 
         /// <summary>
@@ -716,6 +717,18 @@ namespace Stride.Core.Mathematics
 
             return Equals((Int2)value);
         }
+
+        /// <summary>
+        /// Deconstructs the vector's components into named variables.
+        /// </summary>
+        /// <param name="x">The X component</param>
+        /// <param name="y">The Y component</param>
+        public void Deconstruct(out int x, out int y)
+        {
+            x = X;
+            y = Y;
+        }
+
 #if WPFInterop
         /// <summary>
         /// Performs an implicit conversion from <see cref="Stride.Core.Mathematics.Int2"/> to <see cref="System.Windows.Media.Media3D.Int3D"/>.

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using Stride.Graphics;
 
@@ -35,7 +35,11 @@ namespace Stride.Rendering.Compositing
 
             using (drawContext.PushRenderTargetsAndRestore())
             {
-                var depthBuffer = PushScopedResource(context.Allocator.GetTemporaryTexture2D(RenderTexture.ViewWidth, RenderTexture.ViewHeight, drawContext.CommandList.DepthStencilBuffer.ViewFormat, TextureFlags.DepthStencil));
+                var depthBufferTextureFlags = TextureFlags.DepthStencil;
+                if (context.GraphicsDevice.Features.HasDepthAsSRV)
+                    depthBufferTextureFlags |= TextureFlags.ShaderResource;
+
+                var depthBuffer = PushScopedResource(context.Allocator.GetTemporaryTexture2D(RenderTexture.ViewWidth, RenderTexture.ViewHeight, drawContext.CommandList.DepthStencilBuffer.ViewFormat, depthBufferTextureFlags));
                 drawContext.CommandList.SetRenderTargetAndViewport(depthBuffer, RenderTexture);
 
                 Child?.Draw(drawContext);

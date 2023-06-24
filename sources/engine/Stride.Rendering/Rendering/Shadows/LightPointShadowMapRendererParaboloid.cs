@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -18,7 +18,7 @@ namespace Stride.Rendering.Shadows
     public class LightPointShadowMapRendererParaboloid : LightShadowMapRendererBase
     {
         private PoolListStruct<ShaderData> shaderDataPool;
-        private PoolListStruct<ShadowMapTexture> shadowMaps;
+        protected new PoolListStruct<ShadowMapTexture> shadowMaps;
 
         public LightPointShadowMapRendererParaboloid()
         {
@@ -180,7 +180,7 @@ namespace Stride.Rendering.Shadows
             view *= flippingMatrix;
         }
 
-        private class ShadowMapTexture : LightShadowMapTexture
+        protected class ShadowMapTexture : LightShadowMapTexture
         {
             public Matrix ForwardMatrix;
         }

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #if STRIDE_PLATFORM_ANDROID
 using System;
@@ -37,7 +37,7 @@ namespace Stride.Games
         {
             get
             {
-                var assemblyUri = new Uri(Assembly.GetEntryAssembly().CodeBase);
+                var assemblyUri = new Uri(Assembly.GetEntryAssembly().Location);
                 return Path.GetDirectoryName(assemblyUri.LocalPath);
             }
         }
@@ -46,7 +46,7 @@ namespace Stride.Games
         {
             if (type == AppContextType.Android)
             {
-                return new GameWindowAndroid();
+                return new GameWindowSDL();
             }
             else
             {
@@ -56,7 +56,7 @@ namespace Stride.Games
 
         public override List<GraphicsDeviceInformation> FindBestDevices(GameGraphicsParameters preferredParameters)
         {
-            var gameWindowAndroid = gameWindow as GameWindowAndroid;
+            var gameWindowAndroid = gameWindow as GameWindowSDL;
             if (gameWindowAndroid != null)
             {
                 var graphicsAdapter = GraphicsAdapterFactory.Default;

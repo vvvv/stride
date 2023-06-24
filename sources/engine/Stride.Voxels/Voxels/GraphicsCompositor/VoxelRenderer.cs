@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Sean Boettger <sean@whypenguins.com>
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Sean Boettger <sean@whypenguins.com>
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -83,9 +83,9 @@ namespace Stride.Rendering.Voxels
                 if (dataVolume.VoxelGridSnapping)
                 {
                     matTrans /= storageContext.RealVoxelSize();
-                    matTrans.X = (float)Math.Floor(matTrans.X);
-                    matTrans.Y = (float)Math.Floor(matTrans.Y);
-                    matTrans.Z = (float)Math.Floor(matTrans.Z);
+                    matTrans.X = MathF.Floor(matTrans.X);
+                    matTrans.Y = MathF.Floor(matTrans.Y);
+                    matTrans.Z = MathF.Floor(matTrans.Z);
                     matTrans *= storageContext.RealVoxelSize();
 
                     corMatrix = Matrix.Scaling(matScale) * Matrix.Translation(matTrans);

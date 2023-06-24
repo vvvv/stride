@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -31,6 +31,7 @@ namespace Stride.Rendering.Images
         private bool isAnamorphic;
 
         private Vector2[] tapOffsetsWeights;
+        private Vector3[] anamorphicOffsetsWeights;
 
         private readonly List<string> lightStreakDebugStrings = new List<string>();
 
@@ -217,7 +218,22 @@ namespace Stride.Rendering.Images
         /// offset of the original streak, with a certain weight.
         /// </summary>
         [DataMemberIgnore]
-        public Vector3[] AnamorphicOffsetsWeights { get; set; }
+        public Vector3[] AnamorphicOffsetsWeights
+        {
+            get => anamorphicOffsetsWeights;
+            set
+            {
+                if (value != anamorphicOffsetsWeights)
+                {
+                    // Ensure the allocated effect parameters have the same length.
+                    if (value != null && anamorphicOffsetsWeights != null && value.Length != anamorphicOffsetsWeights.Length)
+                    {
+                        lightStreakEffect?.Parameters.Clear();
+                    }
+                    anamorphicOffsetsWeights = value;
+                }
+            }
+        }
 
         protected override void DrawCore(RenderDrawContext contextParameters)
         {
@@ -268,8 +284,8 @@ namespace Stride.Rendering.Images
 
                 // Direction vector
                 float angle = MathUtil.DegreesToRadians(Phase) + streak * MathUtil.TwoPi / StreakCount;
-                direction.X = (float)Math.Cos(angle);
-                direction.Y = (float)Math.Sin(angle);
+                direction.X = MathF.Cos(angle);
+                direction.Y = MathF.Sin(angle);
 
                 // Extends the length recursively
                 for (int level = 0; level < IterationCount; level++)
@@ -280,7 +296,7 @@ namespace Stride.Rendering.Images
                     for (int i = 0; i < TapsPerIteration; i++)
                     {
                         tapOffsetsWeights[i].X = i * passLength;
-                        tapOffsetsWeights[i].Y = (float)Math.Pow(MathUtil.Lerp(0.7f, 1.0f, Attenuation), i * passLength);
+                        tapOffsetsWeights[i].Y = MathF.Pow(MathUtil.Lerp(0.7f, 1.0f, Attenuation), i * passLength);
                         totalWeight += tapOffsetsWeights[i].Y;
                     }
                     // Normalizes the weights

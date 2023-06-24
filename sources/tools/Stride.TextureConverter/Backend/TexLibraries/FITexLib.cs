@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -11,6 +11,7 @@ using Stride.Graphics;
 using Stride.TextureConverter.Requests;
 using FreeImageAPI;
 using FreeImageAPI.Plugins;
+using System.Runtime.CompilerServices;
 
 namespace Stride.TextureConverter.TexLibraries
 {
@@ -88,14 +89,14 @@ namespace Stride.TextureConverter.TexLibraries
             libraryData.Data = IntPtr.Zero;
         }
 
-        public void EndLibrary(TexImage image)
+        public unsafe void EndLibrary(TexImage image)
         {
             if (!image.LibraryData.ContainsKey(this)) return;
             FreeImageTextureLibraryData libraryData = (FreeImageTextureLibraryData)image.LibraryData[this];
 
-            IntPtr buffer = Marshal.AllocHGlobal(image.DataSize);
+            nint buffer = Marshal.AllocHGlobal(image.DataSize);
             int offset = 0;
-            int size, rowPitch, slicePitch;
+            int size;
 
             image.SubImageArray = new TexImage.SubImage[libraryData.Bitmaps.Length];
 
@@ -106,15 +107,15 @@ namespace Stride.TextureConverter.TexLibraries
                     image.SubImageArray[i].Width = (int)FreeImage.GetWidth(libraryData.Bitmaps[i]);
                     image.SubImageArray[i].Height = (int)FreeImage.GetHeight(libraryData.Bitmaps[i]);
 
-                    Tools.ComputePitch(image.Format, image.SubImageArray[i].Width, image.SubImageArray[i].Height, out rowPitch, out slicePitch);
+                    Tools.ComputePitch(image.Format, image.SubImageArray[i].Width, image.SubImageArray[i].Height, out var rowPitch, out var slicePitch);
                     size = slicePitch;
 
-                    image.SubImageArray[i].Data = new IntPtr(buffer.ToInt64() + offset);
+                    image.SubImageArray[i].Data = buffer + offset;
                     image.SubImageArray[i].DataSize = size;
                     image.SubImageArray[i].RowPitch = rowPitch;
                     image.SubImageArray[i].SlicePitch = slicePitch;
 
-                    Utilities.CopyMemory(image.SubImageArray[i].Data, FreeImage.GetBits(libraryData.Bitmaps[i]), size);
+                    Unsafe.CopyBlockUnaligned((void*)image.SubImageArray[i].Data, (void*)FreeImage.GetBits(libraryData.Bitmaps[i]), (uint)size);
                     offset += size;
                 }
             }

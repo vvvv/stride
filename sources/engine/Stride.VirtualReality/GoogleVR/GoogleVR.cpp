@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 #if defined(DONT_BUILD_FOR_NOW) && (defined(ANDROID) || defined(IOS)) || !defined(__clang__)
@@ -118,8 +118,6 @@ extern "C" {
 #if defined(ANDROID)
 			gGvrLibrary = LoadDynamicLibrary("libgvr");
 			gGvrGLESv2 = LoadDynamicLibrary("libGLESv2");
-			auto core = LoadDynamicLibrary("libcore");
-			cnDebugPrintLine = (CnPrintDebugFunc)GetSymbolAddress(core, "cnDebugPrintLine");
 #else
 			gGvrLibrary = LoadDynamicLibrary(NULL);
 			gGvrGLESv2 = LoadDynamicLibrary(NULL);

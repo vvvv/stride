@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 
@@ -27,7 +27,7 @@ namespace Stride.UI.Renderers
             var barSize = bar.RenderSizeInternal;
             var realVirtualRatio = bar.LayoutingContext.RealVirtualResolutionRatio;
             for (var i = 0; i < 2; i++)
-                barSize[i] = (float)(Math.Ceiling(barSize[i] * realVirtualRatio[i]) / realVirtualRatio[i]);
+                barSize[i] = MathF.Ceiling(barSize[i] * realVirtualRatio[i]) / realVirtualRatio[i];
             
             Batch.DrawRectangle(ref element.WorldMatrixInternal, ref barSize, ref bar.BarColorInternal, context.DepthBias);
         }

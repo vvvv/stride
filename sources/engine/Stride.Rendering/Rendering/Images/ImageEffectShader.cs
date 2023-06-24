@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -104,7 +104,7 @@ namespace Stride.Rendering.Images
         }
 
         /// <summary>
-        /// Updates the effect <see cref="ImageEffectShader.Parameters" /> from properties defined in this instance. See remarks.
+        /// Updates the effect <see cref="DrawEffect.Parameters" /> from properties defined in this instance. See remarks.
         /// </summary>
         /// <exception cref="System.InvalidOperationException">Expecting less than 10 textures in input</exception>
         /// <remarks>By default, all the input textures will be remapped to <see cref="TexturingKeys.Texture0" />...etc.</remarks>

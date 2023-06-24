@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core.Yaml.Serialization;
@@ -49,6 +49,21 @@ namespace Stride.Core.Reflection
         public object GetValue(object array, int index)
         {
             return ((Array)array).GetValue(index);
+        }
+
+        public void SetValue(object array, int index, object value)
+        {
+            ((Array)array).SetValue(value, index);
+        }
+
+        /// <summary>
+        /// Determines the number of elements of an array, -1 if it cannot determine the number of elements.
+        /// </summary>
+        /// <param name="array">The array.</param>
+        /// <returns>The number of elements of an array, -1 if it cannot determine the number of elements.</returns>
+        public int GetLength(object array)
+        {
+            return ((Array)array).Length;
         }
     }
 }

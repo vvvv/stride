@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Diagnostics;
@@ -24,7 +24,7 @@ namespace Stride.Editor.CrashReport
             settings = storeCrashEmailSetting;
             currentData = crashReport;
             InitializeComponent();
-            textBoxLog.Text = crashReport.ToString();            
+            textBoxLog.Text = crashReport.ToString();
             if (settings == null)
             {
                 emailCheckbox.Visible = false;
@@ -82,7 +82,7 @@ namespace Stride.Editor.CrashReport
                 settings.Email = "";
                 settings.Save();
             }
-            
+
             RefreshReport();
             MailReport(currentData);
 

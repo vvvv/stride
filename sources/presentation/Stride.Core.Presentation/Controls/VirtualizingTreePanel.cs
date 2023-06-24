@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #define DEBUGVIRTUALIZATIONno
 
@@ -424,10 +424,11 @@ namespace Stride.Core.Presentation.Controls
             {
                 for (var i = 0; i < itemsControl.Items.Count; i++)
                 {
-                    var child = itemsControl.ItemContainerGenerator.ContainerFromIndex(i) as UIElement;
-
-                    child?.Arrange(new Rect(-HorizontalOffset, currentY - VerticalOffset, finalSize.Width, child.DesiredSize.Height));
-                    currentY += child.DesiredSize.Height;
+                    if (itemsControl.ItemContainerGenerator.ContainerFromIndex(i) is UIElement child)
+                    {
+                        child.Arrange(new Rect(-HorizontalOffset, currentY - VerticalOffset, finalSize.Width, child.DesiredSize.Height));
+                        currentY += child.DesiredSize.Height;
+                    }
                 }
             }
 

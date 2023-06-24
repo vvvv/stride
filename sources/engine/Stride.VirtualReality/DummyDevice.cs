@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -113,7 +113,7 @@ namespace Stride.VirtualReality
             Vector3 eyeWorld;
             Matrix fullRotation;
             var headRotationMatrix = ignoreHeadRotation ? Matrix.Identity : Matrix.RotationQuaternion(headRotation);
-            Matrix.MultiplyTo(ref headRotationMatrix, ref cameraRotation, out fullRotation);
+            Matrix.Multiply(ref headRotationMatrix, ref cameraRotation, out fullRotation);
             Vector3.TransformCoordinate(ref eyeLocal, ref fullRotation, out eyeWorld);
             var pos = cameraPosition + eyeWorld;
 
@@ -181,7 +181,7 @@ namespace Stride.VirtualReality
             
             var unitZTransform = Vector3.Transform(Vector3.UnitZ, GetSpaceChangeRotation() * orientationSensor.Quaternion);
             var unitZProjected = new Vector3(unitZTransform.X, 0, unitZTransform.Z);
-            var directionAdjustmentAngle = unitZProjected.Length() > MathUtil.ZeroTolerance ? -Math.Sign(unitZProjected.X) * (float)Math.Acos(unitZProjected.Z / unitZProjected.Length()) : 0;
+            var directionAdjustmentAngle = unitZProjected.Length() > MathUtil.ZeroTolerance ? -MathF.Sign(unitZProjected.X) * MathF.Acos(unitZProjected.Z / unitZProjected.Length()) : 0;
             orientationOffset = Quaternion.RotationY(directionAdjustmentAngle);
 
             // update the head rotation immediately so that it is updated from the current of the frame.

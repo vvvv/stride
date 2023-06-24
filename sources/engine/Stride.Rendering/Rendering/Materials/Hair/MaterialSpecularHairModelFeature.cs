@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -131,7 +131,7 @@ namespace Stride.Rendering.Materials
         /// </summary>
         /// <userdoc>
         /// This is the ratio between the angle of the orientation of the primary and secondary specular highlights.
-        // The theoretical value is 1.5, but you can change it for more artistic control. With this parameter you can change the position of the secondary highlight.
+        /// The theoretical value is 1.5, but you can change it for more artistic control. With this parameter you can change the position of the secondary highlight.
         /// </userdoc>
         [DataMember(125)]
         [DefaultValue(1.5f)]

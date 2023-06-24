@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2013 SharpDX - Alexandre Mutel
@@ -92,8 +92,8 @@ namespace Stride.Graphics.GeometricPrimitives
             private static Vector3 GetCircleVector(int i, int tessellation)
             {
                 var angle = (float)(i * 2.0 * Math.PI / tessellation);
-                var dx = (float)Math.Sin(angle);
-                var dz = (float)Math.Cos(angle);
+                var dx = MathF.Sin(angle);
+                var dz = MathF.Cos(angle);
 
                 return new Vector3(dx, 0, dz);
             }

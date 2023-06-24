@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2013 SharpDX - Alexandre Mutel
@@ -130,7 +130,8 @@ namespace Stride.Games
 
         // This code is for backward compatibility only where the generated games
         // would not explicitly create the context, but would just use a Winform
-#if STRIDE_PLATFORM_WINDOWS_DESKTOP && (STRIDE_UI_WINFORMS || STRIDE_UI_WPF)        /// <summary>
+#if (STRIDE_UI_WINFORMS || STRIDE_UI_WPF)
+        /// <summary>
         /// Performs an implicit conversion from <see cref="Control"/> to <see cref="GameContextWinforms"/>.
         /// </summary>
         /// <param name="control">Winform control</param>
@@ -139,19 +140,6 @@ namespace Stride.Games
         public static implicit operator GameContext(System.Windows.Forms.Control control)
         {
             return new GameContextWinforms(control);
-        }
-#endif
-
-#if (STRIDE_PLATFORM_WINDOWS_DESKTOP || STRIDE_PLATFORM_UNIX) && STRIDE_GRAPHICS_API_OPENGL && STRIDE_UI_OPENTK
-        /// <summary>
-        /// Performs an implicit conversion from <see cref="OpenTK.GameWindow"/> to <see cref="GameContextOpenTK"/>.
-        /// </summary>
-        /// <param name="gameWindow">OpenTK GameWindow</param>
-        /// <returns>The result of the conversion.</returns>
-        [Obsolete ("Use new GameContextOpenTK(gameWindow) instead.")]
-        public static implicit operator GameContext(OpenTK.GameWindow gameWindow)
-        {
-            return new GameContextOpenTK(gameWindow);
         }
 #endif
     }

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #if STRIDE_PLATFORM_IOS
 
@@ -28,7 +28,7 @@ namespace Stride.UI.Controls
         private static void InitializeStaticImpl()
         {
             doneButton = UIButton.FromType(UIButtonType.RoundedRect);
-            doneButton.SetTitle(NSBundle.MainBundle.LocalizedString("UIDoneButton", null), UIControlState.Normal);
+            doneButton.SetTitle(NSBundle.MainBundle.GetLocalizedString("UIDoneButton", null), UIControlState.Normal);
             doneButton.SetTitleColor(UIColor.Black, UIControlState.Normal);
             doneButton.TouchDown += DoneButtonOnTouchDown;
 
@@ -88,7 +88,8 @@ namespace Stride.UI.Controls
                 Debug.Assert(game.Context is GameContextiOS, "There is only one possible descendant of GameContext for iOS.");
 
                 gameContext = (GameContextiOS)game.Context;
-                gameContext.Control.GameView.AddSubview(overlayView);
+                throw new NotImplementedException();
+                //gameContext.Control.GameView.AddSubview(overlayView);
 
                 NSNotificationCenter.DefaultCenter.AddObserver(UIDevice.OrientationDidChangeNotification, OnScreenRotated);
 
@@ -112,12 +113,13 @@ namespace Stride.UI.Controls
             const int buttonHeight = 35;
             const int barHeight = buttonHeight + 2*spaceY;
 
-            var viewFrame = gameContext.Control.GameView.Frame;
+            throw new NotImplementedException();
+            /*var viewFrame = gameContext.Control.GameView.Frame;
 
             barView.Frame = new RectangleF(0, 0, (int)viewFrame.Width, barHeight);
             overlayView.Frame = new RectangleF((int)viewFrame.X, (int)viewFrame.Y, 2 * (int)viewFrame.Width, (int)viewFrame.Height); // if we don't over-set width background can be seen during rotation...
             textField.Frame = new RectangleF(spaceX, spaceY, (int)viewFrame.Width - buttonWidth - 3 * spaceX, buttonHeight);
-            doneButton.Frame = new RectangleF((int)viewFrame.Width - buttonWidth - spaceX, spaceY, buttonWidth, buttonHeight);
+            doneButton.Frame = new RectangleF((int)viewFrame.Width - buttonWidth - spaceX, spaceY, buttonWidth, buttonHeight);*/
         }
 
         private static void TextFieldOnEditingDidEnd(object sender, EventArgs eventArgs)

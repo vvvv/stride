@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Linq;
@@ -129,8 +129,8 @@ namespace Stride.Editor.Thumbnails
 
             // setup the camera
             var cameraEntity = new Entity("Thumbnail Camera") { cameraComponent };
-            var cameraToFront = new Vector2(1f / (float)Math.Tan(MathUtil.DegreesToRadians(cameraComponent.VerticalFieldOfView / 2 * cameraComponent.AspectRatio)),
-                1f / (float)Math.Tan(MathUtil.DegreesToRadians(cameraComponent.VerticalFieldOfView / 2)));
+            var cameraToFront = new Vector2(1f / MathF.Tan(MathUtil.DegreesToRadians(cameraComponent.VerticalFieldOfView / 2 * cameraComponent.AspectRatio)),
+                1f / MathF.Tan(MathUtil.DegreesToRadians(cameraComponent.VerticalFieldOfView / 2)));
             var cameraDistanceFromCenter = 1f + Math.Max(cameraToFront.X, cameraToFront.Y); // we want the front face of the element to be fully visible (not only center)
             cameraEntity.Transform.Position = new Vector3(0, 0, cameraDistanceFromCenter);
 

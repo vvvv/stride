@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 #if STRIDE_VIDEO_FFMPEG
@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using FFmpeg.AutoGen;
 using Stride.Core;
 using Stride.Core.Annotations;
@@ -291,7 +292,7 @@ namespace Stride.Video.FFmpeg
                     ret = ffmpeg.avcodec_receive_frame(pCodecContext, pDecodedFrame);
                     if (ret == ffmpeg.AVERROR(ffmpeg.EAGAIN)) // the media file is not ready yet.
                     {
-                        Utilities.Sleep(5);
+                        Thread.Sleep(5);
                         continue;
                     }
                     if (ret < 0)

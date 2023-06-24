@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -21,7 +21,7 @@ namespace Stride.Core.Assets.Compiler
         {
             // Compute StrideSdkDir from this assembly
             // TODO Move this code to a reusable method
-            var codeBase = typeof(PackageCompiler).Assembly.CodeBase;
+            var codeBase = typeof(PackageCompiler).Assembly.Location;
             var uri = new UriBuilder(codeBase);
             var path = Path.GetDirectoryName(Uri.UnescapeDataString(uri.Path));
             SdkDirectory = Path.GetFullPath(Path.Combine(path, @"..\.."));

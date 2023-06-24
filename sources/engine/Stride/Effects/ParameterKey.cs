@@ -1,8 +1,9 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #pragma warning disable SA1402 // File may only contain a single type
 using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Stride.Core;
 using Stride.Core.Serialization;
 using Stride.Core.Storage;
@@ -228,7 +229,7 @@ namespace Stride.Rendering
         [DataMemberIgnore]
         public ParameterKeyValueMetadata<T> DefaultValueMetadataT { get; private set; }
 
-        public override int Size => Interop.SizeOf<T>();
+        public override int Size => Unsafe.SizeOf<T>();
 
         public override string ToString()
         {
@@ -277,10 +278,8 @@ namespace Stride.Rendering
         {
         }
 
-        internal override object ReadValue(IntPtr data)
-        {
-            return Utilities.Read<T>(data);
-        }
+        internal override unsafe object ReadValue(nint data)
+            => Unsafe.ReadUnaligned<T>((void*)data);
     }
 
     /// <summary>

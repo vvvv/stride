@@ -1,5 +1,5 @@
 
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -441,14 +441,6 @@ namespace Stride.Core.Assets.CompilerApp
             var address = "Stride/CompilerApp/PackageBuilderApp/" + Guid.NewGuid();
             var arguments = $"--slave=\"{address}\" --build-path=\"{builderOptions.BuildDirectory}\"";
 
-            using (var debugger = VisualStudioDebugger.GetAttached())
-            {
-                if (debugger != null)
-                {
-                    arguments += $" --reattach-debugger={debugger.ProcessId}";
-                }
-            }
-
             // Start ServiceWire pipe for communication with process
             var processBuilderRemote = new ProcessBuilderRemote(assemblyContainer, commandContext, command);
             var host = new NpHost(address,null,null, new StrideServiceWireSerializer());
@@ -457,7 +449,7 @@ namespace Stride.Core.Assets.CompilerApp
             var startInfo = new ProcessStartInfo
             {
                 // Note: try to get exec server if it exists, otherwise use CompilerApp.exe
-                FileName = Path.ChangeExtension(typeof(PackageBuilder).Assembly.Location, ".exe"),
+                FileName = LoaderToolLocator.GetExecutable(typeof(PackageBuilder).Assembly.Location),
                 Arguments = arguments,
                 WorkingDirectory = Environment.CurrentDirectory,
                 CreateNoWindow = true,

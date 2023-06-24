@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -95,7 +95,7 @@ namespace Stride.Engine.Processors
 
         internal void UpdateTransformations(FastCollection<TransformComponent> transformationComponents)
         {
-            Dispatcher.ForEach(transformationComponents, UpdateTransformationAndChildren);
+            Dispatcher.ForEach(transformationComponents, UpdateTransformationsRecursive);
 
             // Re-update model node links to avoid one frame delay compared reference model (ideally entity should be sorted to avoid this in future).
             if (ModelNodeLinkProcessor != null)
@@ -105,36 +105,18 @@ namespace Stride.Engine.Processors
                 {
                     modelNodeLinkComponents.Add(modelNodeLink.Entity.Transform);
                 }
-                Dispatcher.ForEach(modelNodeLinkComponents, UpdateTransformationAndChildren);
+                Dispatcher.ForEach(modelNodeLinkComponents, UpdateTransformationsRecursive);
             }
         }
 
-        private static void UpdateTransformationAndChildren(TransformComponent transformation)
+        private static void UpdateTransformationsRecursive(TransformComponent transform)
         {
-            UpdateTransformation(transformation);
-
-            // Recurse
-            if (transformation.Children.Count > 0)
-                UpdateTransformationsRecursive(transformation.Children);
-        }
-
-        private static void UpdateTransformationsRecursive(FastCollection<TransformComponent> transformationComponents)
-        {
-            foreach (var transformation in transformationComponents)
-            {
-                UpdateTransformation(transformation);
-
-                // Recurse
-                if (transformation.Children.Count > 0)
-                    UpdateTransformationsRecursive(transformation.Children);
-            }
-        }
-
-        private static void UpdateTransformation(TransformComponent transform)
-        {
-            // Update transform
             transform.UpdateLocalMatrix();
             transform.UpdateWorldMatrixInternal(false);
+            foreach (var child in transform.Children)
+            {
+                UpdateTransformationsRecursive(child);
+            }
         }
 
         /// <summary>

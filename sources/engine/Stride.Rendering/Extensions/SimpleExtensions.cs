@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using Stride.Graphics;
 using Stride.Graphics.Data;
@@ -60,9 +60,9 @@ namespace Stride.Extensions
 
         /// <summary>
         /// Determines whether the specified mesh draw data is simple.
-        /// A <see cref="MeshDrawData"/> is simple if:
-        /// * It contains only one <see cref="VertexBufferBindingData"/>, which must be simple.
-        /// * It contains either no <see cref="IndexBufferBindingData"/>, or a simple one.
+        /// A <see cref="MeshDraw"/> is simple if:
+        /// * It contains only one <see cref="VertexBufferBinding"/>, which must be simple.
+        /// * It contains either no <see cref="VertexBufferBinding"/>, or a simple one.
         /// * StartLocation is 0.
         /// * DrawCount is IndexBuffer.Count if there is an index buffer, otherwise VertexBuffers[0].Count.
         /// </summary>

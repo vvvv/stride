@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core.Assets;
@@ -20,7 +20,7 @@ namespace Stride.Core.Serialization
         /// <remarks>A reference type is either an <see cref="UrlReference"/> or a <see cref="UrlReference{T}"/>.</remarks>
         public static object CreateReference(Type referenceType, AssetId assetId, string assetUrl)
         {
-            if (assetId != null && assetUrl != null && IsUrlReferenceType(referenceType))
+            if (assetUrl != null && IsUrlReferenceType(referenceType))
             {
                 var urlReference = (UrlReferenceBase)AttachedReferenceManager.CreateProxyObject(referenceType, assetId, assetUrl);
 

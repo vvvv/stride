@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2013 SharpDX - Alexandre Mutel
@@ -144,7 +144,7 @@ namespace Stride.Graphics.GeometricPrimitives
                         float v = 1 - (float)j / tessellation;
 
                         float innerAngle = j * MathUtil.TwoPi / tessellation + MathUtil.Pi;
-                        float dx = (float)Math.Cos(innerAngle), dy = (float)Math.Sin(innerAngle);
+                        float dx = MathF.Cos(innerAngle), dy = MathF.Sin(innerAngle);
 
                         // Create a vertex.
                         var normal = new Vector3(dx, dy, 0);

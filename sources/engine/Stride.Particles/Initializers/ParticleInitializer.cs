@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Stride.Core;
@@ -16,7 +16,7 @@ namespace Stride.Particles.Initializers
         /// <param name="pool">Particle pool to target</param>
         /// <param name="startIdx">Starting index (included from the array)</param>
         /// <param name="endIdx">End index (excluded from the array)</param>
-        /// <param name="maxCapacity">Max pool capacity (loops after this point) so that it's possible for (endIdx < startIdx)</param>
+        /// <param name="maxCapacity">Max pool capacity (loops after this point) so that it's possible for (endIdx &lt; startIdx)</param>
         public abstract void Initialize(ParticlePool pool, int startIdx, int endIdx, int maxCapacity);
         /*
         {

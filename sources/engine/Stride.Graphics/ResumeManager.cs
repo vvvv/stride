@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Linq;
@@ -11,9 +11,11 @@ namespace Stride.Graphics
         private GraphicsDevice graphicsDevice;
         private bool deviceHasBeenDestroyed = false;
         private bool deviceHasBeenPaused = false;
+        private IServiceRegistry services;
 
         public ResumeManager(IServiceRegistry services)
         {
+            this.services = services;
             graphicsDevice = services.GetSafeServiceAs<IGraphicsDeviceService>().GraphicsDevice;
         }
 
@@ -124,7 +126,7 @@ namespace Stride.Graphics
                 {
                     if (resource.Reload != null)
                     {
-                        resource.Reload(resource);
+                        resource.Reload(resource, services);
                         resource.LifetimeState = GraphicsResourceLifetimeState.Active;
                     }
                 }

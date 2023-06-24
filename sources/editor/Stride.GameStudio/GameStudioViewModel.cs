@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -80,7 +80,7 @@ namespace Stride.GameStudio
 
         protected override void RestartAndCreateNewSession()
         {
-            restartArguments = "/NewProject" + GetCommonArguments();
+            restartArguments = "/NewProject";
             CloseAndRestart();
         }
 
@@ -100,7 +100,7 @@ namespace Stride.GameStudio
             if (sessionPath == null)
                 return;
 
-            restartArguments = $"\"{sessionPath.ToWindowsPath()}\"" + GetCommonArguments();
+            restartArguments = $"\"{sessionPath.ToWindowsPath()}\"";
             await CloseAndRestart();
         }
 
@@ -134,7 +134,7 @@ namespace Stride.GameStudio
                     StartInfo =
                     {
                         // Make sure to use .exe rather than .dll (.NET Core)
-                        FileName = Path.ChangeExtension(Assembly.GetExecutingAssembly().Location, ".exe"),
+                        FileName = LoaderToolLocator.GetExecutable(Assembly.GetExecutingAssembly().Location),
                         Arguments = restartArguments,
                     }
                 };
@@ -144,21 +144,6 @@ namespace Stride.GameStudio
             {
                 e.Ignore();
             }
-        }
-
-        private static string GetCommonArguments()
-        {
-            var arguments = "";
-
-            using (var debugger = VisualStudioDebugger.GetAttached())
-            {
-                if (debugger != null)
-                {
-                    arguments += $" /Reattach {debugger.ProcessId}";
-                }
-            }
-
-            return arguments;
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.IO;
@@ -50,7 +50,7 @@ namespace Stride.Core.Serialization.Contents
             if (magic != Magic)
             {
                 // Rewind
-                stream.NativeStream.Seek(-4, SeekOrigin.Current);
+                stream.UnderlyingStream.Seek(-4, SeekOrigin.Current);
                 return null;
             }
 

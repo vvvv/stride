@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -8,6 +8,7 @@ using Stride.Core;
 using Stride.Core.Annotations;
 using Stride.Core.Mathematics;
 using Stride.Graphics;
+using Half = Stride.Core.Mathematics.Half;
 
 namespace Stride.Rendering.Images
 {
@@ -408,7 +409,7 @@ namespace Stride.Rendering.Images
                 var downSizedTexture = originalColorBuffer;
                 if (i > 0)
                 {
-                    downSizedTexture = GetScopedRenderTarget(originalColorBuffer.Description, 1f / (float)Math.Pow(2f, i), originalColorBuffer.Description.Format);
+                    downSizedTexture = GetScopedRenderTarget(originalColorBuffer.Description, 1f / MathF.Pow(2f, i), originalColorBuffer.Description.Format);
                     textureScaler.SetInput(0, downscaledSources[i - 1]);
                     textureScaler.SetOutput(downSizedTexture);
                     textureScaler.Draw(context, "DownScale_Factor{0}", i);
@@ -428,6 +429,7 @@ namespace Stride.Rendering.Images
             // Creates all the levels with different CoC strengths.
             // (Skips level with CoC 0 which is always the original buffer.)
             combineLevelsEffect.Parameters.Set(CombineLevelsFromCoCKeys.LevelCount, cocLevels.Count);
+            combineLevelsEffect.EffectInstance.UpdateEffect(GraphicsDevice); //update needed if permutation changed and shader has a value array parameter
             combineLevelsEffect.SetInput(0, cocLinearDepthTexture);
             combineLevelsEffect.SetInput(1, blurredCoCTexture);
             combineLevelsEffect.SetInput(2, originalColorBuffer);
@@ -445,7 +447,7 @@ namespace Stride.Rendering.Images
 
                 var levelConfig = cocLevels[i];
                 var textureToBlur = downscaledSources[levelConfig.DownscaleFactor];
-                float downscaleFactor = 1f / (float)(Math.Pow(2f, levelConfig.DownscaleFactor));
+                float downscaleFactor = 1f / MathF.Pow(2f, levelConfig.DownscaleFactor);
                 var blurOutput = GetScopedRenderTarget(originalColorBuffer.Description, downscaleFactor, originalColorBuffer.Description.Format);
                 var blurOutputFront = NewScopedRenderTarget2D(blurOutput.Description);
                 float blurRadius = (MaxBokehSize * BokehSizeFactor) * levelConfig.CoCValue * downscaleFactor * originalColorBuffer.Width;

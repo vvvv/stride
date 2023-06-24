@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #pragma once
 
@@ -315,6 +315,15 @@ namespace Stride {
 					const float framerate = static_cast<float>(FbxTime::GetFrameRate(scene->GetGlobalSettings().GetTimeMode()));
 					auto oneFrame = FbxTime::GetOneFrameValue(scene->GetGlobalSettings().GetTimeMode());
 
+					//FIX: If scene->GetGlobalSettings().GetTimeMode() returns FbxTime::eFrames30Drop then oneFrame is going to be 0.
+					// This is (propably) undesired since time will increment by 0 in the next second loop, resulting in a infinite loop 
+					// that finally leads to a out-of-memory exception.
+
+					if (oneFrame <= 0) 
+						oneFrame = FbxTime::GetOneFrameValue(FbxTime::eNTSCDropFrame); // FbxTime::eNTSCDropFrame is equivalent to FbxTime::eFrames30Drop.
+					//Source: (FBX Docs : http://docs.autodesk.com/FBX/2014/ENU/FBX-SDK-Documentation/index.html?url=cpp_ref/class_fbx_time.html,topicNumber=cpp_ref_class_fbx_time_html29087af6-8c2c-4e9d-aede-7dc5a1c2436c)
+					//Refer to: enum EMode
+
 					// Step1: Pregenerate curve with discontinuities
 					int currentKeyIndices[4];
 					int currentEvaluationIndices[4];
@@ -517,7 +526,8 @@ namespace Stride {
 						if (camera->FieldOfViewY.GetCurve(animLayer))
 						{
 							curves[0] = camera->FieldOfViewY.GetCurve(animLayer);
-							auto FovAnimChannel = ProcessAnimationCurveVector<float>(animationClip, cameraComponentKey+"VerticalFieldOfView", 1, curves, camera->FieldOfViewY.Get(), false);
+							float defaultValue = static_cast<float>(camera->FieldOfViewY.Get());
+							auto FovAnimChannel = ProcessAnimationCurveVector<float>(animationClip, cameraComponentKey+"VerticalFieldOfView", 1, curves, defaultValue, false);
 
 							// TODO: Check again Max
 							//if (!exportedFromMaya)
@@ -528,20 +538,23 @@ namespace Stride {
 						if (camera->FocalLength.GetCurve(animLayer))
 						{
 							curves[0] = camera->FocalLength.GetCurve(animLayer);
-							auto flAnimChannel = ProcessAnimationCurveVector<float>(animationClip, cameraComponentKey+"VerticalFieldOfView", 1, curves, camera->FocalLength.Get(), false);
+							float defaultValue = static_cast<float>(camera->FocalLength.Get());
+							auto flAnimChannel = ProcessAnimationCurveVector<float>(animationClip, cameraComponentKey+"VerticalFieldOfView", 1, curves, defaultValue, false);
 							ComputeFovFromFL(flAnimChannel, camera);
 						}
 
 						if (camera->NearPlane.GetCurve(animLayer))
 						{
 							curves[0] = camera->NearPlane.GetCurve(animLayer);
-							ProcessAnimationCurveVector<float>(animationClip, cameraComponentKey+"NearClipPlane", 1, curves, camera->NearPlane.Get(), false);
+							float defaultValue = static_cast<float>(camera->NearPlane.Get());
+							ProcessAnimationCurveVector<float>(animationClip, cameraComponentKey+"NearClipPlane", 1, curves, defaultValue, false);
 						}
 
 						if (camera->FarPlane.GetCurve(animLayer))
 						{
 							curves[0] = camera->FarPlane.GetCurve(animLayer);
-							ProcessAnimationCurveVector<float>(animationClip, cameraComponentKey+"FarClipPlane", 1, curves, camera->FarPlane.Get(), false);
+							float defaultValue = static_cast<float>(camera->FarPlane.Get());
+							ProcessAnimationCurveVector<float>(animationClip, cameraComponentKey+"FarClipPlane", 1, curves, defaultValue, false);
 						}
 					}
 					if (importCustomAttributeAnimations)
@@ -561,7 +574,7 @@ namespace Stride {
 
 							// extract the animation from the property
 							auto channelCount = lCurveNode->GetChannelsCount();
-							for (int c = 0; c<channelCount && c<3; ++c)
+							for (unsigned int c = 0; c<channelCount && c<3; ++c)
 								curves[c] = lCurveNode->GetCurve(c);
 
 							FbxDataType lDataType = lProperty.GetPropertyDataType();
@@ -625,9 +638,9 @@ namespace Stride {
 						{
 							parentNodeName = sceneMapping->FindNode(parentNode).Name;
 						}
-
-						float start = animStart.GetSecondDouble();
-						float end = animEnd.GetSecondDouble();
+						
+						FbxLongLong start = static_cast<FbxLongLong>(animStart.GetSecondDouble());
+						FbxLongLong end = static_cast<FbxLongLong>(animEnd.GetSecondDouble());
 
 						FbxTime sampling_period = FbxTimeSeconds(1.f / 60.0f);
 						bool loop_again = true;
@@ -656,9 +669,6 @@ namespace Stride {
 							scalingFrames->Add(KeyFrameData<Vector3>(time, scaling));
 							translationFrames->Add(KeyFrameData<Vector3>(time, translation));
 							rotationFrames->Add(KeyFrameData<Quaternion>(time, rotation));
-							//System::Diagnostics::Debug::WriteLine("[{0}] Parent:{1} Transform.Position[{2}] = {3}", t, parentNodeName, nodeName, translation);
-							//System::Diagnostics::Debug::WriteLine("[{0}] Parent:{1} Transform.Rotation[{2}] = {3}", t, parentNodeName, nodeName, rotation);
-							//System::Diagnostics::Debug::WriteLine("[{0}] Parent:{1} Transform.Scale[{2}] = {3}", t, parentNodeName, nodeName, scaling);
 						}
 
 						CreateCurve(animationClip, String::Format("Transform.Position[{0}]", nodeName), translationFrames);

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -89,8 +89,8 @@ namespace Stride.Particles.ShapeBuilders
                 {
                     var rotationAngle = GetParticleRotation(particle, angleField, lifeField);
 
-                    var cosA = (float)Math.Cos(rotationAngle);
-                    var sinA = (float)Math.Sin(rotationAngle);
+                    var cosA = MathF.Cos(rotationAngle);
+                    var sinA = MathF.Sin(rotationAngle);
                     var tempX = unitX * cosA - unitY * sinA;
                     unitY = unitY * cosA + unitX * sinA;
                     unitX = tempX;

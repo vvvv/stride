@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core.Reflection;
@@ -24,15 +24,17 @@ namespace Stride.Core.Quantum
 
             if (value == null) throw new ArgumentNullException(nameof(value));
 
-            var collectionDescriptor = descriptor as CollectionDescriptor;
-            if (collectionDescriptor != null)
+            if (descriptor is CollectionDescriptor collectionDescriptor)
             {
-                return collectionDescriptor.GetValue(value, index.Int);
+                return collectionDescriptor.GetValue(value, index.Value);
             }
-            var dictionaryDescriptor = descriptor as DictionaryDescriptor;
-            if (dictionaryDescriptor != null)
+            else if (descriptor is DictionaryDescriptor dictionaryDescriptor)
             {
                 return dictionaryDescriptor.GetValue(value, index.Value);
+            }
+            else if (descriptor is ArrayDescriptor arrayDescriptor)
+            {
+                return arrayDescriptor.GetValue(value, (int)index.Value);
             }
 
             // Try with the concrete type descriptor

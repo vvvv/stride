@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -8,6 +8,7 @@ using Stride.Particles.Initializers;
 using Stride.Particles.Sorters;
 using Stride.Particles.VertexLayouts;
 using Stride.Particles.ShapeBuilders.Tools;
+using System.Runtime.CompilerServices;
 
 namespace Stride.Particles.ShapeBuilders
 {
@@ -194,11 +195,11 @@ namespace Stride.Particles.ShapeBuilders
 
                 particleCapacity = requiredCapacity;
 
-                int positionDataSize = Utilities.SizeOf<Vector3>() * particleCapacity;
+                int positionDataSize = Unsafe.SizeOf<Vector3>() * particleCapacity;
                 positionDataSize = (positionDataSize % 4 == 0) ? positionDataSize : (positionDataSize + 4 - (positionDataSize % 4));
                 positionData = Utilities.AllocateMemory(positionDataSize);
 
-                int sizeDataSize = Utilities.SizeOf<float>() * particleCapacity;
+                int sizeDataSize = sizeof(float) * particleCapacity;
                 sizeDataSize = (sizeDataSize % 4 == 0) ? sizeDataSize : (sizeDataSize + 4 - (sizeDataSize % 4));
                 sizeData = Utilities.AllocateMemory(sizeDataSize);
             }

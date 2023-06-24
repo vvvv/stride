@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.Collections.Generic;
@@ -20,7 +20,11 @@ namespace Stride.Graphics
 
         private int boundScissorCount;
         private readonly Rectangle[] scissors = new Rectangle[MaxViewportAndScissorRectangleCount];
+
+#pragma warning disable 414 // The field 'CommandList.scissorsDirty' is assigned but its value is never used
+        // This field is used in CommandList.Direct3D12.cs and CommandList.Vulkan.cs
         private bool scissorsDirty = false;
+#pragma warning restore 414
 
         private Texture depthStencilBuffer;
 

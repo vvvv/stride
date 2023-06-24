@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System.Collections.Generic;
@@ -27,7 +27,7 @@ namespace Stride.Physics
         private readonly List<CharacterComponent> characters = new List<CharacterComponent>();
 
         private Bullet2PhysicsSystem physicsSystem;
-        private SceneSystem sceneSystem;
+        private Scene parentScene;
         private Scene debugScene;
 
         private bool colliderShapesRendering;
@@ -37,7 +37,35 @@ namespace Stride.Physics
         public PhysicsProcessor()
             : base(typeof(TransformComponent))
         {
-            Order = 0xFFFF;
+            Order = 0xFFFE;
+        }
+
+        /// <summary>
+        /// Gets or sets the associated parent scene to render the physics debug shapes. Assigned with default one on <see cref="OnSystemAdd"/>
+        /// </summary>
+        /// <value>
+        /// The parent scene.
+        /// </value>
+        public Scene ParentScene
+        {
+            get => parentScene;
+            set
+            {
+                if (value != parentScene)
+                {
+                    if (parentScene != null && debugShapeRendering.Enabled)
+                    {
+                        // If debug rendering is running, disable it and re-enable for new scene system
+                        RenderColliderShapes(false);
+                        parentScene = value;
+                        RenderColliderShapes(true);
+                    }
+                    else
+                    {
+                        parentScene = value;
+                    }
+                }
+            }
         }
 
         public Simulation Simulation { get; private set; }
@@ -58,8 +86,9 @@ namespace Stride.Physics
                     {
                         element.RemoveDebugEntity(debugScene);
                     }
-
-                    sceneSystem.SceneInstance.RootScene.Children.Remove(debugScene);
+                    
+                    // Remove from parent scene
+                    debugScene.Parent = null;
                 }
             }
             else
@@ -74,7 +103,7 @@ namespace Stride.Physics
                     }
                 }
 
-                sceneSystem.SceneInstance.RootScene.Children.Add(debugScene);
+                debugScene.Parent = parentScene;
             }
         }
 
@@ -130,7 +159,7 @@ namespace Stride.Physics
 
         private void ComponentRemoval(PhysicsComponent component)
         {
-            Simulation.CleanContacts(component);
+            Simulation.ClearCollisionDataOf(component);
 
             if (component.BoneIndex != -1)
             {
@@ -183,7 +212,7 @@ namespace Stride.Physics
 
             Simulation = physicsSystem.Create(this);
 
-            sceneSystem = Services.GetSafeServiceAs<SceneSystem>();
+            parentScene = Services.GetSafeServiceAs<SceneSystem>()?.SceneInstance?.RootScene;
         }
 
         protected override void OnSystemRemove()
@@ -234,19 +263,6 @@ namespace Stride.Physics
             foreach (var element in boneElements)
             {
                 element.UpdateBones();
-            }
-        }
-
-        public void UpdateContacts()
-        {
-            foreach (var dataPair in ComponentDatas)
-            {
-                var data = dataPair.Value;
-                var shouldProcess = data.PhysicsComponent.ProcessCollisions || ((data.PhysicsComponent as PhysicsTriggerComponentBase)?.IsTrigger ?? false);
-                if (data.PhysicsComponent.Enabled && shouldProcess && data.PhysicsComponent.ColliderShape != null)
-                {
-                    Simulation.ContactTest(data.PhysicsComponent);
-                }
             }
         }
 

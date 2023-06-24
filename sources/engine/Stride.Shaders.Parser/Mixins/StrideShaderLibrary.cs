@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -34,11 +34,6 @@ namespace Stride.Shaders.Parser.Mixins
         /// Load function
         /// </summary>
         public ShaderLoader ShaderLoader { get; private set; }
-
-        /// <summary>
-        /// Log of all the warnings and errors
-        /// </summary>
-        public LoggerResult ErrorWarningLog = new LoggerResult();
 
         /// <summary>
         /// The source hashes
@@ -319,18 +314,17 @@ namespace Stride.Shaders.Parser.Mixins
             if (!SourceHashes.ContainsKey(classSource.ClassName))
                 SourceHashes.Add(classSource.ClassName, shaderClass.SourceHash);
 
-            // check if it was a generic class and find out if the instanciation was correct
-            if (shaderType.GenericParameters.Count > 0)
+            // check if it was a generic class and find out if the instantiation was correct
+            var genCount = Math.Max(shaderType.GenericParameters.Count, shaderType.ShaderGenerics.Count);
+            var argCount = classSource.GenericArguments?.Length ?? 0;
+            if (genCount > argCount)
             {
-                if (classSource.GenericArguments == null || classSource.GenericArguments.Length == 0 || shaderType.GenericParameters.Count > classSource.GenericArguments.Length)
-                {
-                    mixinInfo.Instanciated = false;
-                    mixinInfo.Log.Error(StrideMessageCode.ErrorClassSourceNotInstantiated, shaderType.Span, classSource.ClassName);
-                }
-                else
-                {
-                    ModuleMixinInfo.CleanIdentifiers(shaderType.GenericParameters.Select(x => x.Name).ToList());
-                }
+                mixinInfo.Instanciated = false;
+                mixinInfo.Log.Error(StrideMessageCode.ErrorClassSourceNotInstantiated, shaderType.Span, classSource.ClassName, argCount, genCount);
+            }
+            else if (shaderType.GenericParameters.Count > 0)
+            {
+                ModuleMixinInfo.CleanIdentifiers(shaderType.GenericParameters.Select(x => x.Name).ToList());
             }
 
             mixinInfo.MixinAst = shaderType;

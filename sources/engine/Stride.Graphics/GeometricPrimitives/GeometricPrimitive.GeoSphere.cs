@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2013 SharpDX - Alexandre Mutel
@@ -264,8 +264,8 @@ namespace Stride.Graphics.GeometricPrimitives
                         var pos = normal * radius;
 
                         // calculate texture coordinates for this vertex
-                        float longitude = (float)Math.Atan2(normal.X, -normal.Z);
-                        float latitude = (float)Math.Acos(normal.Y);
+                        float longitude = MathF.Atan2(normal.X, -normal.Z);
+                        float latitude = MathF.Acos(normal.Y);
 
                         float u = (float)(longitude / (Math.PI * 2.0) + 0.5);
                         float v = (float)(latitude / Math.PI);

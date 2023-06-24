@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -26,6 +26,8 @@ namespace Stride.Assets.Presentation.AssetEditors.GameEditor.Game
         public Color3 Color { get; set; } = (Color3)new Color(180, 180, 180);
 
         public float Alpha { get; set; } = 0.35f;
+
+        public int AxisIndex { get; set; } = 1;
 
         public override IEnumerable<Type> Dependencies { get { yield return typeof(IEditorGameCameraService); } }
 
@@ -61,7 +63,7 @@ namespace Stride.Assets.Presentation.AssetEditors.GameEditor.Game
             while (!IsDisposed)
             {
                 grid.IsEnabled = IsActive;
-                grid.Update(Color, game.EditorServices.Get<IEditorGameCameraService>().SceneUnit);
+                grid.Update(Color, Alpha, AxisIndex, game.EditorServices.Get<IEditorGameCameraService>().SceneUnit);
                 await game.Script.NextFrame();
             }
         }

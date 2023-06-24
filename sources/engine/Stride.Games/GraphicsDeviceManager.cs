@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2013 SharpDX - Alexandre Mutel
@@ -23,6 +23,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Stride.Core;
 using Stride.Core.Diagnostics;
 using Stride.Graphics;
@@ -487,10 +488,10 @@ namespace Stride.Games
             switch (GraphicsDevice.GraphicsDeviceStatus)
             {
                 case GraphicsDeviceStatus.Removed:
-                    Utilities.Sleep(TimeSpan.FromMilliseconds(20));
+                    Thread.Sleep(TimeSpan.FromMilliseconds(20));
                     return false;
                 case GraphicsDeviceStatus.Reset:
-                    Utilities.Sleep(TimeSpan.FromMilliseconds(20));
+                    Thread.Sleep(TimeSpan.FromMilliseconds(20));
                     try
                     {
                         ChangeOrCreateDevice(true);
@@ -648,26 +649,12 @@ namespace Stride.Games
             if (PreferredColorSpace == ColorSpace.Linear)
             {
                 // If the device support SRgb and ColorSpace is linear, we use automatically a SRgb backbuffer
-                if (preferredParameters.PreferredBackBufferFormat == PixelFormat.R8G8B8A8_UNorm)
-                {
-                    preferredParameters.PreferredBackBufferFormat = PixelFormat.R8G8B8A8_UNorm_SRgb;
-                }
-                else if (preferredParameters.PreferredBackBufferFormat == PixelFormat.B8G8R8A8_UNorm)
-                {
-                    preferredParameters.PreferredBackBufferFormat = PixelFormat.B8G8R8A8_UNorm_SRgb;
-                }
+                preferredParameters.PreferredBackBufferFormat = preferredParameters.PreferredBackBufferFormat.ToSRgb();
             }
             else
             {
                 // If we are looking for gamma and the backbuffer format is SRgb, switch back to non srgb
-                if (preferredParameters.PreferredBackBufferFormat == PixelFormat.R8G8B8A8_UNorm_SRgb)
-                {
-                    preferredParameters.PreferredBackBufferFormat = PixelFormat.R8G8B8A8_UNorm;
-                }
-                else if (preferredParameters.PreferredBackBufferFormat == PixelFormat.B8G8R8A8_UNorm_SRgb)
-                {
-                    preferredParameters.PreferredBackBufferFormat = PixelFormat.B8G8R8A8_UNorm;
-                }
+                preferredParameters.PreferredBackBufferFormat = preferredParameters.PreferredBackBufferFormat.ToNonSRgb();
             }
 
             // Setup resized value if there is a resize pending
@@ -1053,6 +1040,7 @@ namespace Stride.Games
                             {
                                 try
                                 {
+                                    GraphicsDevice.ColorSpace = graphicsDeviceInformation.PresentationParameters.ColorSpace;
                                     var newWidth = graphicsDeviceInformation.PresentationParameters.BackBufferWidth;
                                     var newHeight = graphicsDeviceInformation.PresentationParameters.BackBufferHeight;
                                     var newFormat = graphicsDeviceInformation.PresentationParameters.BackBufferFormat;
@@ -1084,9 +1072,6 @@ namespace Stride.Games
                         {
                             throw new InvalidOperationException("Unexpected null GraphicsDevice");
                         }
-
-                        // Make sure to copy back coolor space to GraphicsDevice
-                        GraphicsDevice.ColorSpace = graphicsDeviceInformation.PresentationParameters.ColorSpace;
 
                         var presentationParameters = GraphicsDevice.Presenter.Description;
                         isReallyFullScreen = presentationParameters.IsFullScreen;

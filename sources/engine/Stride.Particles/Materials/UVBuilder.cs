@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Stride.Core;
@@ -18,7 +18,7 @@ namespace Stride.Particles.Materials
         /// (base texture coordinates may differ depending on the actual shape)
         /// </summary>
         /// <param name="bufferState">The particle buffer state which is used to build the assigned vertex buffer</param>
-        /// <param name="sorter"><see cref="ParticleSorter"/> to use to iterate over all particles drawn this frame</param>
+        /// <param name="sorter"><see cref="ParticleList"/> to use to iterate over all particles drawn this frame</param>
         /// <param name="texCoordsDescription">Attribute description of the texture coordinates in the current vertex layout</param>
         public abstract void BuildUVCoordinates(ref ParticleBufferState bufferState, ref ParticleList sorter, AttributeDescription texCoordsDescription);
     }

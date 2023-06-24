@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections;
@@ -47,16 +47,22 @@ namespace Stride.Core.Assets.Analysis
                 base.VisitArray(array, descriptor);
             }
 
-            public override void VisitCollection(IEnumerable collection, CollectionDescriptor descriptor)
-            {
-                Fixup(collection);
-                base.VisitCollection(collection, descriptor);
-            }
-
             public override void VisitDictionary(object dictionary, DictionaryDescriptor descriptor)
             {
                 Fixup(dictionary);
                 base.VisitDictionary(dictionary, descriptor);
+            }
+
+            public override void VisitSet(IEnumerable set, SetDescriptor descriptor)
+            {
+                Fixup(set);
+                base.VisitSet(set, descriptor);
+            }
+
+            public override void VisitCollection(IEnumerable collection, CollectionDescriptor descriptor)
+            {
+                Fixup(collection);
+                base.VisitCollection(collection, descriptor);
             }
 
             /// <summary>

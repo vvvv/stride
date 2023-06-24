@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // Copyright (c) 2010-2012 SharpDX - Alexandre Mutel
@@ -799,7 +799,7 @@ namespace Stride.Graphics
                 if (!IsIndexBufferDynamic)
                 {
                     IndexBuffer = Buffer.Index.New(device, resourceBufferInfo.StaticIndices).DisposeBy(this);
-                    IndexBuffer.Reload = graphicsResource => ((Buffer)graphicsResource).Recreate(resourceBufferInfo.StaticIndices);
+                    IndexBuffer.Reload = (graphicsResource, services) => ((Buffer)graphicsResource).Recreate(resourceBufferInfo.StaticIndices);
                 }
 
                 InputElements = declaration.CreateInputElements();

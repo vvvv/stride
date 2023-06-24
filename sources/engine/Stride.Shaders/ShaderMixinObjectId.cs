@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.IO;
@@ -23,16 +23,17 @@ namespace Stride.Shaders
         private static object generatorLock = new object();
         private static ShaderMixinObjectId generator;
 
-        private readonly NativeMemoryStream memStream;
+        private readonly UnmanagedMemoryStream memStream;
         private readonly HashSerializationWriter writer;
         private ObjectIdBuilder objectIdBuilder;
         private IntPtr buffer;
 
-        private ShaderMixinObjectId()
+        private unsafe ShaderMixinObjectId()
         {
             objectIdBuilder = new ObjectIdBuilder();
-            buffer = Marshal.AllocHGlobal(65536);
-            memStream = new NativeMemoryStream(buffer, 65536);
+            const int size = 1 << 16;
+            buffer = Marshal.AllocHGlobal(size);
+            memStream = new UnmanagedMemoryStream((byte*)buffer, size, capacity: size, access: FileAccess.Write);
             writer = new HashSerializationWriter(memStream);
             writer.Context.SerializerSelector = new SerializerSelector("Default", "Hash");
         }

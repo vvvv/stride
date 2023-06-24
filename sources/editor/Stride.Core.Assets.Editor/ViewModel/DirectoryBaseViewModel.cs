@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -165,8 +165,7 @@ namespace Stride.Core.Assets.Editor.ViewModel
         /// <param name="newParent">The nwe parent of this directory.</param>
         protected void SetParent(DirectoryBaseViewModel oldParent, DirectoryBaseViewModel newParent)
         {
-            var directory = this as DirectoryViewModel;
-            if (directory == null) throw new InvalidOperationException("Can't change the parent of this folder");
+            if (this is not DirectoryViewModel directory) throw new InvalidOperationException("Can't change the parent of this folder");
 
             Dispatcher.Invoke(() =>
             {
@@ -206,15 +205,12 @@ namespace Stride.Core.Assets.Editor.ViewModel
 
             foreach (var child in children)
             {
-                var mountPoint = child as MountPointViewModel;
-                var directory = child as DirectoryViewModel;
-                var asset = child as AssetViewModel;
-                if (mountPoint != null)
+                if (child is MountPointViewModel mountPoint)
                 {
                     message = DragDropBehavior.InvalidDropAreaMessage;
                     return false;
                 }
-                if (directory != null)
+                if (child is DirectoryViewModel directory)
                 {
                     if (directory == this)
                     {
@@ -224,11 +220,6 @@ namespace Stride.Core.Assets.Editor.ViewModel
                     if (directory.Root.GetType() != Root.GetType())
                     {
                         message = "Incompatible folder";
-                        return false;
-                    }
-                    if (directory.Root is ProjectViewModel && Root != directory.Root)
-                    {
-                        message = "Can't move source files between projects";
                         return false;
                     }
                     if (SubDirectories.Any(x => x.Name == directory.Name))
@@ -252,7 +243,7 @@ namespace Stride.Core.Assets.Editor.ViewModel
                         currentParent = currentParent.Parent;
                     }
                 }
-                else if (asset != null)
+                else if (child is AssetViewModel asset)
                 {
                     if (asset.IsLocked)
                     {
@@ -272,11 +263,6 @@ namespace Stride.Core.Assets.Editor.ViewModel
                     if (asset.Directory.Root.GetType() != Root.GetType())
                     {
                         message = "Incompatible folder";
-                        return false;
-                    }
-                    if (asset.Directory.Root is ProjectViewModel && Root != asset.Directory.Root)
-                    {
-                        message = "Can't move source files between projects";
                         return false;
                     }
                 }

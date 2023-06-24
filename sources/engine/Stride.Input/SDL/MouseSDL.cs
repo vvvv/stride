@@ -1,11 +1,12 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 #if STRIDE_UI_SDL
 using System;
-using SDL2;
+using Silk.NET.SDL;
 using Stride.Core.Mathematics;
-using Stride.Graphics.SDL;
+using Point = Stride.Core.Mathematics.Point;
+using Window = Stride.Graphics.SDL.Window;
 
 namespace Stride.Input
 {
@@ -20,18 +21,20 @@ namespace Stride.Input
         {
             Source = source;
             this.uiControl = uiControl;
-            
+
             uiControl.MouseMoveActions += OnMouseMoveEvent;
             uiControl.PointerButtonPressActions += OnMouseInputEvent;
             uiControl.PointerButtonReleaseActions += OnMouseInputEvent;
             uiControl.MouseWheelActions += OnMouseWheelEvent;
             uiControl.ResizeEndActions += OnSizeChanged;
-            OnSizeChanged(new SDL.SDL_WindowEvent());
+            OnSizeChanged(new WindowEvent());
+
+            Id = InputDeviceUtils.DeviceNameToGuid(uiControl.SdlHandle.ToString() + Name);
         }
         
         public override string Name => "SDL Mouse";
 
-        public override Guid Id => new Guid("0ccaf48e-e371-4b34-b6bb-a3720f6742a8");
+        public override Guid Id { get; }
 
         public override bool IsPositionLocked => isMousePositionLocked;
 
@@ -82,22 +85,22 @@ namespace Stride.Input
             uiControl.RelativeCursorPosition = new Point((int)position.X, (int)position.Y);
         }
         
-        private void OnSizeChanged(SDL.SDL_WindowEvent eventArgs)
+        private void OnSizeChanged(WindowEvent eventArgs)
         {
             SetSurfaceSize(new Vector2(uiControl.ClientSize.Width, uiControl.ClientSize.Height));
         }
 
-        private void OnMouseWheelEvent(SDL.SDL_MouseWheelEvent sdlMouseWheelEvent)
+        private void OnMouseWheelEvent(Silk.NET.SDL.MouseWheelEvent sdlMouseWheelEvent)
         {
-            var flip = sdlMouseWheelEvent.direction == (uint)SDL.SDL_MouseWheelDirection.SDL_MOUSEWHEEL_FLIPPED ? -1 : 1;
-            MouseState.HandleMouseWheel(sdlMouseWheelEvent.y * flip);
+            var flip = sdlMouseWheelEvent.Direction == (uint)MouseWheelDirection.MousewheelFlipped ? -1 : 1;
+            MouseState.HandleMouseWheel(sdlMouseWheelEvent.Y * flip);
         }
 
-        private void OnMouseInputEvent(SDL.SDL_MouseButtonEvent e)
+        private void OnMouseInputEvent(Silk.NET.SDL.MouseButtonEvent e)
         {
-            MouseButton button = ConvertMouseButton(e.button);
+            MouseButton button = ConvertMouseButton(e.Button);
 
-            if (e.type == SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN)
+            if ((EventType)e.Type == EventType.Mousebuttondown)
             {
                 MouseState.HandleButtonDown(button);
             }
@@ -107,35 +110,44 @@ namespace Stride.Input
             }
         }
 
-        private void OnMouseMoveEvent(SDL.SDL_MouseMotionEvent e)
+        private void OnMouseMoveEvent(MouseMotionEvent e)
         {
             if (IsPositionLocked)
             {
-                MouseState.HandleMouseDelta(new Vector2(e.xrel, e.yrel));
+                MouseState.HandleMouseDelta(new Vector2(e.Xrel, e.Yrel));
             }
             else
             {
-                MouseState.HandleMove(new Vector2(e.x, e.y));
+                MouseState.HandleMove(new Vector2(e.X, e.Y));
             }
         }
 
         private static MouseButton ConvertMouseButton(uint mouseButton)
         {
-            switch (mouseButton)
+            switch ((SdlMouseButton)mouseButton)
             {
-                case SDL.SDL_BUTTON_LEFT:
+                case SdlMouseButton.Left:
                     return MouseButton.Left;
-                case SDL.SDL_BUTTON_RIGHT:
+                case SdlMouseButton.Right:
                     return MouseButton.Right;
-                case SDL.SDL_BUTTON_MIDDLE:
+                case SdlMouseButton.Middle:
                     return MouseButton.Middle;
-                case SDL.SDL_BUTTON_X1:
+                case SdlMouseButton.X1:
                     return MouseButton.Extended1;
-                case SDL.SDL_BUTTON_X2:
+                case SdlMouseButton.X2:
                     return MouseButton.Extended2;
             }
 
             return (MouseButton)(-1);
+        }
+
+        enum SdlMouseButton
+        {
+            Left = 1,
+            Middle = 2,
+            Right = 3,
+            X1 = 4,
+            X2 = 5,
         }
     }
 }

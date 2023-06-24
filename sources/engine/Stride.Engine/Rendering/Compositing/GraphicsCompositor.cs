@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -24,7 +24,7 @@ namespace Stride.Rendering.Compositing
     public class GraphicsCompositor : RendererBase
     {
         /// <summary>
-        /// A property key to get the current graphics compositor from the <see cref="RenderContext.Tags"/>.
+        /// A property key to get the current <see cref="GraphicsCompositor"/> from the <see cref="RenderContext.Tags"/>.
         /// </summary>
         public static readonly PropertyKey<GraphicsCompositor> Current = new PropertyKey<GraphicsCompositor>("GraphicsCompositor.Current", typeof(GraphicsCompositor));
 

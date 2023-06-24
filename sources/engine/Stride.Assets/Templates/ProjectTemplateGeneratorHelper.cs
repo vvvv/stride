@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -120,11 +120,8 @@ namespace Stride.Assets.Templates
                     package.Session.Projects.Remove(existingProject);
                 }
 
-                if (platform.Platform.Type == PlatformType.Windows)
-                {
-                    var isNETCore = RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
-                    AddOption(parameters, "TargetFramework", isNETCore ? "netcoreapp3.1" : "net461");
-                }
+                AddOption(parameters, "TargetFramework", platform.Platform.TargetFramework);
+                AddOption(parameters, "RuntimeIdentifier", platform.Platform.RuntimeIdentifier);
 
                 var projectDirectory = Path.GetDirectoryName(projectFullPath.ToWindowsPath());
                 if (projectDirectory != null && Directory.Exists(projectDirectory))
@@ -280,12 +277,6 @@ namespace Stride.Assets.Templates
 
             AddOption(parameters, "ProjectType", projectType);
             AddOption(parameters, "Namespace", parameters.Namespace ?? Utilities.BuildValidNamespaceName(package.Meta.Name));
-
-            if (platformType == PlatformType.Windows)
-            {
-                var isNETCore = RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
-                AddOption(parameters, "TargetFramework", isNETCore ? "netcoreapp3.1" : "net461");
-            }
 
             return projectTemplate;
         }

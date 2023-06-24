@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections;
@@ -124,7 +124,14 @@ namespace Stride.Core.Yaml
             while (enumerator.MoveNext())
             {
                 collectionDescriptor.Add(targetCollection, enumerator.Value);
-                identifier.Add(i, (ItemId)enumerator.Key);
+                if (targetDescriptor.Category == DescriptorCategory.Set)
+                {
+                    identifier.Add(enumerator.Value, (ItemId)enumerator.Key);
+                }
+                else
+                {
+                    identifier.Add(i, (ItemId)enumerator.Key);
+                }
                 ++i;
             }
             if (deletedItems != null)

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -50,8 +50,8 @@ namespace Stride.Navigation
         public static void SnapBoundingBoxToCellHeight(NavigationMeshBuildSettings settings, ref BoundingBox boundingBox)
         {
             // Snap Y to tile height to avoid height differences between tiles
-            boundingBox.Minimum.Y = (float)Math.Floor(boundingBox.Minimum.Y / settings.CellHeight) * settings.CellHeight;
-            boundingBox.Maximum.Y = (float)Math.Ceiling(boundingBox.Maximum.Y / settings.CellHeight) * settings.CellHeight;
+            boundingBox.Minimum.Y = MathF.Floor(boundingBox.Minimum.Y / settings.CellHeight) * settings.CellHeight;
+            boundingBox.Maximum.Y = MathF.Ceiling(boundingBox.Maximum.Y / settings.CellHeight) * settings.CellHeight;
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using Stride.Core.Assets;
 using Stride.Physics;
@@ -36,6 +36,19 @@ namespace Stride.Assets.Physics
         public static ColliderShapeAsset Create()
         {
             return new ColliderShapeAsset { ColliderShapes = { new ConvexHullColliderShapeDesc() } };
+        }
+
+        public override ColliderShapeAsset New()
+        {
+            return Create();
+        }
+    }
+
+    public class ColliderShapeStaticMeshFactory : AssetFactory<ColliderShapeAsset>
+    {
+        public static ColliderShapeAsset Create()
+        {
+            return new ColliderShapeAsset { ColliderShapes = { new StaticMeshColliderShapeDesc() } };
         }
 
         public override ColliderShapeAsset New()

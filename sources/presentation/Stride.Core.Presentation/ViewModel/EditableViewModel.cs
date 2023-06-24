@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -293,7 +293,7 @@ namespace Stride.Core.Presentation.ViewModel
             {
                 var toIListMethod = sender.GetType().GetMethod("ToIList");
                 if (toIListMethod != null)
-                    list = (IList)toIListMethod.Invoke(sender, new object[0]);
+                    list = (IList)toIListMethod.Invoke(sender, Array.Empty<object>());
             }
             if (!UndoRedoService.UndoRedoInProgress && !suspendedCollections.Contains(collectionName))
             {

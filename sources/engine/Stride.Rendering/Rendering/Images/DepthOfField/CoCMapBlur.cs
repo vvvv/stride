@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core.Mathematics;
@@ -85,7 +85,7 @@ namespace Stride.Rendering.Images
 
             // Blur in one direction
             var blurAngle = 0f;
-            cocBlurEffect.Parameters.Set(CoCMapBlurShaderKeys.Direction, new Vector2((float)Math.Cos(blurAngle), (float)Math.Sin(blurAngle)));
+            cocBlurEffect.Parameters.Set(CoCMapBlurShaderKeys.Direction, new Vector2(MathF.Cos(blurAngle), MathF.Sin(blurAngle)));
 
             var firstBlurTexture = NewScopedRenderTarget2D(originalTexture.Description);
             cocBlurEffect.SetInput(0, originalTexture);
@@ -94,7 +94,7 @@ namespace Stride.Rendering.Images
 
             // Second blur pass to ouput the final result
             blurAngle = MathUtil.PiOverTwo;
-            cocBlurEffect.Parameters.Set(CoCMapBlurShaderKeys.Direction, new Vector2((float)Math.Cos(blurAngle), (float)Math.Sin(blurAngle)));
+            cocBlurEffect.Parameters.Set(CoCMapBlurShaderKeys.Direction, new Vector2(MathF.Cos(blurAngle), MathF.Sin(blurAngle)));
 
             cocBlurEffect.SetInput(0, firstBlurTexture);
             cocBlurEffect.SetOutput(outputTexture);

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -210,12 +210,12 @@ namespace Stride.Rendering.Images
             if (AutoKeyValue)
             {
                 // From "Perceptual effects in real-time tone mapping" by Grzegorz Krawczyk, Karol Myszkowski, Hans-Peter Seidel, p. 4, Equation 11
-                keyValue = 1.03f - (2.0f / (2.0f + (float)Math.Log10(adaptedLum + 1)));
+                keyValue = 1.03f - (2.0f / (2.0f + MathF.Log10(adaptedLum + 1)));
             }
 
             // Setup parameters
             Parameters.Set(ToneMapShaderKeys.LuminanceTexture, luminanceResult.LocalTexture);
-            Parameters.Set(ToneMapShaderKeys.LuminanceAverageGlobal, (float)Math.Log(adaptedLum, 2));
+            Parameters.Set(ToneMapShaderKeys.LuminanceAverageGlobal, MathF.Log(adaptedLum, 2));
             Parameters.Set(ToneMapShaderKeys.Exposure, (float)Math.Pow(2.0, Exposure));
             Parameters.Set(ToneMapShaderKeys.KeyValue, keyValue);
 

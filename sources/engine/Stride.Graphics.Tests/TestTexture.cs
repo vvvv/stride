@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -432,12 +432,12 @@ namespace Stride.Graphics.Tests
                     var device = game.GraphicsDevice;
                     var fileName = sourceFormat.ToFileExtension().Substring(1) + "Image";
                     var filePath = "ImageTypes/" + fileName;
-                        
+
                     // Load an image from a file and dispose it.
                     Texture texture;
                     using (var inStream = game.Content.OpenAsStream(filePath, StreamFlags.None))
                         texture = Texture.Load(device, inStream, loadAsSRGB: true);
-                        
+
                     game.GraphicsContext.DrawTexture(texture, BlendStates.AlphaBlend);
                 },
                 GraphicsProfile.Level_9_1);
@@ -449,7 +449,7 @@ namespace Stride.Graphics.Tests
             var data2 = texture.GetData<byte>(graphicsContext.CommandList);
 
             // Assert that data are the same
-            Assert.True(Utilities.Compare(data, data2));
+            Assert.True(data.AsSpan().SequenceEqual(data2.AsSpan()));
 
             // Sets new data on the gpu
             data[0] = 1;
@@ -460,7 +460,7 @@ namespace Stride.Graphics.Tests
             data2 = texture.GetData<byte>(graphicsContext.CommandList);
 
             // Assert that data are the same
-            Assert.True(Utilities.Compare(data, data2));
+            Assert.True(data.AsSpan().SequenceEqual(data2.AsSpan()));
         }
 
         [Theory]

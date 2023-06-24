@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -142,7 +142,7 @@ namespace Stride.UI.Panels
             }
 
             var validPosition = Math.Max(0, Math.Min(position, elementCount * modulo));
-            var inferiorQuotient = Math.Min(elementCount - 1, (float)Math.Floor(validPosition / modulo));
+            var inferiorQuotient = Math.Min(elementCount - 1, MathF.Floor(validPosition / modulo));
 
             distances.X = (inferiorQuotient+0) * modulo - validPosition;
             distances.Y = (inferiorQuotient+1) * modulo - validPosition;

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections;
@@ -28,7 +28,7 @@ namespace Stride.Rendering
         private EffectCompilerBase compiler;
         private readonly Dictionary<string, List<CompilerResults>> earlyCompilerCache = new Dictionary<string, List<CompilerResults>>();
         private Dictionary<EffectBytecode, Effect> cachedEffects = new Dictionary<EffectBytecode, Effect>();
-#if STRIDE_PLATFORM_WINDOWS_DESKTOP
+#if STRIDE_PLATFORM_DESKTOP
         private DirectoryWatcher directoryWatcher;
 #endif
         private bool isInitialized;
@@ -67,7 +67,7 @@ namespace Stride.Rendering
             // Get graphics device service
             base.InitGraphicsDeviceService();
 
-#if STRIDE_PLATFORM_WINDOWS_DESKTOP
+#if STRIDE_PLATFORM_DESKTOP
             Enabled = true;
             directoryWatcher = new DirectoryWatcher("*.sdsl");
             directoryWatcher.Modified += FileModifiedEvent;
@@ -98,7 +98,7 @@ namespace Stride.Rendering
                 isInitialized = false;
             }
 
-#if STRIDE_PLATFORM_WINDOWS_DESKTOP
+#if STRIDE_PLATFORM_DESKTOP
             if (directoryWatcher != null)
             {
                 directoryWatcher.Modified -= FileModifiedEvent;
@@ -158,13 +158,11 @@ namespace Stride.Rendering
 
             if (bytecode.Task != null && !bytecode.Task.IsCompleted)
             {
-                // Result was async, keep it async
-                // NOTE: There was some hangs when doing ContinueWith() (note: it might switch from EffectPriorityScheduler to TaskScheduler.Default, maybe something doesn't work well in this case?)
-                //       it seems that TaskContinuationOptions.ExecuteSynchronously is helping in this case (also it will force continuation to execute right away on the thread pool, which is probably better)
-                //       Not sure if the probably totally disappeared (esp. if something does a ContinueWith() externally on that) -- might need further investigation.
+                // Ensure the continuation is scheduled on the thread pool or we might end up in a dead lock when then calling thread
+                // is already waiting on the result
                 var result = bytecode.Task.ContinueWith(
                     x => CreateEffect(effectName, x.Result, compilerResult),
-                    TaskContinuationOptions.ExecuteSynchronously);
+                    scheduler: TaskScheduler.Default);
                 return result;
             }
             else
@@ -213,7 +211,7 @@ namespace Stride.Rendering
                     effect = new Effect(GraphicsDevice, bytecode) { Name = effectName };
                     cachedEffects.Add(bytecode, effect);
 
-#if STRIDE_PLATFORM_WINDOWS_DESKTOP
+#if STRIDE_PLATFORM_DESKTOP
                     foreach (var type in bytecode.HashSources.Keys)
                     {
                         var storagePath = EffectCompilerBase.GetStoragePathFromShaderType(type);

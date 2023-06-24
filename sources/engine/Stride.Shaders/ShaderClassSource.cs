@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -72,7 +72,9 @@ namespace Stride.Shaders
         {
             if (ReferenceEquals(null, shaderClassSource)) return false;
             if (ReferenceEquals(this, shaderClassSource)) return true;
-            return string.Equals(ClassName, shaderClassSource.ClassName) && Utilities.Compare(GenericArguments, shaderClassSource.GenericArguments);
+            return
+                string.Equals(ClassName, shaderClassSource.ClassName) &&
+                GenericArguments.SequenceEqualAllowNull(shaderClassSource.GenericArguments);
         }
 
         public override bool Equals(object obj)

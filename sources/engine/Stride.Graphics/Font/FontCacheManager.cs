@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -36,7 +36,7 @@ namespace Stride.Graphics.Font
             ClearCache();
         }
 
-        private void ReloadCache(GraphicsResourceBase graphicsResourceBase)
+        private void ReloadCache(GraphicsResourceBase graphicsResourceBase, IServiceRegistry services)
         {
             foreach (var cacheTexture in cacheTextures)
                 cacheTexture.Recreate();

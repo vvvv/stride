@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.IO;
@@ -53,8 +53,14 @@ namespace Stride.Core.IO
         /// Returns the list of files from the specified path.
         /// </summary>
         /// <param name="path">The path.</param>
-        /// <param name="searchPattern">The search pattern.</param>
-        /// <param name="searchOption">The search option.</param>
+        /// <param name="searchPattern">
+        /// The search string to match against the names of files in <paramref name="path"/>.
+        /// This parameter can contain a combination of valid literal path and wildcard (* and ?) characters,
+        /// but it doesn't support regular expressions.
+        /// </param>
+        /// <param name="searchOption">
+        /// One of the enumeration values that specifies whether the search operation should include all subdirectories or only the current directory.
+        /// </param>
         /// <returns>A list of files from the specified path</returns>
         string[] ListFiles(string path, string searchPattern, VirtualSearchOption searchOption);
 

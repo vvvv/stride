@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections;
@@ -263,7 +263,7 @@ namespace Stride.Core.Yaml
             var newMemberName = type == OverrideType.Base
                 ? key
                 : $"{key}{type.ToText()}";
-            
+
             keyMapping[key] = newMemberName;
             overrides[key] = type;
 
@@ -301,7 +301,7 @@ namespace Stride.Core.Yaml
                 keyMapping[key] = key;
             }
         }
-        
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return node.Children.Select(x => new KeyValuePair<dynamic, dynamic>(ConvertToDynamic(x.Key), ConvertToDynamic(x.Value))).ToArray().GetEnumerator();

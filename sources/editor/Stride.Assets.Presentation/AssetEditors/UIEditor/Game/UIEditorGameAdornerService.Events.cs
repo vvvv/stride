@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -143,8 +143,8 @@ namespace Stride.Assets.Presentation.AssetEditors.UIEditor.Game
                         // snap the current position, to prevent accumulating some delta when starting dragging
                         if (snapValue > float.Epsilon)
                         {
-                            currentPosition.X = (float)Math.Round(currentPosition.X / snapValue) * snapValue;
-                            currentPosition.Y = (float)Math.Round(currentPosition.Y / snapValue) * snapValue;
+                            currentPosition.X = MathF.Round(currentPosition.X / snapValue) * snapValue;
+                            currentPosition.Y = MathF.Round(currentPosition.Y / snapValue) * snapValue;
                         }
                     }
                 }
@@ -154,8 +154,8 @@ namespace Stride.Assets.Presentation.AssetEditors.UIEditor.Game
                     // snap the world position
                     if (snapValue > float.Epsilon)
                     {
-                        position.X = (float)Math.Round(position.X / snapValue) * snapValue;
-                        position.Y = (float)Math.Round(position.Y / snapValue) * snapValue;
+                        position.X = MathF.Round(position.X / snapValue) * snapValue;
+                        position.Y = MathF.Round(position.Y / snapValue) * snapValue;
                     }
                     // calculate delta
                     var delta = position - currentPosition;

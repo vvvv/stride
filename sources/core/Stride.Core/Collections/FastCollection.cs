@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections;
@@ -28,7 +28,7 @@ namespace Stride.Core.Collections
 
         public FastCollection()
         {
-            items = ArrayHelper<T>.Empty;
+            items = Array.Empty<T>();
         }
 
         public FastCollection([NotNull] IEnumerable<T> collection)
@@ -78,7 +78,7 @@ namespace Stride.Core.Collections
                     }
                     else
                     {
-                        items = ArrayHelper<T>.Empty;
+                        items = Array.Empty<T>();
                     }
                 }
             }
@@ -87,11 +87,11 @@ namespace Stride.Core.Collections
         public int Count => size;
 
         /// <summary>
-        /// Gets or sets the element <see cref="T"/> at the specified index.
+        /// Gets or sets the element <typeparamref name="T"/> at the specified index.
         /// </summary>
         /// <param name="index">The index.</param>
         /// <value>
-        /// The element <see cref="T"/>.
+        /// The element <typeparamref name="T"/>.
         /// </value>
         /// <returns>The element at the specified index</returns>
         /// <exception cref="System.ArgumentOutOfRangeException">If index is out of range</exception>

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -118,7 +118,7 @@ namespace Stride.Particles.Updaters.FieldShapes
             inverseRotation.Rotate(ref particlePosition);
 //            particlePosition /= fieldSize;
 
-            var maxDist = (float)Math.Sqrt(particlePosition.X * particlePosition.X + particlePosition.Z * particlePosition.Z);
+            var maxDist = MathF.Sqrt(particlePosition.X * particlePosition.X + particlePosition.Z * particlePosition.Z);
 
             var fieldX = radius * fieldSize.X;
             var fieldY = halfHeight * fieldSize.Y;

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Stride.Rendering;
@@ -20,7 +20,11 @@ namespace Stride.Graphics
         {
             foreach (var member in constantBuffer.Members)
             {
-                parameterCollectionLayout.LayoutParameterKeyInfos.Add(new ParameterKeyInfo(member.KeyInfo.Key, parameterCollectionLayout.BufferSize + member.Offset, member.Type.Elements > 0 ? member.Type.Elements : 1));
+                var pki = new ParameterKeyInfo(
+                    member.KeyInfo.Key,
+                    parameterCollectionLayout.BufferSize + member.Offset,
+                    member.Type.Elements > 0 ? member.Type.Elements : 1);
+                parameterCollectionLayout.LayoutParameterKeyInfos.Add(pki);
             }
             parameterCollectionLayout.BufferSize += constantBuffer.Size;
         }

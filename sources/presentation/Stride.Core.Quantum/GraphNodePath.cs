@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections;
@@ -436,12 +436,14 @@ namespace Stride.Core.Quantum
                         var index = itemPath.Index;
                         var enumerableReference = ((IObjectNode)node).ItemReferences;
                         var descriptor = node.Descriptor;
-                        var collectionDescriptor = descriptor as CollectionDescriptor;
-                        if (collectionDescriptor != null)
-                            memberPath.Push(collectionDescriptor, index.Int);
-                        var dictionaryDescriptor = descriptor as DictionaryDescriptor;
-                        if (dictionaryDescriptor != null)
+                        if (descriptor is CollectionDescriptor collectionDescriptor)
+                        {
+                            memberPath.Push(collectionDescriptor, index.Value);
+                        }
+                        else if (descriptor is DictionaryDescriptor dictionaryDescriptor)
+                        {
                             memberPath.Push(dictionaryDescriptor, index.Value);
+                        }
 
                         if (i != path.Count - 1)
                         {

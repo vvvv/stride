@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using Stride.Rendering.Materials;
 
@@ -9,8 +9,12 @@ namespace Stride.Rendering.Shadows
     {
         using params MaterialKeys;
 
-        // For cut off materials we want to run pixel shader during rendering shadow maps
-        if(MaterialKeys.UsePixelShaderWithDepthPass)
+        // For cut off and blend materials we want to run pixel shader during rendering shadow maps
+        if(MaterialKeys.UseDitheredShadows)
+        {
+            mixin ShadowMapCasterAlphaDithered;
+        }
+        else if(MaterialKeys.UsePixelShaderWithDepthPass)
         {
             mixin ShadowMapCasterAlphaDiscard;
         }

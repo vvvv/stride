@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -73,7 +73,7 @@ namespace Stride.Rendering.ComputeEffect
         }
 
         /// <summary>
-        /// Updates the effect <see cref="ComputeEffectShader.Parameters" /> from properties defined in this instance. See remarks.
+        /// Updates the effect <see cref="DrawEffect.Parameters" /> from properties defined in this instance. See remarks.
         /// </summary>
         protected virtual void UpdateParameters()
         {

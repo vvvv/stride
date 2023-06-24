@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -6,33 +6,29 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using NuGet.Commands;
 using NuGet.Common;
 using NuGet.Configuration;
+using NuGet.Frameworks;
+using NuGet.LibraryModel;
 using NuGet.PackageManagement;
 using NuGet.Packaging;
+using NuGet.Packaging.Core;
 using NuGet.ProjectManagement;
+using NuGet.ProjectModel;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
-using Stride.Core;
+using NuGet.Resolver;
+using NuGet.Versioning;
 using Stride.Core.Extensions;
 using Stride.Core.Windows;
 using ISettings = NuGet.Configuration.ISettings;
 using PackageSource = NuGet.Configuration.PackageSource;
 using PackageSourceProvider = NuGet.Configuration.PackageSourceProvider;
-using Settings = NuGet.Configuration.Settings;
-using NuGet.Resolver;
-using System.Reflection;
-using NuGet.Frameworks;
-using NuGet.Packaging.Core;
-using NuGet.Versioning;
-using NuGet.ProjectModel;
-using NuGet.LibraryModel;
-using NuGet.Commands;
 
 namespace Stride.Core.Packages
 {
@@ -41,10 +37,8 @@ namespace Stride.Core.Packages
     /// </summary>
     public class NugetStore : INugetDownloadProgress
     {
-        public const string DefaultPackageSource = "https://packages.stride3d.net/nuget";
-
         private IPackagesLogger logger;
-        private readonly ISettings settings, localSettings;
+        private readonly ISettings settings;
         private ProgressReport currentProgressReport;
 
         private readonly string oldRootDirectory;
@@ -66,8 +60,7 @@ namespace Stride.Core.Packages
             RemoveDeletedSources(settings, "Xenko Dev");
             // Note the space: we want to keep "Stride Dev" but not "Stride Dev {PATH}\bin\packages" anymore
             RemoveSources(settings, "Stride Dev ");
-            // Add Stride package store (still used for Xenko up to 3.0)
-            CheckPackageSource("Stride", DefaultPackageSource);
+
             settings.SaveToDisk();
 
             InstallPath = SettingsUtility.GetGlobalPackagesFolder(settings);
@@ -123,7 +116,24 @@ namespace Stride.Core.Packages
             }
         }
 
-        private void CheckPackageSource(string name, string url)
+        public static bool CheckPackageSource(ISettings settings, string name)
+        {
+            var packageSources = settings.GetSection("packageSources");
+            if (packageSources != null)
+            {
+                foreach (var packageSource in packageSources.Items.OfType<SourceItem>().ToList())
+                {
+                    if (packageSource.Key == name)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public static void UpdatePackageSource(ISettings settings, string name, string url)
         {
             settings.AddOrUpdate("packageSources", new SourceItem(name, url));
         }
@@ -145,7 +155,29 @@ namespace Stride.Core.Packages
         /// <summary>
         /// Package Id of the Visual Studio Integration plugin.
         /// </summary>
-        public string VsixPluginId { get; } = "Stride.VisualStudio.Package";
+        public string VsixPackageId { get; } = "Stride.VisualStudio.Package";
+
+        /// <summary>
+        /// The different supported versions of Visual Studio
+        /// </summary>
+        public enum VsixSupportedVsVersion
+        {
+            VS2019,
+            VS2022
+        }
+
+        /// <summary>
+        /// A mapping of the supported versions of VS to a Stride release version range.  
+        /// For each supported VS release, the first Version represents the included earliest Stride version eligible for the VSIX and the second Version is the excluded upper bound.
+        /// </summary>
+        public IReadOnlyDictionary<VsixSupportedVsVersion, (PackageVersion MinVersion, PackageVersion MaxVersion)> VsixVersionToStrideRelease { get; } = new Dictionary<VsixSupportedVsVersion, (PackageVersion, PackageVersion)>
+        {
+            // The VSIX for VS2019 is avaliable in Stride packages of version 4.0.x
+            {VsixSupportedVsVersion.VS2019, (new PackageVersion("4.0"), new PackageVersion("4.1")) },
+
+            // The VSIX for VS2022 is available in Stride packages of version 4.1.x and later.
+            {VsixSupportedVsVersion.VS2022, (new PackageVersion("4.1"), new PackageVersion(int.MaxValue,0,0,0)) },
+        };
 
         /// <summary>
         /// Logger for all operations of the package manager.
@@ -275,7 +307,7 @@ namespace Stride.Core.Packages
         /// <remarks>It is safe to call it concurrently be cause we operations are done using the FileLock.</remarks>
         /// <param name="packageId">Name of package to install.</param>
         /// <param name="version">Version of package to install.</param>
-        public async Task<NugetLocalPackage> InstallPackage(string packageId, PackageVersion version, ProgressReport progress)
+        public async Task<NugetLocalPackage> InstallPackage(string packageId, PackageVersion version, IEnumerable<string> targetFrameworks, ProgressReport progress)
         {
             using (GetLocalRepositoryLock())
             {
@@ -303,6 +335,10 @@ namespace Stride.Core.Packages
                     {
                         var installPath = SettingsUtility.GetGlobalPackagesFolder(settings);
 
+                        // In case it's a package without any TFM (i.e. Visual Studio plugin), we still need to specify one
+                        if (!targetFrameworks.Any())
+                            targetFrameworks = new string[] { "net6.0" };
+
                         // Old version expects to be installed in GamePackages
                         if (packageId == "Xenko" && version < new PackageVersion(3, 0, 0, 0) && oldRootDirectory != null)
                         {
@@ -321,13 +357,6 @@ namespace Stride.Core.Packages
                                     LibraryRange = new LibraryRange(packageId, new VersionRange(version.ToNuGetVersion()), LibraryDependencyTarget.Package),
                                 }
                             },
-                            TargetFrameworks =
-                            {
-                                new TargetFrameworkInformation
-                                {
-                                    FrameworkName = NuGetFramework.Parse("net472"),
-                                }
-                            },
                             RestoreMetadata = new ProjectRestoreMetadata
                             {
                                 ProjectPath = projectPath,
@@ -335,13 +364,17 @@ namespace Stride.Core.Packages
                                 ProjectStyle = ProjectStyle.PackageReference,
                                 ProjectUniqueName = projectPath,
                                 OutputPath = Path.Combine(Path.GetTempPath(), $"StrideLauncher-{packageId}-{version.ToString()}"),
-                                OriginalTargetFrameworks = new[] { "net472" },
+                                OriginalTargetFrameworks = targetFrameworks.ToList(),
                                 ConfigFilePaths = settings.GetConfigFilePaths(),
                                 PackagesPath = installPath,
                                 Sources = SettingsUtility.GetEnabledSources(settings).ToList(),
                                 FallbackFolders = SettingsUtility.GetFallbackPackageFolders(settings).ToList()
                             },
                         };
+                        foreach (var targetFramework in targetFrameworks)
+                        {
+                            spec.TargetFrameworks.Add(new TargetFrameworkInformation { FrameworkName = NuGetFramework.Parse(targetFramework) });
+                        }
 
                         using (var context = new SourceCacheContext { MaxAge = DateTimeOffset.UtcNow })
                         {

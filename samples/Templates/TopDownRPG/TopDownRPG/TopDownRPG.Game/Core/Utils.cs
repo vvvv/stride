@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Threading.Tasks;
@@ -128,6 +128,7 @@ namespace TopDownRPG.Core
 
         public static Vector3 LogicDirectionToWorldDirection(Vector2 logicDirection, CameraComponent camera, Vector3 upVector)
         {
+            camera.Update();
             var inverseView = Matrix.Invert(camera.ViewMatrix);
 
             var forward = Vector3.Cross(upVector, inverseView.Right);
@@ -163,7 +164,7 @@ namespace TopDownRPG.Core
             var minDistance = float.PositiveInfinity;
 
             var result = new FastList<HitResult>();
-            simulation.RaycastPenetrating(vectorNear.XYZ(), vectorFar.XYZ(), result);
+            simulation.RaycastPenetrating(vectorNear.XYZ(), vectorFar.XYZ(), result, hitTriggers: true);
             foreach (var hitResult in result)
             {
                 ClickType type = ClickType.Empty;

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -75,6 +75,15 @@ namespace Stride.Rendering.ProceduralModels
         /// <inheritdoc/>
         [DataMemberIgnore]
         public IEnumerable<KeyValuePair<string, MaterialInstance>> MaterialInstances { get { yield return new KeyValuePair<string, MaterialInstance>("Material", MaterialInstance); } }
+
+        public Model Generate(IServiceRegistry services)
+        {
+            var model = new Model();
+
+            Generate(services, model);
+
+            return model;
+        }
 
         public void Generate(IServiceRegistry services, Model model)
         {

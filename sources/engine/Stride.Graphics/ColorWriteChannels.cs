@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core;
@@ -9,7 +9,7 @@ namespace Stride.Graphics
     /// Identify which components of each pixel of a render target are writable during blending.
     /// </summary>
     /// <remarks>
-    /// These flags can be combined with a bitwise OR and is used in <see cref="BlendState"/>.
+    /// These flags can be combined with a bitwise OR and is used in <see cref="BlendStateDescription"/> and <see cref="BlendStateRenderTargetDescription"/>.
     /// </remarks>
     [Flags]
     [DataContract]

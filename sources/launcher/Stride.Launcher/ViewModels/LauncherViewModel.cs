@@ -1,28 +1,25 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
-
-//#define SIMULATE_OFFLINE
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Win32;
-
 using Stride.Core.Extensions;
-using Stride.PrivacyPolicy;
-using Stride.LauncherApp.Resources;
-using Stride.LauncherApp.Services;
 using Stride.Core.Packages;
 using Stride.Core.Presentation.Collections;
 using Stride.Core.Presentation.Commands;
 using Stride.Core.Presentation.Services;
 using Stride.Core.Presentation.ViewModel;
-using Stride.Metrics;
 using Stride.Core.VisualStudio;
+using Stride.LauncherApp.Resources;
+using Stride.LauncherApp.Services;
+using Stride.Metrics;
 
 namespace Stride.LauncherApp.ViewModels
 {
@@ -41,7 +38,7 @@ namespace Stride.LauncherApp.ViewModels
         private bool isOffline;
         private bool isSynchronizing = true;
         private string currentToolTip;
-        private List<(DateTime Time, MessageLevel Level, string Message)> logMessages = new List<(DateTime, MessageLevel, string)>();
+        private List<(DateTime Time, MessageLevel Level, string Message)> logMessages = new();
         private bool autoCloseLauncher = LauncherSettings.CloseLauncherAutomatically;
         private bool lastActiveVersionRestored;
         private AnnouncementViewModel announcement;
@@ -51,15 +48,14 @@ namespace Stride.LauncherApp.ViewModels
         internal LauncherViewModel(IViewModelServiceProvider serviceProvider, NugetStore store)
             : base(serviceProvider)
         {
-            if (store == null) throw new ArgumentNullException(nameof(store));
             DependentProperties.Add("ActiveVersion", new[] { "ActiveDocumentationPages" });
-            this.store = store;
+            this.store = store ?? throw new ArgumentNullException(nameof(store));
             store.Logger = this;
 
             DisplayReleaseAnnouncement();
 
-            VsixPackage = new VsixVersionViewModel(this, store, store.VsixPluginId);
-            VsixPackageXenko = new VsixVersionViewModel(this, store, store.VsixPluginId.Replace("Stride", "Xenko"));
+            VsixPackage2019 = new VsixVersionViewModel(this, store, store.VsixPackageId, NugetStore.VsixSupportedVsVersion.VS2019);
+            VsixPackage2022 = new VsixVersionViewModel(this, store, store.VsixPackageId, NugetStore.VsixSupportedVsVersion.VS2022);
             // Commands
             InstallLatestVersionCommand = new AnonymousTaskCommand(ServiceProvider, InstallLatestVersion) { IsEnabled = false };
             OpenUrlCommand = new AnonymousTaskCommand<string>(ServiceProvider, OpenUrl);
@@ -70,6 +66,22 @@ namespace Stride.LauncherApp.ViewModels
                 await FetchOnlineData();
             });
             StartStudioCommand = new AnonymousTaskCommand(ServiceProvider, StartStudio) { IsEnabled = false };
+            CheckDeprecatedSourcesCommand = new AnonymousTaskCommand(ServiceProvider, async () =>
+            {
+                var settings = NuGet.Configuration.Settings.LoadDefaultSettings(null);
+                if (NugetStore.CheckPackageSource(settings, "Stride"))
+                {
+                    return;
+                }
+                // Add Stride package store (still used for Xenko up to 3.0)
+                if (await ServiceProvider.Get<IDialogService>().MessageBox(Strings.AskAddNugetDeprecatedSource, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                {
+                    NugetStore.UpdatePackageSource(settings, "Stride", "https://packages.stride3d.net/nuget");
+                    settings.SaveToDisk();
+
+                    SelfUpdater.RestartApplication();
+                }
+            });
 
             foreach (var devVersion in LauncherSettings.DeveloperVersions)
             {
@@ -93,9 +105,9 @@ namespace Stride.LauncherApp.ViewModels
 
         public bool ShowBetaVersions { get { return showBetaVersions; } set { SetValue(ref showBetaVersions, value); } }
 
-        public VsixVersionViewModel VsixPackage { get; }
+        public VsixVersionViewModel VsixPackage2019 { get; }
 
-        public VsixVersionViewModel VsixPackageXenko { get; }
+        public VsixVersionViewModel VsixPackage2022 { get; }
 
         public StrideVersionViewModel ActiveVersion { get { return activeVersion; } set { SetValue(ref activeVersion, value); Dispatcher.InvokeAsync(() => StartStudioCommand.IsEnabled = (value != null) && value.CanStart); } }
 
@@ -143,6 +155,8 @@ namespace Stride.LauncherApp.ViewModels
 
         public CommandBase StartStudioCommand { get; }
 
+        public CommandBase CheckDeprecatedSourcesCommand { get; }
+
         private async Task FetchOnlineData()
         {
             // We ensure that the self-updater task starts once the app is running because it might invoke dialogs.
@@ -177,8 +191,8 @@ namespace Stride.LauncherApp.ViewModels
                 var newsTask = FetchNewsPages();
 
                 await RetrieveServerStrideVersions();
-                await VsixPackage.UpdateFromStore();
-                await VsixPackageXenko.UpdateFromStore();
+                await VsixPackage2019.UpdateFromStore();
+                await VsixPackage2022.UpdateFromStore();
                 await CheckForFirstInstall();
 
                 await newsTask;
@@ -206,6 +220,54 @@ namespace Stride.LauncherApp.ViewModels
             Dispatcher.Invoke(() => IsSynchronizing = false);
         }
 
+        private class ReferencedPackageEqualityComparer : IEqualityComparer<NugetLocalPackage>
+        {
+            public static readonly ReferencedPackageEqualityComparer Instance = new ReferencedPackageEqualityComparer();
+
+            private ReferencedPackageEqualityComparer() { }
+
+            public bool Equals(NugetLocalPackage x, NugetLocalPackage y)
+                => (ReferenceEquals(x, y)) || ((!ReferenceEquals(x, null)) && (!ReferenceEquals(y, null)) && (x.Id == y.Id) && (x.Version.ToString() == y.Version.ToString()));
+
+            public int GetHashCode([DisallowNull] NugetLocalPackage obj)
+                => (obj.Id.GetHashCode() ^ obj.Version.ToString().GetHashCode());
+        }
+
+        private HashSet<NugetLocalPackage> referencedPackages = new(ReferencedPackageEqualityComparer.Instance);
+
+        private async Task RemoveUnusedPackages(IEnumerable<NugetLocalPackage> mainPackages)
+        {
+            var previousReferencedPackages = referencedPackages;
+            referencedPackages = new HashSet<NugetLocalPackage>(ReferencedPackageEqualityComparer.Instance);
+            foreach (var mainPackage in mainPackages)
+            {
+                await FindReferencedPackages(mainPackage);
+            }
+            foreach (var package in previousReferencedPackages.Where(package => !referencedPackages.Contains(package)))
+            {
+                await store.UninstallPackage(package, null);
+            }
+        }
+
+        private async Task FindReferencedPackages(NugetLocalPackage package)
+        {
+            foreach (var dependency in package.Dependencies)
+            {
+                string prefix = dependency.Item1.Split('.', 2)[0];
+                if (prefix is not "Stride" and not "Xenko")
+                {
+                    continue;
+                }
+                NugetLocalPackage dependencyPackage = store.FindLocalPackage(dependency.Item1, dependency.Item2);
+                if (dependencyPackage == null || referencedPackages.Contains(dependencyPackage))
+                {
+                    continue;
+                }
+                referencedPackages.Add(dependencyPackage);
+                await FindReferencedPackages(dependencyPackage);
+            }
+        }
+
         public async Task RetrieveLocalStrideVersions()
         {
             List<RecentProjectViewModel> currentRecentProjects;
@@ -218,6 +280,22 @@ namespace Stride.LauncherApp.ViewModels
                 var localPackages = await RunLockTask(() => store.GetPackagesInstalled(store.MainPackageIds).FilterStrideMainPackages().OrderByDescending(p => p.Version).ToList());
                 lock (objectLock)
                 {
+                    // Try to remove unused Stride/Xenko packages after uninstall or update
+                    try
+                    {
+                        Task.WaitAll(RemoveUnusedPackages(localPackages));
+                    }
+                    catch (Exception e)
+                    {
+                        var message = $@"**Failed to remove unused NuGet package(s).**
+
+### Exception
+```
+{e.FormatSummary(false).TrimEnd(Environment.NewLine.ToCharArray())}
+```";
+                        Task.WaitAll(ServiceProvider.Get<IDialogService>().MessageBox(message, MessageBoxButton.OK, MessageBoxImage.Warning));
+                    }
+
                     // Retrieve all local packages
                     var packages = localPackages.Where(p => !store.IsDevRedirectPackage(p)).GroupBy(p => $"{p.Version.Version.Major}.{p.Version.Version.Minor}", p => p);
                     var updatedLocalPackages = new HashSet<StrideStoreVersionViewModel>();
@@ -248,7 +326,7 @@ namespace Stride.LauncherApp.ViewModels
                     Dispatcher.Invoke(() =>
                     {
                         foreach (var strideUninstalledVersion in strideVersions.OfType<StrideStoreVersionViewModel>().Where(x => !updatedLocalPackages.Contains(x)))
-                            strideUninstalledVersion.UpdateLocalPackage(null, new NugetLocalPackage[0]);
+                            strideUninstalledVersion.UpdateLocalPackage(null, Array.Empty<NugetLocalPackage>());
                     });
 
                     // Update the active version if it is now invalid.
@@ -304,8 +382,7 @@ namespace Stride.LauncherApp.ViewModels
                             if (version is StrideDevVersionViewModel)
                                 project.CompatibleVersions.Add(version);
 
-                            var storeVersion = version as StrideStoreVersionViewModel;
-                            if (storeVersion != null && storeVersion.CanDelete)
+                            if (version is StrideStoreVersionViewModel storeVersion && storeVersion.CanDelete)
                             {
                                 // Discard the version that matches the recent project version
                                 if (project.StrideVersion == new Version(storeVersion.Version.Version.Major, storeVersion.Version.Version.Minor))
@@ -327,11 +404,13 @@ namespace Stride.LauncherApp.ViewModels
         {
             try
             {
-#if SIMULATE_OFFLINE
-                var serverPackages = new List<IPackage>();
-#else
-                var serverPackages = await RunLockTask(() => store.FindSourcePackages(store.MainPackageIds, CancellationToken.None).Result.FilterStrideMainPackages().Where(p => !store.IsDevRedirectPackage(p)).OrderByDescending(p => p.Version).ToList());
-#endif
+                var serverPackages = await RunLockTask(() => store
+                    .FindSourcePackages(store.MainPackageIds, CancellationToken.None).Result
+                    .FilterStrideMainPackages()
+                    .Where(p => !store.IsDevRedirectPackage(p))
+                    .OrderByDescending(p => p.Version)
+                    .ToList());
+
                 // Check if we could connect to the server
                 var wasOffline = IsOffline;
                 IsOffline = serverPackages.Count == 0;
@@ -408,8 +487,6 @@ namespace Stride.LauncherApp.ViewModels
         public async Task CheckForFirstInstall()
         {
             const string prerequisitesRunTaskName = "PrerequisitesRun";
-            //const string askedForJapaneseSurveyTaskName = "AskedForJapaneseSurvey";
-            //const string askedForSurveyTaskName = "AskedForSurvey";
 
             if (!HasDoneTask(prerequisitesRunTaskName))
             {
@@ -421,8 +498,6 @@ namespace Stride.LauncherApp.ViewModels
             }
 
             bool firstInstall = StrideVersions.All(x => !x.CanDelete) && StrideVersions.Any(x => x.CanBeDownloaded);
-            //var surveyTaskName = CultureInfo.InstalledUICulture.IetfLanguageTag != "ja-JP" ? askedForSurveyTaskName : askedForJapaneseSurveyTaskName;
-            //bool surveyAsked = HasDoneTask(surveyTaskName);
 
             await Dispatcher.InvokeTask(async () =>
             {
@@ -433,33 +508,28 @@ namespace Stride.LauncherApp.ViewModels
                     {
                         var versionToInstall = StrideVersions.First(x => x.CanBeDownloaded);
                         await versionToInstall.Download(true);
-                    }
-                    if (!VsixPackage.IsLatestVersionInstalled && VisualStudioVersions.AvailableVisualStudioInstances.Any())
-                    {
-                        result = await ServiceProvider.Get<IDialogService>().MessageBox(Strings.AskInstallVSIX, MessageBoxButton.YesNo, MessageBoxImage.Question);
-                        if (result == MessageBoxResult.Yes)
+
+                        // if VS2022 is installed (version 17.x)
+                        if (!VsixPackage2022.IsLatestVersionInstalled && VsixPackage2022.CanBeDownloaded && VisualStudioVersions.AvailableVisualStudioInstances.Any(ide => ide.InstallationVersion.Major == 17))
                         {
-                            await VsixPackage.ExecuteAction();
+                            result = await ServiceProvider.Get<IDialogService>().MessageBox(string.Format(Strings.AskInstallVSIX, "2022"), MessageBoxButton.YesNo, MessageBoxImage.Question);
+                            if (result == MessageBoxResult.Yes)
+                            {
+                                await VsixPackage2022.ExecuteAction();
+                            }
+                        }
+
+                        // if VS2019 is installed (version 16.x)
+                        if (!VsixPackage2019.IsLatestVersionInstalled && VsixPackage2019.CanBeDownloaded && VisualStudioVersions.AvailableVisualStudioInstances.Any(ide => ide.InstallationVersion.Major == 16))
+                        {
+                            result = await ServiceProvider.Get<IDialogService>().MessageBox(string.Format(Strings.AskInstallVSIX, "2019"), MessageBoxButton.YesNo, MessageBoxImage.Question);
+                            if (result == MessageBoxResult.Yes)
+                            {
+                                await VsixPackage2019.ExecuteAction();
+                            }
                         }
                     }
                 }
-                // Disable dialog for the survey
-                //else if (!surveyAsked)
-                //{
-                //    var result = ShowMessage(ServiceProvider, Strings.AskSurvey, MessageBoxButton.YesNo, MessageBoxImage.Question);
-                //    if (result == MessageBoxResult.Yes)
-                //    {
-                //        try
-                //        {
-                //            Process.Start(Urls.Survey1);
-                //        }
-                //        catch
-                //        {
-                //            ShowMessage(ServiceProvider, Strings.ErrorOpeningBrowser, MessageBoxButton.OK, MessageBoxImage.Error);
-                //        }
-                //    }
-                //    SaveTaskAsDone(surveyTaskName);
-                //}
             });
         }
 
@@ -503,8 +573,7 @@ namespace Stride.LauncherApp.ViewModels
                 var mainExecutable = ActiveVersion.LocateMainExecutable();
 
                 // If version is older than 1.2.0, than we need to log the usage of older version
-                var activeStoreVersion = ActiveVersion as StrideStoreVersionViewModel;
-                if (activeStoreVersion != null && activeStoreVersion.Version.Version < new Version(1, 2, 0, 0))
+                if (ActiveVersion is StrideStoreVersionViewModel activeStoreVersion && activeStoreVersion.Version.Version < new Version(1, 2, 0, 0))
                 {
                     metricsForEditorBefore120 = new MetricsClient(CommonApps.StrideEditorAppId, versionOverride: activeStoreVersion.Version.ToString());
                 }

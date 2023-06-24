@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -254,6 +254,9 @@ namespace Stride.GameStudio
                         var assemblyToReload = modifiedAssembly.Value;
                         assemblyToReload.LoadedAssemblyPath = result.AssemblyPath;
                         assembliesToReload.Add(assemblyToReload);
+
+                        var userDocumentationService = Session.ServiceProvider.Get<UserDocumentationService>();
+                        userDocumentationService.ClearCachedAssemblyDocumentation(assemblyToReload.LoadedAssembly.Assembly);
                     }
                     else
                     {

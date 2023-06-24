@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 // Copyright 2010-2014 Outercurve Foundation
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,8 +24,8 @@ namespace Stride.Core
     public sealed partial class PackageVersion : IComparable, IComparable<PackageVersion>, IEquatable<PackageVersion>
     {
         private const RegexOptions Flags = RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture;
-        private static readonly Regex SemanticVersionRegex = new Regex(@"^(?<Version>\d+(\s*\.\s*\d+){0,3})(?<Release>-[a-z][0-9a-z-]*)?$", Flags);
-        private static readonly Regex StrictSemanticVersionRegex = new Regex(@"^(?<Version>\d+(\.\d+){2})(?<Release>-[a-z][0-9a-z-]*)?$", Flags);
+        private static readonly Regex SemanticVersionRegex = new Regex(@"^(?<Version>\d+(\s*\.\s*\d+){0,3})(?<Release>-[0-9a-z]*[\.0-9a-z-]*)?(?<BuildMetadata>\+[0-9a-z]*[\.0-9a-z-]*)?$", Flags);
+        private static readonly Regex StrictSemanticVersionRegex = new Regex(@"^(?<Version>\d+(\.\d+){2})(?<Release>-[0-9a-z]*[\.0-9a-z-]*)?(?<BuildMetadata>\+[0-9a-z]*[\.0-9a-z-]*)?$", Flags);
         private readonly string originalString;
 
         /// <summary>

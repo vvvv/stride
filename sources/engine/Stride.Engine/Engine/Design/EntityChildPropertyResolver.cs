@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -82,7 +82,7 @@ namespace Stride.Engine.Design
             /// <inheritdoc/>
             public override object GetObject(IntPtr obj)
             {
-                var entity = UpdateEngineHelper.PtrToObject<Entity>(obj);
+                var entity = UpdateEngineHelper.PointerToObject<Entity>(obj);
                 foreach (var child in entity.Transform.Children)
                 {
                     var childEntity = child.Entity;
@@ -145,7 +145,7 @@ namespace Stride.Engine.Design
             /// <inheritdoc/>
             public override object GetObject(IntPtr obj)
             {
-                var entity = UpdateEngineHelper.PtrToObject<Entity>(obj);
+                var entity = UpdateEngineHelper.PointerToObject<Entity>(obj);
                 var components = entity.Components;
                 for (int i = 0; i < components.Count; i++)
                 {
@@ -161,7 +161,7 @@ namespace Stride.Engine.Design
             /// <inheritdoc/>
             public override void SetObject(IntPtr obj, object data)
             {
-                var entity = UpdateEngineHelper.PtrToObject<Entity>(obj);
+                var entity = UpdateEngineHelper.PointerToObject<Entity>(obj);
                 var components = entity.Components;
                 bool notSet = true;
                 for (int i = 0; i < components.Count; i++)

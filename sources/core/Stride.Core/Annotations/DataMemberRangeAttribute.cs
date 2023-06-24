@@ -1,4 +1,4 @@
-﻿// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+﻿// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -45,42 +45,6 @@ namespace Stride.Core.Annotations
             Maximum = maximum;
             SmallStep = smallStep;
             LargeStep = largeStep;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DataMemberRangeAttribute" /> class.
-        /// </summary>
-        /// <param name="minimum">The minimum.</param>
-        /// <param name="maximum">The maximum.</param>
-        [Obsolete("This method will be removed in a future release. Use DataMemberRangeAttribute(double minimum, double maximum, double smallStep, double largeStep, int decimalPlaces) instead")]
-        public DataMemberRangeAttribute(double minimum, double maximum)
-            : this(minimum, maximum, 1, 2, 3)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DataMemberRangeAttribute" /> class.
-        /// </summary>
-        /// <param name="minimum">The minimum.</param>
-        /// <param name="maximum">The maximum.</param>
-        /// <param name="decimalPlaces">The decimal places</param>
-        [Obsolete("This method will be removed in a future release. Use DataMemberRangeAttribute(double minimum, double maximum, double smallStep, double largeStep, int decimalPlaces) instead")]
-        public DataMemberRangeAttribute(double minimum, double maximum, int decimalPlaces)
-            : this(minimum, maximum, 1, 2, decimalPlaces)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DataMemberRangeAttribute" /> class.
-        /// </summary>
-        /// <param name="minimum">The minimum.</param>
-        /// <param name="maximum">The maximum.</param>
-        /// <param name="smallStep">The minimum step used to go from minimum to maximum.</param>
-        /// <param name="largeStep">The maximum step.</param>
-        [Obsolete("This method will be removed in a future release. Use DataMemberRangeAttribute(double minimum, double maximum, double smallStep, double largeStep, int decimalPlaces) instead")]
-        public DataMemberRangeAttribute(double minimum, double maximum, double smallStep, double largeStep)
-            : this(minimum, maximum, smallStep, largeStep, 3)
-        {
         }
 
         /// <summary>

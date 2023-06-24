@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core;
@@ -54,7 +54,7 @@ namespace Stride.Engine
             var farPlane = nearPlane + virtualResolution.Z;
             var zOffset = nearPlane + virtualResolution.Z / 2;
             var aspectRatio = virtualResolution.X / virtualResolution.Y;
-            var verticalFov = (float)Math.Atan2(virtualResolution.Y / 2, zOffset) * 2;
+            var verticalFov = MathF.Atan2(virtualResolution.Y / 2, zOffset) * 2;
 
             var cameraComponent = new CameraComponent(nearPlane, farPlane)
             {

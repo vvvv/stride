@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections;
@@ -87,6 +87,13 @@ namespace Stride.Core.Assets
 
             Visit(value, valueDescriptor);
             //base.VisitDictionaryKeyValue(dictionary, descriptor, key, keyDescriptor, value, valueDescriptor);
+        }
+
+        public override void VisitSetItem(IEnumerable set, SetDescriptor descriptor, object item, ITypeDescriptor itemDescriptor)
+        {
+            if (ProcessObject(item, itemDescriptor.Type)) return;
+
+            Visit(item, itemDescriptor);
         }
 
         private bool ProcessObject(object obj, Type expectedType)

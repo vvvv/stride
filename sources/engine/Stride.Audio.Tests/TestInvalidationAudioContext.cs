@@ -1,4 +1,4 @@
-//// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+//// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 //// This file is distributed under GPL v3. See LICENSE.md for details.
 //using Xunit;
 //
@@ -57,7 +57,7 @@
 //                Assert.DoesNotThrow(()=>oneSound.Play());
 //                ++count;
 //
-//                Utilities.Sleep(10);
+//                Thread.Sleep(10);
 //            }
 //
 //            oneSound.Stop();
@@ -81,7 +81,7 @@
 //                Assert.DoesNotThrow(() => sayuriPart.Play());
 //                engine.Update();
 //
-//                Utilities.Sleep(10);
+//                Thread.Sleep(10);
 //            }
 //
 //            sayuriPart.Stop();

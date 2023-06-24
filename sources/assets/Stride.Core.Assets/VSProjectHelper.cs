@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -129,7 +129,8 @@ namespace Stride.Core.Assets
                     {
                         var parameters = new BuildParameters(pc)
                         {
-                            Loggers = new[] { new LoggerRedirect(logger, true) } //Instance of ILogger instantiated earlier
+                            Loggers = new[] { new LoggerRedirect(logger, true) }, //Instance of ILogger instantiated earlier
+                            DisableInProcNode = true,
                         };
 
                         // Run a MSBuild /t:Restore <projectfile>
@@ -168,7 +169,8 @@ namespace Stride.Core.Assets
                 {
                     var parameters = new BuildParameters(pc)
                     {
-                        Loggers = new[] { new LoggerRedirect(logger, true) } //Instance of ILogger instantiated earlier
+                        Loggers = new[] { new LoggerRedirect(logger, true) }, //Instance of ILogger instantiated earlier
+                        DisableInProcNode = true,
                     };
 
                     // Run a MSBuild /t:Restore <projectfile>
@@ -339,7 +341,8 @@ namespace Stride.Core.Assets
                     var buildResult = mainBuildManager.Build(
                         new BuildParameters(project.ProjectCollection)
                         {
-                            Loggers = new[] { logger }
+                            Loggers = new[] { logger },
+                            DisableInProcNode = true,
                         },
                         new BuildRequestData(projectInstance, targets.Split(';'), null, flags));
 

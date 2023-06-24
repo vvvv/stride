@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using Stride.Core;
@@ -54,7 +54,7 @@ namespace Stride.Rendering.Materials
         /// Defines the types of normals to use for computing the directional attenuation.
         /// Mesh normals: Use the mesh normals.
         /// Normal map normals: Use the normal map values (falls back to mesh normals if no normal map is present).
-        /// Mesh & normal map normals: Use the normal map and mesh normals. This can fix artifacts on edges between lit and unlit areas (falls back to mesh normals if no normal map is present).
+        /// Mesh &amp; normal map normals: Use the normal map and mesh normals. This can fix artifacts on edges between lit and unlit areas (falls back to mesh normals if no normal map is present).
         /// </userdoc>
         [DataMember(20)]
         [Display("Normals to use")]

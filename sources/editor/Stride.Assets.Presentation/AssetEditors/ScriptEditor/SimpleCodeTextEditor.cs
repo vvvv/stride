@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Threading;
@@ -114,7 +114,6 @@ namespace Stride.Assets.Presentation.AssetEditors.ScriptEditor
 
             // Context Actions
             contextActionsRenderer.Providers.Remove(contextActionProvider);
-            contextActionsRenderer.Dispose();
             contextActionsRenderer = null;
             contextActionProvider = null;
 
@@ -131,13 +130,13 @@ namespace Stride.Assets.Presentation.AssetEditors.ScriptEditor
 
         public void ProcessDiagnostics(DiagnosticsUpdatedArgs args)
         {
-            if (this.GetDispatcher().CheckAccess())
+            if (this.Dispatcher.CheckAccess())
             {
                 ProcessDiagnosticsOnUiThread(args);
                 return;
             }
 
-            this.GetDispatcher().InvokeAsync(() => ProcessDiagnosticsOnUiThread(args));
+            this.Dispatcher.InvokeAsync(() => ProcessDiagnosticsOnUiThread(args));
         }
 
         private void ProcessDiagnosticsOnUiThread(DiagnosticsUpdatedArgs args)
@@ -156,7 +155,12 @@ namespace Stride.Assets.Presentation.AssetEditors.ScriptEditor
                     continue;
                 }
 
-                var marker = textMarkerService.TryCreate(diagnosticData.TextSpan.Start, diagnosticData.TextSpan.Length);
+                if (diagnosticData.GetTextSpan() is Microsoft.CodeAnalysis.Text.TextSpan diag == false)
+                {
+                    continue;
+                }
+
+                var marker = textMarkerService.TryCreate(diag.Start, diag.Length);
                 if (marker != null)
                 {
                     marker.Tag = args.Id;
@@ -194,7 +198,7 @@ namespace Stride.Assets.Presentation.AssetEditors.ScriptEditor
         {
             base.OnKeyDown(e);
 
-            if (e.HasModifiers(ModifierKeys.Control))
+            if ((Keyboard.Modifiers & ModifierKeys.Control) != 0)
             {
                 switch (e.Key)
                 {

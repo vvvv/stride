@@ -1,7 +1,7 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
-#if STRIDE_PLATFORM_WINDOWS_DESKTOP && (STRIDE_UI_WINFORMS || STRIDE_UI_WPF)
+#if (STRIDE_UI_WINFORMS || STRIDE_UI_WPF)
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,13 +33,15 @@ namespace Stride.Input
             uiControl.MouseDown += OnMouseDown;
             uiControl.MouseUp += OnMouseUp;
             uiControl.MouseWheel += OnMouseWheelEvent;
-            uiControl.MouseCaptureChanged += OnLostMouseCapture;
             uiControl.SizeChanged += OnSizeChanged;
             uiControl.GotFocus += OnGotFocus;
+            uiControl.LostFocus += OnLostFocus;
 
             OnSizeChanged(this, null);
 
             BindRawInput();
+
+            Id = InputDeviceUtils.DeviceNameToGuid(uiControl.Handle.ToString() + Name);
         }
 
         public override IInputSource Source { get; }
@@ -50,8 +52,9 @@ namespace Stride.Input
             uiControl.MouseDown -= OnMouseDown;
             uiControl.MouseUp -= OnMouseUp;
             uiControl.MouseWheel -= OnMouseWheelEvent;
-            uiControl.MouseCaptureChanged -= OnLostMouseCapture;
             uiControl.SizeChanged -= OnSizeChanged;
+            uiControl.GotFocus -= OnGotFocus;
+            uiControl.LostFocus -= OnLostFocus;
 
             if (rawInputMouse != null)
             {
@@ -61,7 +64,7 @@ namespace Stride.Input
         }
 
         public override string Name => "Windows Mouse";
-        public override Guid Id => new Guid("699e35c5-c363-4bb0-8e8b-0474ea1a5cf1");
+        public override Guid Id { get; }
         public override bool IsPositionLocked => isPositionLocked;
 
         public override void Update(List<InputEvent> inputEvents)
@@ -139,6 +142,15 @@ namespace Stride.Input
             }
         }
 
+        private void OnLostFocus(object sender, EventArgs args)
+        {
+            var buttonsToRelease = DownButtons.ToArray();
+            foreach (var button in buttonsToRelease)
+            {
+                MouseState.HandleButtonUp(button);
+            }
+        }
+
         private void OnMouseMove(object sender, MouseEventArgs e)
         {
             if (!isPositionLocked)
@@ -178,15 +190,6 @@ namespace Stride.Input
         {
             uiControl.Focus();
             MouseState.HandleButtonDown(ConvertMouseButton(mouseEventArgs.Button));
-        }
-
-        private void OnLostMouseCapture(object sender, EventArgs args)
-        {
-            var buttonsToRelease = DownButtons.ToArray();
-            foreach (var button in buttonsToRelease)
-            {
-                MouseState.HandleButtonUp(button);
-            }
         }
 
         private static MouseButton ConvertMouseButton(MouseButtons mouseButton)

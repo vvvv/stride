@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -40,7 +40,7 @@ namespace Stride.Physics
             return other.Shape == Shape;
         }
 
-        public ColliderShape CreateShape()
+        public ColliderShape CreateShape(IServiceRegistry services)
         {
             if (Shape == null)
             {
@@ -49,7 +49,9 @@ namespace Stride.Physics
 
             if (Shape.Shape == null)
             {
-                Shape.Shape = PhysicsColliderShape.Compose(Shape.Descriptions);
+                Shape.Shape = PhysicsColliderShape.Compose(Shape.Descriptions, services);
+                if(Shape.Shape != null)
+                    Shape.Shape.Description = this;
             }
 
             return this.Shape.Shape;

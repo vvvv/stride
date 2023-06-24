@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System.Collections.Generic;
 using System.IO;
@@ -15,7 +15,7 @@ namespace Stride.LauncherApp.Services
 
         private static readonly SettingsKey<bool> CloseLauncherAutomaticallyKey = new SettingsKey<bool>("Internal/Launcher/CloseLauncherAutomatically", SettingsContainer, false);
         private static readonly SettingsKey<string> ActiveVersionKey = new SettingsKey<string>("Internal/Launcher/ActiveVersion", SettingsContainer, "");
-        private static readonly SettingsKey<string> PreferredFrameworkKey = new SettingsKey<string>("Internal/Launcher/PreferredFramework", SettingsContainer, "net5.0");
+        private static readonly SettingsKey<string> PreferredFrameworkKey = new SettingsKey<string>("Internal/Launcher/PreferredFramework", SettingsContainer, "net6.0");
         private static readonly SettingsKey<int> CurrentTabKey = new SettingsKey<int>("Internal/Launcher/CurrentTabSessions", SettingsContainer, 0);
         private static readonly SettingsKey<List<UDirectory>> DeveloperVersionsKey = new SettingsKey<List<UDirectory>>("Internal/Launcher/DeveloperVersions", SettingsContainer, () => new List<UDirectory>());
 

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 #pragma warning disable SA1405 // Debug.Assert must provide message text
 using System;
@@ -117,13 +117,13 @@ namespace Stride.Graphics.Data
                         PixelBuffers = pixelBuffers,
                     };
                     // TODO: We end up duplicating some of the texture data; we could find a way to avoid that by saving only the chunks of higher level mips?
-                    initialImage.Save(stream.NativeStream, ImageFileType.Stride);
+                    initialImage.Save(stream.UnderlyingStream, ImageFileType.Stride);
                 }
             }
             else
             {
                 // Write whole image (old texture content serialization)
-                Image.Save(stream.NativeStream, ImageFileType.Stride);
+                Image.Save(stream.UnderlyingStream, ImageFileType.Stride);
             }
         }
     }

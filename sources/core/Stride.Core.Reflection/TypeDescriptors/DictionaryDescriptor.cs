@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections;
@@ -272,7 +272,23 @@ namespace Stride.Core.Reflection
         /// <returns><c>true</c> if the specified type is dictionary; otherwise, <c>false</c>.</returns>
         public static bool IsDictionary(Type type)
         {
-            return TypeHelper.IsDictionary(type);
+            if (type == null) throw new ArgumentNullException(nameof(type));
+            var typeInfo = type.GetTypeInfo();
+            if (typeof(IDictionary).GetTypeInfo().IsAssignableFrom(typeInfo))
+            {
+                return true;
+            }
+
+            foreach (var iType in typeInfo.ImplementedInterfaces)
+            {
+                var iTypeInfo = iType.GetTypeInfo();
+                if (iTypeInfo.IsGenericType && iTypeInfo.GetGenericTypeDefinition() == typeof(IDictionary<,>))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public static IEnumerable<KeyValuePair<object, object>> GetGenericEnumerable<TKey, TValue>(IDictionary<TKey, TValue> dictionary)

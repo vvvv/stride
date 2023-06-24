@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -41,7 +41,6 @@ namespace Stride.Core.Presentation.Quantum.ViewModels
             GraphViewModelService = serviceProvider.TryGet<GraphViewModelService>();
             if (GraphViewModelService == null) throw new InvalidOperationException($"{nameof(GraphViewModel)} requires a {nameof(GraphViewModelService)} in the service provider.");
             Logger = GlobalLogger.GetLogger(DefaultLoggerName);
-            if (rootPresenters == null) throw new ArgumentNullException(nameof(rootNode));
             var viewModelFactory = serviceProvider.Get<GraphViewModelService>().NodeViewModelFactory;
             viewModelFactory.CreateGraph(this, type, rootPresenters);
         }

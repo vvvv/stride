@@ -1,15 +1,14 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp) 
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Threading.Tasks;
-using Stride.Core;
 using Stride.Core.Extensions;
-using Stride.LauncherApp.Resources;
 using Stride.Core.Packages;
-using Stride.LauncherApp.Services;
 using Stride.Core.Presentation.Commands;
 using Stride.Core.Presentation.Services;
 using Stride.Core.Presentation.ViewModel;
+using Stride.LauncherApp.Resources;
+using Stride.LauncherApp.Services;
 
 namespace Stride.LauncherApp.ViewModels
 {
@@ -36,10 +35,8 @@ namespace Stride.LauncherApp.ViewModels
         internal PackageVersionViewModel(LauncherViewModel launcher, NugetStore store, NugetLocalPackage localPackage)
             : base(launcher.SafeArgument("launcher").ServiceProvider)
         {
-            if (launcher == null) throw new ArgumentNullException(nameof(launcher));
-            if (store == null) throw new ArgumentNullException(nameof(store));
-            Launcher = launcher;
-            Store = store;
+            Launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
+            Store = store ?? throw new ArgumentNullException(nameof(store));
             LocalPackage = localPackage;
             DownloadCommand = new AnonymousTaskCommand(ServiceProvider, () => Download(true));
             DeleteCommand = new AnonymousTaskCommand(ServiceProvider, () => Delete(true, true)) { IsEnabled = CanDelete };
@@ -185,13 +182,11 @@ namespace Stride.LauncherApp.ViewModels
                     try
                     {
                         CurrentProcessStatus = null;
-                        using (var progressReport = new ProgressReport(Store, ServerPackage))
-                        {
-                            progressReport.ProgressChanged += (action, progress) => { Dispatcher.InvokeAsync(() => { UpdateProgress(action, progress); }).Forget(); };
-                            progressReport.UpdateProgress(ProgressAction.Delete, -1);
-                            await Store.UninstallPackage(LocalPackage, progressReport);
-                            CurrentProcessStatus = null;
-                        }
+                        using var progressReport = new ProgressReport(Store, ServerPackage);
+                        progressReport.ProgressChanged += (action, progress) => { Dispatcher.InvokeAsync(() => { UpdateProgress(action, progress); }).Forget(); };
+                        progressReport.UpdateProgress(ProgressAction.Delete, -1);
+                        await Store.UninstallPackage(LocalPackage, progressReport);
+                        CurrentProcessStatus = null;
                     }
                     catch (Exception e)
                     {
@@ -218,7 +213,7 @@ namespace Stride.LauncherApp.ViewModels
                         progressReport.ProgressChanged += (action, progress) => { Dispatcher.InvokeAsync(() => { UpdateProgress(action, progress); }).Forget(); };
                         progressReport.UpdateProgress(ProgressAction.Install, -1);
                         MetricsHelper.NotifyDownloadStarting(ServerPackage.Id, ServerPackage.Version.ToString());
-                        await Store.InstallPackage(ServerPackage.Id, ServerPackage.Version, progressReport);
+                        await Store.InstallPackage(ServerPackage.Id, ServerPackage.Version, ServerPackage.TargetFrameworks, progressReport);
                         downloadCompleted = true;
                         MetricsHelper.NotifyDownloadCompleted(ServerPackage.Id, ServerPackage.Version.ToString());
                     }
@@ -318,7 +313,7 @@ namespace Stride.LauncherApp.ViewModels
 
         private void UpdateStatusInternal()
         {
-            CanBeDownloaded = LocalPackage == null || (LocalPackage != null && ServerPackage != null && LocalPackage.Version < ServerPackage.Version);
+            CanBeDownloaded = (LocalPackage == null && ServerPackage != null) || (LocalPackage != null && ServerPackage != null && LocalPackage.Version < ServerPackage.Version);
             CanDelete = LocalPackage != null;
             DownloadCommand.IsEnabled = CanBeDownloaded;
         }

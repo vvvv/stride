@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using Stride.Core;
 using Stride.Core.Annotations;
@@ -52,6 +52,12 @@ namespace Stride.Rendering.Materials
         [DataMember(20)]
         public IComputeNode<Vector4> Tint { get; set; }
 
+        /// <userdoc>
+        /// Dither shadows cast by this object to simulate semi-transparent shadows, works best at higher PCF filtering levels.
+        /// </userdoc>
+        [DataMember(30)]
+        public bool DitheredShadows { get; set; } = true;
+
         public override void GenerateShader(MaterialGeneratorContext context)
         {
             var alpha = Alpha ?? new ComputeFloat(1f);
@@ -72,7 +78,11 @@ namespace Stride.Rendering.Materials
             context.SetStream(AlphaBlendColorStream.Stream, tint, MaterialKeys.AlphaBlendColorMap, MaterialKeys.AlphaBlendColorValue, Color.White);
 
             context.MaterialPass.Parameters.Set(MaterialKeys.UsePixelShaderWithDepthPass, true);
-
+            if (DitheredShadows)
+            {
+                context.MaterialPass.Parameters.Set(MaterialKeys.UseDitheredShadows, true);
+            }
+            
             if (!context.Tags.Get(HasFinalCallback))
             {
                 context.Tags.Set(HasFinalCallback, true);

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 //
 // -----------------------------------------------------------------------------
@@ -44,7 +44,7 @@ namespace Stride.Core.Mathematics
         /// <summary>
         /// The size of the <see cref="Stride.Core.Mathematics.Vector4"/> type, in bytes.
         /// </summary>
-        public static readonly int SizeInBytes = Utilities.SizeOf<Vector4>();
+        public static readonly int SizeInBytes = Unsafe.SizeOf<Vector4>();
 
         /// <summary>
         /// A <see cref="Stride.Core.Mathematics.Vector4"/> with all of its components set to zero.
@@ -178,7 +178,7 @@ namespace Stride.Core.Mathematics
         /// </summary>
         public bool IsNormalized
         {
-            get { return Math.Abs((X * X) + (Y * Y) + (Z * Z) + (W * W) - 1f) < MathUtil.ZeroTolerance; }
+            get { return MathF.Abs((X * X) + (Y * Y) + (Z * Z) + (W * W) - 1f) < MathUtil.ZeroTolerance; }
         }
 
         /// <summary>
@@ -225,9 +225,9 @@ namespace Stride.Core.Mathematics
         /// and speed is of the essence.
         /// </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float Length()
+        public readonly float Length()
         {
-            return (float)Math.Sqrt((X * X) + (Y * Y) + (Z * Z) + (W * W));
+            return MathF.Sqrt((X * X) + (Y * Y) + (Z * Z) + (W * W));
         }
 
         /// <summary>
@@ -267,10 +267,10 @@ namespace Stride.Core.Mathematics
         /// <param name="exponent">The exponent.</param>
         public void Pow(float exponent)
         {
-            X = (float)Math.Pow(X, exponent);
-            Y = (float)Math.Pow(Y, exponent);
-            Z = (float)Math.Pow(Z, exponent);
-            W = (float)Math.Pow(W, exponent);
+            X = MathF.Pow(X, exponent);
+            Y = MathF.Pow(Y, exponent);
+            Z = MathF.Pow(Z, exponent);
+            W = MathF.Pow(W, exponent);
         }
 
         /// <summary>
@@ -280,6 +280,29 @@ namespace Stride.Core.Mathematics
         public float[] ToArray()
         {
             return new float[] { X, Y, Z, W };
+        }
+
+        /// <summary>
+        /// Moves the first vector4 to the second one in a straight line.
+        /// </summary>
+        /// <param name="from">The first point.</param>
+        /// <param name="to">The second point.</param>
+        /// <param name="maxTravelDistance">The rate at which the first point is going to move towards the second point.</param>
+        public static Vector4 Moveto(in Vector4 from, in Vector4 to, float maxTravelDistance)
+        {
+            Vector4 distance = Subtract(to, from);
+
+            float length = distance.Length();
+
+            if (maxTravelDistance >= length || length == 0)
+            {
+                return to;
+            }
+            else
+            {
+                var v = 1f / length * maxTravelDistance;
+                return new Vector4(from.X + distance.X * v, from.Y + distance.Y * v, from.Z + distance.Z * v, from.W + distance.W * v);
+            }
         }
 
         /// <summary>
@@ -325,7 +348,7 @@ namespace Stride.Core.Mathematics
         /// <param name="right">The second vector to subtract.</param>
         /// <returns>The difference of the two vectors.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector4 Subtract(Vector4 left, Vector4 right)
+        public static Vector4 Subtract(in Vector4 left, in Vector4 right)
         {
             return new Vector4(left.X - right.X, left.Y - right.Y, left.Z - right.Z, left.W - right.W);
         }
@@ -541,7 +564,7 @@ namespace Stride.Core.Mathematics
             float z = value1.Z - value2.Z;
             float w = value1.W - value2.W;
 
-            result = (float)Math.Sqrt((x * x) + (y * y) + (z * z) + (w * w));
+            result = MathF.Sqrt((x * x) + (y * y) + (z * z) + (w * w));
         }
 
         /// <summary>
@@ -561,7 +584,7 @@ namespace Stride.Core.Mathematics
             float z = value1.Z - value2.Z;
             float w = value1.W - value2.W;
 
-            return (float)Math.Sqrt((x * x) + (y * y) + (z * z) + (w * w));
+            return MathF.Sqrt((x * x) + (y * y) + (z * z) + (w * w));
         }
 
         /// <summary>
@@ -1338,10 +1361,10 @@ namespace Stride.Core.Mathematics
         /// </returns>
         public bool Equals(Vector4 other)
         {
-            return ((float)Math.Abs(other.X - X) < MathUtil.ZeroTolerance &&
-                (float)Math.Abs(other.Y - Y) < MathUtil.ZeroTolerance &&
-                (float)Math.Abs(other.Z - Z) < MathUtil.ZeroTolerance &&
-                (float)Math.Abs(other.W - W) < MathUtil.ZeroTolerance);
+            return (MathF.Abs(other.X - X) < MathUtil.ZeroTolerance &&
+                MathF.Abs(other.Y - Y) < MathUtil.ZeroTolerance &&
+                MathF.Abs(other.Z - Z) < MathUtil.ZeroTolerance &&
+                MathF.Abs(other.W - W) < MathUtil.ZeroTolerance);
         }
 
         /// <summary>
@@ -1360,6 +1383,21 @@ namespace Stride.Core.Mathematics
                 return false;
 
             return Equals((Vector4)value);
+        }
+        
+        /// <summary>
+        /// Deconstructs the vector's components into named variables.
+        /// </summary>
+        /// <param name="x">The X component</param>
+        /// <param name="y">The Y component</param>
+        /// <param name="z">The Z component</param>
+        /// <param name="w">The W component</param>
+        public void Deconstruct(out float x, out float y, out float z, out float w)
+        {
+            x = X;
+            y = Y;
+            z = Z;
+            w = W;
         }
 
 #if WPFInterop

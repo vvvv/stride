@@ -1,19 +1,17 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
-using System.ComponentModel;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Stride.Core;
 using Stride.Core.Extensions;
-using Stride.LauncherApp.Resources;
 using Stride.Core.Packages;
 using Stride.Core.Presentation.Collections;
-using Stride.Core.Presentation.Commands;
 using Stride.Core.Presentation.Services;
-using System.Collections.Generic;
-using System.Linq;
+using Stride.LauncherApp.Resources;
 
 namespace Stride.LauncherApp.ViewModels
 {
@@ -40,6 +38,28 @@ namespace Stride.LauncherApp.ViewModels
         {
             FetchReleaseNotes();
             FetchDocumentation();
+        }
+
+        /// <summary>
+        /// Checks whether the latest available package is from a remote repository (i.e. NuGet).
+        /// </summary>
+        public bool IsLatestPackageRemote
+        {
+            get
+            {
+                return (LatestServerPackage?.Source != null) && Uri.IsWellFormedUriString(LatestServerPackage.Source, UriKind.Absolute);
+            }
+        }
+
+        /// <summary>
+        /// Checks whether the latest available package is from a local repository (i.e. disk).
+        /// </summary>
+        public bool IsLatestPackageLocal
+        {
+            get
+            {
+                return (LatestServerPackage?.Source != null) && (Directory.Exists(LatestServerPackage.Source));
+            }
         }
 
         /// <summary>
@@ -118,7 +138,11 @@ namespace Stride.LauncherApp.ViewModels
 
             // Always keep track of highest version
             if (ServerPackage != null && (LatestServerPackage == null || LatestServerPackage.Version < ServerPackage.Version))
+            {
+                OnPropertyChanging(nameof(IsLatestPackageRemote), nameof(IsLatestPackageLocal));
                 LatestServerPackage = ServerPackage;
+                OnPropertyChanged(nameof(IsLatestPackageRemote), nameof(IsLatestPackageLocal));
+            }
 
             Dispatcher.Invoke(UpdateStatus);
             if (alternateVersions != null)

@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using Stride.Core.Serialization.Serializers;
@@ -30,7 +30,7 @@ namespace Stride.Core.Serialization
     }
 
     /// <summary>
-    /// Represents a Url to an asset of type <see cref="T"/>.
+    /// Represents a Url to an asset of type <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The type off asset.</typeparam>
     [DataSerializer(typeof(UrlReferenceDataSerializer<>), Mode = DataSerializerGenericMode.GenericArguments)]

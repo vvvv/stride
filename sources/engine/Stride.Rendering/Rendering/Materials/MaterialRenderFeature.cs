@@ -1,8 +1,9 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Stride.Core;
 using Stride.Core.Threading;
@@ -77,10 +78,12 @@ namespace Stride.Rendering.Materials
             public bool HasNormalMap;
 
             /// <summary>
-            /// Indicates that material requries using pixel shader stage during depth-only pass (Z prepass or shadow map rendering).
+            /// Indicates that material requires using pixel shader stage during depth-only pass (Z prepass or shadow map rendering).
             /// Used by transparent and cut off materials.
             /// </summary>
             public bool UsePixelShaderWithDepthPass;
+
+            public bool UseDitheredShadows;
 
             public MaterialInfo(MaterialPass materialPass)
             {
@@ -100,7 +103,6 @@ namespace Stride.Rendering.Materials
             perMaterialDescriptorSetSlot = ((RootEffectRenderFeature)RootRenderFeature).GetOrCreateEffectDescriptorSetSlot("PerMaterial");
         }
 
-        /// <param name="context"></param>
         /// <inheritdoc/>
         public override void PrepareEffectPermutations(RenderDrawContext context)
         {
@@ -226,6 +228,7 @@ namespace Stride.Rendering.Materials
                                 materialInfo.PixelStageStreamInitializer = material.Parameters.Get(MaterialKeys.PixelStageStreamInitializer);
                                 materialInfo.HasNormalMap = material.Parameters.Get(MaterialKeys.HasNormalMap);
                                 materialInfo.UsePixelShaderWithDepthPass = material.Parameters.Get(MaterialKeys.UsePixelShaderWithDepthPass);
+                                materialInfo.UseDitheredShadows = material.Parameters.Get(MaterialKeys.UseDitheredShadows);
 
                                 materialInfo.MaterialParameters = material.Parameters;
                                 materialInfo.ParametersChanged = isMaterialParametersChanged;
@@ -259,6 +262,8 @@ namespace Stride.Rendering.Materials
                         renderEffect.EffectValidator.ValidateParameter(MaterialKeys.HasNormalMap, materialInfo.HasNormalMap);
                     if (materialInfo.UsePixelShaderWithDepthPass)
                         renderEffect.EffectValidator.ValidateParameter(MaterialKeys.UsePixelShaderWithDepthPass, materialInfo.UsePixelShaderWithDepthPass);
+                    if (materialInfo.UseDitheredShadows)
+                        renderEffect.EffectValidator.ValidateParameter(MaterialKeys.UseDitheredShadows, materialInfo.UseDitheredShadows);
                 }
             });
 
@@ -375,9 +380,9 @@ namespace Stride.Rendering.Materials
             // Process PerMaterial cbuffer
             if (materialInfo.ConstantBufferReflection != null)
             {
-                var mappedCB = materialInfo.Resources.ConstantBuffer.Data;
+                var mappedCB = (byte*)materialInfo.Resources.ConstantBuffer.Data;
                 fixed (byte* dataValues = materialInfo.ParameterCollection.DataValues)
-                    Utilities.CopyMemory(mappedCB, (IntPtr)dataValues, materialInfo.Resources.ConstantBuffer.Size);
+                    Unsafe.CopyBlockUnaligned(mappedCB, dataValues, (uint)materialInfo.Resources.ConstantBuffer.Size);
             }
 
             return true;

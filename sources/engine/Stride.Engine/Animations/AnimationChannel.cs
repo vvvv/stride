@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -87,7 +87,7 @@ namespace Stride.Animations
             public int Compare(LinkedListNode<ErrorNode> x, LinkedListNode<ErrorNode> y)
             {
                 if (x.Value.Error != y.Value.Error)
-                    return Math.Sign(x.Value.Error - y.Value.Error);
+                    return MathF.Sign(x.Value.Error - y.Value.Error);
 
                 return x.Value.GetHashCode() - y.Value.GetHashCode();
             }

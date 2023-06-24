@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -26,19 +26,7 @@ namespace Stride.Core.Assets
         {
             var assemblies = new List<string>();
 
-            var libPaths = new Dictionary<ValueTuple<string, NuGet.Versioning.NuGetVersion>, string>();
-            foreach (var lib in lockFile.Libraries)
-            {
-                foreach (var packageFolder in lockFile.PackageFolders)
-                {
-                    var libraryPath = Path.Combine(packageFolder.Path, lib.Path.Replace('/', Path.DirectorySeparatorChar));
-                    if (Directory.Exists(libraryPath))
-                    {
-                        libPaths.Add(ValueTuple.Create(lib.Name, lib.Version), libraryPath);
-                        break;
-                    }
-                }
-            }
+            var libPaths = GetLibPaths(lockFile);
 
             bool TryCollectGraphicsApiDependentAssemblies(string assemblyFile)
             {
@@ -90,6 +78,47 @@ namespace Stride.Core.Assets
             }
 
             return assemblies;
+        }
+
+        public static List<string> ListNativeLibs(LockFile lockFile)
+        {
+            var libs = new List<string>();
+
+            var libPaths = GetLibPaths(lockFile);
+
+            var target = lockFile.Targets.Last();
+            foreach (var lib in target.Libraries)
+            {
+                if (libPaths.TryGetValue(ValueTuple.Create(lib.Name, lib.Version), out var libPath))
+                {
+                    foreach (var n in lib.NativeLibraries)
+                    {
+                        var assemblyFile = Path.Combine(libPath, n.Path.Replace('/', Path.DirectorySeparatorChar));
+                        libs.Add(assemblyFile);
+                    }
+                }
+            }
+
+            return libs;
+        }
+
+        private static Dictionary<(string, NuGetVersion), string> GetLibPaths(LockFile lockFile)
+        {
+            var libPaths = new Dictionary<ValueTuple<string, NuGet.Versioning.NuGetVersion>, string>();
+            foreach (var lib in lockFile.Libraries)
+            {
+                foreach (var packageFolder in lockFile.PackageFolders)
+                {
+                    var libraryPath = Path.Combine(packageFolder.Path, lib.Path.Replace('/', Path.DirectorySeparatorChar));
+                    if (Directory.Exists(libraryPath))
+                    {
+                        libPaths.Add(ValueTuple.Create(lib.Name, lib.Version), libraryPath);
+                        break;
+                    }
+                }
+            }
+
+            return libPaths;
         }
 
         public static (RestoreRequest, RestoreResult) Restore(ILogger logger, NuGetFramework nugetFramework, string runtimeIdentifier, string packageName, VersionRange versionRange, string settingsRoot = null)
@@ -171,7 +200,7 @@ namespace Stride.Core.Assets
                         var mainResult = results.First();
                         return (mainResult.SummaryRequest.Request, mainResult.Result);
                     }
-                    catch (Exception e) when (e is UnauthorizedAccessException || e is IOException)
+                    catch (Exception e) when (e is UnauthorizedAccessException || e is IOException || ((e is AggregateException ae) && ae.InnerExceptions.Any(e2 => e2 is UnauthorizedAccessException || e2 is IOException)))
                     {
                         // If we have an unauthorized access exception, it means assemblies are locked by running Stride process
                         // During first try, kill some known harmless processes, and try again

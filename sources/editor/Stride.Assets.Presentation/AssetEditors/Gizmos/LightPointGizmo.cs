@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -45,7 +45,7 @@ namespace Stride.Assets.Presentation.AssetEditors.Gizmos
             pointMesh= new LightPointMesh(GraphicsDevice);
             pointMesh.Build();
 
-            pointMaterial = GizmoUniformColorMaterial.Create(GraphicsDevice, (Color)new Color4(GetLightColor(GraphicsDevice), 1f));
+            pointMaterial = GizmoEmissiveColorMaterial.Create(GraphicsDevice, (Color)new Color4(GetLightColor(GraphicsDevice), 1f));
 
             pointEntity = new Entity("Point Mesh of {0}".ToFormat(root.Id))
             {
@@ -71,7 +71,7 @@ namespace Stride.Assets.Presentation.AssetEditors.Gizmos
             pointEntity.Transform.Scale = new Vector3(LightPoint.Radius);
 
             // update the spot color
-            GizmoUniformColorMaterial.UpdateColor(GraphicsDevice, pointMaterial, (Color)new Color4(GetLightColor(GraphicsDevice), 1f));
+            GizmoEmissiveColorMaterial.UpdateColor(GraphicsDevice, pointMaterial, (Color)new Color4(GetLightColor(GraphicsDevice), 1f));
         }
         
         public override bool IsSelected
@@ -119,18 +119,18 @@ namespace Stride.Assets.Presentation.AssetEditors.Gizmos
                     var rotation = Matrix.Identity;
                     if (j == 1)
                     {
-                        rotation = Matrix.RotationX((float)Math.PI / 2);
+                        rotation = Matrix.RotationX(MathF.PI / 2);
                     }
                     else if (j == 2)
                     {
-                        rotation = Matrix.RotationY((float)Math.PI / 2);
+                        rotation = Matrix.RotationY(MathF.PI / 2);
                     }
 
                     for (int i = 0; i <= Tesselation; i++)
                     {
                         var longitude = (float)(i * 2.0 * Math.PI / Tesselation);
-                        var dx = (float)Math.Cos(longitude);
-                        var dy = (float)Math.Sin(longitude);
+                        var dx = MathF.Cos(longitude);
+                        var dy = MathF.Sin(longitude);
 
                         var normal = new Vector3(dx, dy, 0);
                         Vector3.TransformNormal(ref normal, ref rotation, out normal);

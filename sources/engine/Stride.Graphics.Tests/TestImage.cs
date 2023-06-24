@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 // Copyright (c) 2010-2012 SharpDX - Alexandre Mutel
@@ -121,7 +121,7 @@ namespace Stride.Graphics.Tests
             dest.Dispose();
         }
 
-        private void ManipulateImage(Image source, Image dest, int arrayIndex, int zIndex, int mipIndex)
+        private unsafe void ManipulateImage(Image source, Image dest, int arrayIndex, int zIndex, int mipIndex)
         {
             // Use Set Pixel
             var fromPixelBuffer = source.PixelBuffer[0];
@@ -131,7 +131,9 @@ namespace Stride.Graphics.Tests
             fromPixelBuffer.SetPixel(16, 0, (byte)128);
             fromPixelBuffer.CopyTo(toPixelBuffer);
 
-            Assert.True(Utilities.CompareMemory(fromPixelBuffer.DataPointer, toPixelBuffer.DataPointer, fromPixelBuffer.BufferStride));
+            var lhs = new ReadOnlySpan<byte>((void*)fromPixelBuffer.DataPointer, fromPixelBuffer.BufferStride);
+            var rhs = new ReadOnlySpan<byte>((void*)toPixelBuffer.DataPointer, fromPixelBuffer.BufferStride);
+            Assert.True(lhs.SequenceEqual(rhs));
 
             // Use Get Pixels
             var fromPixels = fromPixelBuffer.GetPixels<byte>();

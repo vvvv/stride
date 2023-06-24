@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Collections.Generic;
@@ -133,9 +133,6 @@ namespace Stride.Core.Quantum.References
 
                 if (targetValue != null && !type.IsInstanceOfType(targetValue))
                     throw new InvalidOperationException(@"The type of the retrieved node content does not match the type of this reference");
-
-                if (targetValue != null && !type.IsInstanceOfType(targetValue))
-                    throw new InvalidOperationException("TargetNode type does not match the reference type.");
 
                 TargetNode = targetNode;
                 TargetGuid = targetNode.Guid;

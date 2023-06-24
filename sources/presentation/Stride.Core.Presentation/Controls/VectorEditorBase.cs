@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 using System;
 using System.Windows;
@@ -198,7 +198,7 @@ namespace Stride.Core.Presentation.Controls
 
             var editor = (VectorEditorBase<T>)sender;
             var decimalPlaces = editor.DecimalPlaces;
-            return decimalPlaces < 0 ? basevalue : (float)Math.Round((float)basevalue, decimalPlaces);
+            return decimalPlaces < 0 ? basevalue : MathF.Round((float)basevalue, decimalPlaces);
         }
 
         /// <summary>

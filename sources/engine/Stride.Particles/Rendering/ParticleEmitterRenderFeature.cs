@@ -1,4 +1,4 @@
-// Copyright (c) Stride contributors (https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
+// Copyright (c) .NET Foundation and Contributors (https://dotnetfoundation.org/ & https://stride3d.net) and Silicon Studio Corp. (https://www.siliconstudio.co.jp)
 // Distributed under the MIT license. See the LICENSE.md file in the project root for more information.
 
 using System;
@@ -269,8 +269,8 @@ namespace Stride.Particles.Rendering
 
                 renderParticleNodeData[renderNodeReference] = nodeData;
 
-                Matrix viewInverse; // TODO Build this per view, not per node!!!
-                Matrix.Invert(ref renderNode.RenderView.View, out viewInverse);
+                // TODO Build this per view, not per node!!!
+                Matrix.Invert(ref renderNode.RenderView.View, out var viewInverse);
                 renderParticleEmitter.ParticleEmitter.BuildVertexBuffer(sharedBufferPtr + nodeData.VertexBufferOffset, ref viewInverse, ref renderNode.RenderView.ViewProjection);
             });
 
